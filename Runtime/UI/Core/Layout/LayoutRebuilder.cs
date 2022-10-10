@@ -169,14 +169,14 @@ namespace UnityEngine.UI
         /// <param name="rect">Rect to rebuild.</param>
         public static void MarkLayoutForRebuild(RectTransform rect)
         {
-            if (rect == null || rect.gameObject == null)
+            if (rect == null)
                 return;
 
             var comps = ListPool<Component>.Get();
             bool validLayoutGroup = true;
             RectTransform layoutRoot = rect;
             var parent = layoutRoot.parent as RectTransform;
-            while (validLayoutGroup && !(parent == null || parent.gameObject == null))
+            while (validLayoutGroup && !ReferenceEquals(parent, null))
             {
                 validLayoutGroup = false;
                 parent.GetComponents(typeof(ILayoutGroup), comps);
@@ -184,7 +184,7 @@ namespace UnityEngine.UI
                 for (int i = 0; i < comps.Count; ++i)
                 {
                     var cur = comps[i];
-                    if (cur != null && cur is Behaviour && ((Behaviour)cur).isActiveAndEnabled)
+                    if (((Behaviour)cur).isActiveAndEnabled)
                     {
                         validLayoutGroup = true;
                         layoutRoot = parent;
@@ -197,7 +197,7 @@ namespace UnityEngine.UI
 
             // We know the layout root is valid if it's not the same as the rect,
             // since we checked that above. But if they're the same we still need to check.
-            if (layoutRoot == rect && !ValidController(layoutRoot, comps))
+            if (ReferenceEquals(layoutRoot, rect) && !ValidController(layoutRoot, comps))
             {
                 ListPool<Component>.Release(comps);
                 return;
@@ -209,14 +209,11 @@ namespace UnityEngine.UI
 
         private static bool ValidController(RectTransform layoutRoot, List<Component> comps)
         {
-            if (layoutRoot == null || layoutRoot.gameObject == null)
-                return false;
-
             layoutRoot.GetComponents(typeof(ILayoutController), comps);
             for (int i = 0; i < comps.Count; ++i)
             {
                 var cur = comps[i];
-                if (cur != null && cur is Behaviour && ((Behaviour)cur).isActiveAndEnabled)
+                if (((Behaviour)cur).isActiveAndEnabled)
                 {
                     return true;
                 }
