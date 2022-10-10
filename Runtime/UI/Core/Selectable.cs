@@ -424,7 +424,7 @@ namespace UnityEngine.UI
                 m_TargetGraphic = GetComponent<Graphic>();
         }
 
-        private readonly List<CanvasGroup> m_CanvasGroupCache = new List<CanvasGroup>();
+        private static readonly List<CanvasGroup> m_CanvasGroupCache = new List<CanvasGroup>();
         protected override void OnCanvasGroupChanged()
         {
             // Figure out if parent groups allow interaction
