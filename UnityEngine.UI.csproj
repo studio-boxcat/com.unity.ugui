@@ -140,6 +140,7 @@
     <Compile Include="Runtime\UI\Core\SpriteState.cs" />
     <Compile Include="Runtime\UI\Core\StencilMaterial.cs" />
     <Compile Include="Runtime\UI\Core\Text.cs" />
+    <Compile Include="Runtime\UI\Core\Text_Custom.cs" />
     <Compile Include="Runtime\UI\Core\Toggle.cs" />
     <Compile Include="Runtime\UI\Core\ToggleGroup.cs" />
     <Compile Include="Runtime\UI\Core\Utility\ReflectionMethodsCache.cs" />
