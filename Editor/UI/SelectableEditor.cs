@@ -25,7 +25,6 @@ namespace UnityEditor.UI
 
         GUIContent m_VisualizeNavigation = EditorGUIUtility.TrTextContent("Visualize", "Show navigation flows between selectable UI elements.");
 
-        AnimBool m_ShowColorTint       = new AnimBool();
         AnimBool m_ShowSpriteTrasition = new AnimBool();
         AnimBool m_ShowAnimTransition  = new AnimBool();
 
@@ -61,11 +60,9 @@ namespace UnityEditor.UI
             };
 
             var trans = GetTransition(m_TransitionProperty);
-            m_ShowColorTint.value       = (trans == Selectable.Transition.ColorTint);
             m_ShowSpriteTrasition.value = (trans == Selectable.Transition.SpriteSwap);
             m_ShowAnimTransition.value  = (trans == Selectable.Transition.Animation);
 
-            m_ShowColorTint.valueChanged.AddListener(Repaint);
             m_ShowSpriteTrasition.valueChanged.AddListener(Repaint);
 
             s_Editors.Add(this);
@@ -76,7 +73,6 @@ namespace UnityEditor.UI
 
         protected virtual void OnDisable()
         {
-            m_ShowColorTint.valueChanged.RemoveListener(Repaint);
             m_ShowSpriteTrasition.valueChanged.RemoveListener(Repaint);
 
             s_Editors.Remove(this);
@@ -108,7 +104,6 @@ namespace UnityEditor.UI
                 graphic = (target as Selectable).GetComponent<Graphic>();
 
             var animator = (target as Selectable).GetComponent<Animator>();
-            m_ShowColorTint.target = (!m_TransitionProperty.hasMultipleDifferentValues && trans == Button.Transition.ColorTint);
             m_ShowSpriteTrasition.target = (!m_TransitionProperty.hasMultipleDifferentValues && trans == Button.Transition.SpriteSwap);
             m_ShowAnimTransition.target = (!m_TransitionProperty.hasMultipleDifferentValues && trans == Button.Transition.Animation);
 
@@ -116,29 +111,18 @@ namespace UnityEditor.UI
 
             ++EditorGUI.indentLevel;
             {
-                if (trans == Selectable.Transition.ColorTint || trans == Selectable.Transition.SpriteSwap)
+                if (trans == Selectable.Transition.SpriteSwap)
                 {
                     EditorGUILayout.PropertyField(m_TargetGraphicProperty);
                 }
 
                 switch (trans)
                 {
-                    case Selectable.Transition.ColorTint:
-                        if (graphic == null)
-                            EditorGUILayout.HelpBox("You must have a Graphic target in order to use a color transition.", MessageType.Warning);
-                        break;
-
                     case Selectable.Transition.SpriteSwap:
                         if (graphic as Image == null)
                             EditorGUILayout.HelpBox("You must have a Image target in order to use a sprite swap transition.", MessageType.Warning);
                         break;
                 }
-
-                if (EditorGUILayout.BeginFadeGroup(m_ShowColorTint.faded))
-                {
-                    EditorGUILayout.PropertyField(m_ColorBlockProperty);
-                }
-                EditorGUILayout.EndFadeGroup();
 
                 if (EditorGUILayout.BeginFadeGroup(m_ShowSpriteTrasition.faded))
                 {

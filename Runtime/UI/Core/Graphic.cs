@@ -216,9 +216,6 @@ namespace UnityEngine.UI
 
         [NonSerialized] protected Mesh m_CachedMesh;
         [NonSerialized] protected Vector2[] m_CachedUvs;
-        // Tween controls for the Graphic
-        [NonSerialized]
-        private readonly TweenRunner<ColorTween> m_ColorTweenRunner;
 
         protected bool useLegacyMeshGeneration { get; set; }
 
@@ -226,9 +223,6 @@ namespace UnityEngine.UI
         // should not be called by users
         protected Graphic()
         {
-            if (m_ColorTweenRunner == null)
-                m_ColorTweenRunner = new TweenRunner<ColorTween>();
-            m_ColorTweenRunner.Init(this);
             useLegacyMeshGeneration = true;
         }
 
@@ -921,67 +915,6 @@ namespace UnityEngine.UI
                 return rectTransform.rect;
             else
                 return RectTransformUtility.PixelAdjustRect(rectTransform, canvas);
-        }
-
-        ///<summary>
-        ///Tweens the CanvasRenderer color associated with this Graphic.
-        ///</summary>
-        ///<param name="targetColor">Target color.</param>
-        ///<param name="duration">Tween duration.</param>
-        ///<param name="ignoreTimeScale">Should ignore Time.scale?</param>
-        ///<param name="useAlpha">Should also Tween the alpha channel?</param>
-        public virtual void CrossFadeColor(Color targetColor, float duration, bool ignoreTimeScale, bool useAlpha)
-        {
-            CrossFadeColor(targetColor, duration, ignoreTimeScale, useAlpha, true);
-        }
-
-        ///<summary>
-        ///Tweens the CanvasRenderer color associated with this Graphic.
-        ///</summary>
-        ///<param name="targetColor">Target color.</param>
-        ///<param name="duration">Tween duration.</param>
-        ///<param name="ignoreTimeScale">Should ignore Time.scale?</param>
-        ///<param name="useAlpha">Should also Tween the alpha channel?</param>
-        /// <param name="useRGB">Should the color or the alpha be used to tween</param>
-        public virtual void CrossFadeColor(Color targetColor, float duration, bool ignoreTimeScale, bool useAlpha, bool useRGB)
-        {
-            if (canvasRenderer == null || (!useRGB && !useAlpha))
-                return;
-
-            Color currentColor = canvasRenderer.GetColor();
-            if (currentColor.Equals(targetColor))
-            {
-                m_ColorTweenRunner.StopTween();
-                return;
-            }
-
-            ColorTween.ColorTweenMode mode = (useRGB && useAlpha ?
-                ColorTween.ColorTweenMode.All :
-                (useRGB ? ColorTween.ColorTweenMode.RGB : ColorTween.ColorTweenMode.Alpha));
-
-            var colorTween = new ColorTween {duration = duration, startColor = canvasRenderer.GetColor(), targetColor = targetColor};
-            colorTween.AddOnChangedCallback(canvasRenderer.SetColor);
-            colorTween.ignoreTimeScale = ignoreTimeScale;
-            colorTween.tweenMode = mode;
-            m_ColorTweenRunner.StartTween(colorTween);
-        }
-
-        static private Color CreateColorFromAlpha(float alpha)
-        {
-            var alphaColor = Color.black;
-            alphaColor.a = alpha;
-            return alphaColor;
-        }
-
-        ///<summary>
-        ///Tweens the alpha of the CanvasRenderer color associated with this Graphic.
-        ///</summary>
-        ///<param name="alpha">Target alpha.</param>
-        ///<param name="duration">Duration of the tween in seconds.</param>
-        ///<param name="ignoreTimeScale">Should ignore [[Time.scale]]?</param>
-        public virtual void CrossFadeAlpha(float alpha, float duration, bool ignoreTimeScale)
-        {
-            CrossFadeColor(CreateColorFromAlpha(alpha), duration, ignoreTimeScale, true, false);
         }
 
         /// <summary>

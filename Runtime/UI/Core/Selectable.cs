@@ -139,7 +139,7 @@ namespace UnityEngine.UI
             /// <summary>
             /// Use an color tint transition.
             /// </summary>
-            ColorTint,
+            Unused_1,
 
             /// <summary>
             /// Use a sprite swap transition.
@@ -155,7 +155,7 @@ namespace UnityEngine.UI
         // Type of the transition that occurs when the button state changes.
         [FormerlySerializedAs("transition")]
         [SerializeField]
-        private Transition m_Transition = Transition.ColorTint;
+        private Transition m_Transition = Transition.None;
 
         // Colors used for a color tint-based transition.
         [FormerlySerializedAs("colors")]
@@ -596,7 +596,6 @@ namespace UnityEngine.UI
                 DoSpriteSwap(null);
 
                 // If the transition mode got changed, we need to clear all the transitions, since we don't know what the old transition mode was.
-                StartColorTween(Color.white, true);
                 TriggerAnimation(m_AnimationTriggers.normalTrigger);
 
                 // And now go to the right state.
@@ -640,9 +639,6 @@ namespace UnityEngine.UI
 
             switch (m_Transition)
             {
-                case Transition.ColorTint:
-                    StartColorTween(Color.white, true);
-                    break;
                 case Transition.SpriteSwap:
                     DoSpriteSwap(null);
                     break;
@@ -702,9 +698,6 @@ namespace UnityEngine.UI
 
             switch (m_Transition)
             {
-                case Transition.ColorTint:
-                    StartColorTween(tintColor * m_Colors.colorMultiplier, instant);
-                    break;
                 case Transition.SpriteSwap:
                     DoSpriteSwap(transitionSprite);
                     break;
@@ -1085,14 +1078,6 @@ namespace UnityEngine.UI
                     Navigate(eventData, FindSelectableOnDown());
                     break;
             }
-        }
-
-        void StartColorTween(Color targetColor, bool instant)
-        {
-            if (m_TargetGraphic == null)
-                return;
-
-            m_TargetGraphic.CrossFadeColor(targetColor, instant ? 0f : m_Colors.fadeDuration, true, true);
         }
 
         void DoSpriteSwap(Sprite newSprite)

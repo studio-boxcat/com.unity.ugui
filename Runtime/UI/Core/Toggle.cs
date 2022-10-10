@@ -61,7 +61,7 @@ namespace UnityEngine.UI
             set
             {
                 SetToggleGroup(value, true);
-                PlayEffect(true);
+                PlayEffect();
             }
         }
 
@@ -150,7 +150,7 @@ namespace UnityEngine.UI
         {
             base.OnEnable();
             SetToggleGroup(m_Group, false);
-            PlayEffect(true);
+            PlayEffect();
         }
 
         protected override void OnDisable()
@@ -277,7 +277,7 @@ namespace UnityEngine.UI
             // due to already active toggle in a toggle group being clicked.
             // Controls like Dropdown rely on this.
             // It's up to the user to ignore a selection being set to the same value it already was, if desired.
-            PlayEffect(toggleTransition == ToggleTransition.None);
+            PlayEffect();
             if (sendCallback)
             {
                 UISystemProfilerApi.AddMarker("Toggle.value", this);
@@ -288,7 +288,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// Play the appropriate effect.
         /// </summary>
-        private void PlayEffect(bool instant)
+        private void PlayEffect()
         {
             if (graphic == null)
                 return;
@@ -298,7 +298,11 @@ namespace UnityEngine.UI
                 graphic.canvasRenderer.SetAlpha(m_IsOn ? 1f : 0f);
             else
 #endif
-            graphic.CrossFadeAlpha(m_IsOn ? 1f : 0f, instant ? 0f : 0.1f, true);
+            {
+                var color = graphic.color;
+                color.a = m_IsOn ? 1f : 0f;
+                graphic.color = color;
+            }
         }
 
         /// <summary>
@@ -306,7 +310,7 @@ namespace UnityEngine.UI
         /// </summary>
         protected override void Start()
         {
-            PlayEffect(true);
+            PlayEffect();
         }
 
         private void InternalToggle()
