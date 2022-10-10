@@ -34,25 +34,6 @@ namespace UnityEngine.UI
         [Obsolete("Not used anymore.", true)]
         protected bool m_IncludeForMasking = false;
 
-        [Serializable]
-        public class CullStateChangedEvent : UnityEvent<bool> {}
-
-        // Event delegates triggered on click.
-        [SerializeField]
-        private CullStateChangedEvent m_OnCullStateChanged = new CullStateChangedEvent();
-
-        /// <summary>
-        /// Callback issued when culling changes.
-        /// </summary>
-        /// <remarks>
-        /// Called whene the culling state of this MaskableGraphic either becomes culled or visible. You can use this to control other elements of your UI as culling happens.
-        /// </remarks>
-        public CullStateChangedEvent onCullStateChanged
-        {
-            get { return m_OnCullStateChanged; }
-            set { m_OnCullStateChanged = value; }
-        }
-
         /// <summary>
         /// Does this graphic allow masking.
         /// </summary>
@@ -144,7 +125,6 @@ namespace UnityEngine.UI
             {
                 canvasRenderer.cull = cull;
                 UISystemProfilerApi.AddMarker("MaskableGraphic.cullingChanged", this);
-                m_OnCullStateChanged.Invoke(cull);
                 OnCullingChanged();
             }
         }
