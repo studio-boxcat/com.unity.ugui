@@ -139,10 +139,12 @@ namespace UnityEngine.UI
 
         private static void SetDefaultColorTransitionValues(Selectable slider)
         {
+            /*
             ColorBlock colors = slider.colors;
             colors.highlightedColor = new Color(0.882f, 0.882f, 0.882f);
             colors.pressedColor     = new Color(0.698f, 0.698f, 0.698f);
             colors.disabledColor    = new Color(0.521f, 0.521f, 0.521f);
+            */
         }
 
         private static void SetParentAndAlign(GameObject child, GameObject parent)

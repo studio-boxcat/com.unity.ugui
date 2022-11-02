@@ -157,11 +157,6 @@ namespace UnityEngine.UI
         [SerializeField]
         private Transition m_Transition = Transition.None;
 
-        // Colors used for a color tint-based transition.
-        [FormerlySerializedAs("colors")]
-        [SerializeField]
-        private ColorBlock m_Colors = ColorBlock.defaultColorBlock;
-
         // Sprites used for a Image swap-based transition.
         [FormerlySerializedAs("spriteState")]
         [SerializeField]
@@ -234,34 +229,6 @@ namespace UnityEngine.UI
         ///</code>
         /// </example>
         public Transition        transition        { get { return m_Transition; } set { if (SetPropertyUtility.SetStruct(ref m_Transition, value))        OnSetProperty(); } }
-
-        /// <summary>
-        /// The ColorBlock for this selectable object.
-        /// </summary>
-        /// <remarks>
-        /// Modifications will not be visible if  transition is not ColorTint.
-        /// </remarks>
-        /// <example>
-        /// <code>
-        /// <![CDATA[
-        /// using UnityEngine;
-        /// using System.Collections;
-        /// using UnityEngine.UI; // Required when Using UI elements.
-        ///
-        /// public class ExampleClass : MonoBehaviour
-        /// {
-        ///     public Button button;
-        ///
-        ///     void Start()
-        ///     {
-        ///         //Resets the colors in the buttons transitions.
-        ///         button.colors = ColorBlock.defaultColorBlock;
-        ///     }
-        /// }
-        /// ]]>
-        ///</code>
-        /// </example>
-        public ColorBlock        colors            { get { return m_Colors; } set { if (SetPropertyUtility.SetStruct(ref m_Colors, value))            OnSetProperty(); } }
 
         /// <summary>
         /// The SpriteState for this selectable object.
@@ -583,7 +550,6 @@ namespace UnityEngine.UI
         protected override void OnValidate()
         {
             base.OnValidate();
-            m_Colors.fadeDuration = Mathf.Max(m_Colors.fadeDuration, 0.0f);
 
             // OnValidate can be called before OnEnable, this makes it unsafe to access other components
             // since they might not have been initialized yet.
@@ -658,39 +624,32 @@ namespace UnityEngine.UI
             if (!gameObject.activeInHierarchy)
                 return;
 
-            Color tintColor;
             Sprite transitionSprite;
             string triggerName;
 
             switch (state)
             {
                 case SelectionState.Normal:
-                    tintColor = m_Colors.normalColor;
                     transitionSprite = null;
                     triggerName = m_AnimationTriggers.normalTrigger;
                     break;
                 case SelectionState.Highlighted:
-                    tintColor = m_Colors.highlightedColor;
                     transitionSprite = m_SpriteState.highlightedSprite;
                     triggerName = m_AnimationTriggers.highlightedTrigger;
                     break;
                 case SelectionState.Pressed:
-                    tintColor = m_Colors.pressedColor;
                     transitionSprite = m_SpriteState.pressedSprite;
                     triggerName = m_AnimationTriggers.pressedTrigger;
                     break;
                 case SelectionState.Selected:
-                    tintColor = m_Colors.selectedColor;
                     transitionSprite = m_SpriteState.selectedSprite;
                     triggerName = m_AnimationTriggers.selectedTrigger;
                     break;
                 case SelectionState.Disabled:
-                    tintColor = m_Colors.disabledColor;
                     transitionSprite = m_SpriteState.disabledSprite;
                     triggerName = m_AnimationTriggers.disabledTrigger;
                     break;
                 default:
-                    tintColor = Color.black;
                     transitionSprite = null;
                     triggerName = string.Empty;
                     break;

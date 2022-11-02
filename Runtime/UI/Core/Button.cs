@@ -155,20 +155,6 @@ namespace UnityEngine.UI
                 return;
 
             DoStateTransition(SelectionState.Pressed, false);
-            StartCoroutine(OnFinishSubmit());
-        }
-
-        private IEnumerator OnFinishSubmit()
-        {
-            var fadeTime = colors.fadeDuration;
-            var elapsedTime = 0f;
-
-            while (elapsedTime < fadeTime)
-            {
-                elapsedTime += Time.unscaledDeltaTime;
-                yield return null;
-            }
-
             DoStateTransition(currentSelectionState, false);
         }
     }
