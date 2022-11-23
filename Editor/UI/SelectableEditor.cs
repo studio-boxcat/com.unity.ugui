@@ -18,7 +18,6 @@ namespace UnityEditor.UI
         SerializedProperty m_InteractableProperty;
         SerializedProperty m_TargetGraphicProperty;
         SerializedProperty m_TransitionProperty;
-        SerializedProperty m_ColorBlockProperty;
         SerializedProperty m_SpriteStateProperty;
         SerializedProperty m_AnimTriggerProperty;
         SerializedProperty m_NavigationProperty;
@@ -42,7 +41,6 @@ namespace UnityEditor.UI
             m_InteractableProperty  = serializedObject.FindProperty("m_Interactable");
             m_TargetGraphicProperty = serializedObject.FindProperty("m_TargetGraphic");
             m_TransitionProperty    = serializedObject.FindProperty("m_Transition");
-            m_ColorBlockProperty    = serializedObject.FindProperty("m_Colors");
             m_SpriteStateProperty   = serializedObject.FindProperty("m_SpriteState");
             m_AnimTriggerProperty   = serializedObject.FindProperty("m_AnimationTriggers");
             m_NavigationProperty    = serializedObject.FindProperty("m_Navigation");
@@ -52,7 +50,6 @@ namespace UnityEditor.UI
                 m_Script.propertyPath,
                 m_NavigationProperty.propertyPath,
                 m_TransitionProperty.propertyPath,
-                m_ColorBlockProperty.propertyPath,
                 m_SpriteStateProperty.propertyPath,
                 m_AnimTriggerProperty.propertyPath,
                 m_InteractableProperty.propertyPath,
