@@ -631,6 +631,10 @@ namespace UnityEngine.UI
             if (eventData.button != PointerEventData.InputButton.Left)
                 return;
 
+            // Selection tracking
+            if (IsInteractable() && EventSystem.current != null)
+                EventSystem.current.SetSelectedGameObject(gameObject, eventData);
+
             isPointerDown = true;
             EvaluateAndTransitionToSelectionState();
         }

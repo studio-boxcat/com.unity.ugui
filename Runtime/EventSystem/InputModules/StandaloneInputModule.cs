@@ -266,10 +266,6 @@ namespace UnityEngine.EventSystems
             m_InputPointerEvent = pointerEvent;
         }
 
-        /// <summary>
-        /// Calculate and send a submit event to the current selected object.
-        /// </summary>
-        /// <returns>If the submit event was used by the selected object.</returns>
         protected void ProcessMouseEvent()
         {
             ProcessMouseEvent(0);
@@ -282,6 +278,8 @@ namespace UnityEngine.EventSystems
         {
             var mouseData = GetMousePointerEventData(id);
             var leftButtonData = mouseData.GetButtonState(PointerEventData.InputButton.Left).eventData;
+
+            m_CurrentFocusedGameObject = leftButtonData.buttonData.pointerCurrentRaycast.gameObject;
 
             // Process the first mouse button fully
             ProcessMousePress(leftButtonData);
