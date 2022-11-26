@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine.Serialization;
 using UnityEngine.EventSystems;
@@ -24,7 +23,7 @@ namespace UnityEngine.UI
         /// <summary>
         ///Transition mode for a Selectable.
         /// </summary>
-        public enum Transition
+        public enum Transition : byte
         {
             /// <summary>
             /// No Transition.
@@ -56,10 +55,6 @@ namespace UnityEngine.UI
         [FormerlySerializedAs("spriteState")]
         [SerializeField]
         private SpriteState m_SpriteState;
-
-        [FormerlySerializedAs("animationTriggers")]
-        [SerializeField]
-        private AnimationTriggers m_AnimationTriggers = new AnimationTriggers();
 
         [Tooltip("Can the Selectable be interacted with?")]
         [SerializeField]
@@ -129,14 +124,6 @@ namespace UnityEngine.UI
         /// </code>
         /// </example>
         public SpriteState       spriteState       { get { return m_SpriteState; } set { if (SetPropertyUtility.SetStruct(ref m_SpriteState, value))       OnSetProperty(); } }
-
-        /// <summary>
-        /// The AnimationTriggers for this selectable object.
-        /// </summary>
-        /// <remarks>
-        /// Modifications will not be visible if transition is not Animation.
-        /// </remarks>
-        public AnimationTriggers animationTriggers { get { return m_AnimationTriggers; } set { if (SetPropertyUtility.SetClass(ref m_AnimationTriggers, value)) OnSetProperty(); } }
 
         /// <summary>
         /// Graphic that will be transitioned upon.
@@ -405,7 +392,7 @@ namespace UnityEngine.UI
                 DoSpriteSwap(null);
 
                 // If the transition mode got changed, we need to clear all the transitions, since we don't know what the old transition mode was.
-                TriggerAnimation(m_AnimationTriggers.normalTrigger);
+                TriggerAnimation(AnimationTriggers.Normal);
 
                 // And now go to the right state.
                 DoStateTransition(isPointerDown);
@@ -424,8 +411,6 @@ namespace UnityEngine.UI
         /// </summary>
         protected virtual void InstantClearState()
         {
-            string triggerName = m_AnimationTriggers.normalTrigger;
-
             isPointerInside = false;
             isPointerDown = false;
             hasSelection = false;
@@ -436,7 +421,7 @@ namespace UnityEngine.UI
                     DoSpriteSwap(null);
                     break;
                 case Transition.Animation:
-                    TriggerAnimation(triggerName);
+                    TriggerAnimation(AnimationTriggers.Normal);
                     break;
             }
         }
@@ -460,7 +445,7 @@ namespace UnityEngine.UI
                     DoSpriteSwap(pressed ? m_SpriteState.pressedSprite : null);
                     break;
                 case Transition.Animation:
-                    var triggerName = pressed ? m_AnimationTriggers.pressedTrigger : m_AnimationTriggers.normalTrigger;
+                    var triggerName = pressed ? AnimationTriggers.Pressed : AnimationTriggers.Normal;
                     TriggerAnimation(triggerName);
                     break;
             }
@@ -474,16 +459,16 @@ namespace UnityEngine.UI
             image.overrideSprite = newSprite;
         }
 
-        void TriggerAnimation(string triggername)
+        void TriggerAnimation(int triggerId)
         {
 #if PACKAGE_ANIMATION
-            if (transition != Transition.Animation || animator == null || !animator.isActiveAndEnabled || !animator.hasBoundPlayables || string.IsNullOrEmpty(triggername))
+            if (transition != Transition.Animation || animator == null || !animator.isActiveAndEnabled || !animator.hasBoundPlayables)
                 return;
 
-            animator.ResetTrigger(m_AnimationTriggers.normalTrigger);
-            animator.ResetTrigger(m_AnimationTriggers.pressedTrigger);
+            animator.ResetTrigger(AnimationTriggers.Normal);
+            animator.ResetTrigger(AnimationTriggers.Pressed);
 
-            animator.SetTrigger(triggername);
+            animator.SetTrigger(triggerId);
 #endif
         }
 
