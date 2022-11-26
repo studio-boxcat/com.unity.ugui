@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
@@ -154,8 +153,8 @@ namespace UnityEngine.UI
             if (!IsActive() || !IsInteractable())
                 return;
 
-            DoStateTransition(SelectionState.Pressed, false);
-            DoStateTransition(currentSelectionState, false);
+            DoStateTransition(SelectionState.Pressed);
+            DoStateTransition(currentSelectionState);
         }
     }
 }

@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Text;
-using UnityEngine.UI;
 
 namespace UnityEngine.EventSystems
 {
@@ -13,16 +12,6 @@ namespace UnityEngine.EventSystems
         /// Id of the cached left mouse pointer event.
         /// </summary>
         public const int kMouseLeftId = -1;
-
-        /// <summary>
-        /// Id of the cached right mouse pointer event.
-        /// </summary>
-        public const int kMouseRightId = -2;
-
-        /// <summary>
-        /// Id of the cached middle mouse pointer event.
-        /// </summary>
-        public const int kMouseMiddleId = -3;
 
         /// <summary>
         /// Touch id for when simulating touches on a non touch device.
@@ -42,7 +31,7 @@ namespace UnityEngine.EventSystems
         {
             if (!m_PointerData.TryGetValue(id, out data) && create)
             {
-                data = new PointerEventData(eventSystem)
+                data = new PointerEventData()
                 {
                     pointerId = id,
                 };
@@ -102,33 +91,10 @@ namespace UnityEngine.EventSystems
                 m_RaycastResultCache.Clear();
             }
 
-            pointerData.pressure = input.pressure;
-            pointerData.altitudeAngle = input.altitudeAngle;
-            pointerData.azimuthAngle = input.azimuthAngle;
             pointerData.radius = Vector2.one * input.radius;
             pointerData.radiusVariance = Vector2.one * input.radiusVariance;
 
             return pointerData;
-        }
-
-        /// <summary>
-        /// Copy one PointerEventData to another.
-        /// </summary>
-        protected void CopyFromTo(PointerEventData @from, PointerEventData @to)
-        {
-            @to.position = @from.position;
-            @to.delta = @from.delta;
-            @to.scrollDelta = @from.scrollDelta;
-            @to.pointerCurrentRaycast = @from.pointerCurrentRaycast;
-            @to.pointerEnter = @from.pointerEnter;
-
-            @to.pressure = @from.pressure;
-            @to.tangentialPressure = @from.tangentialPressure;
-            @to.altitudeAngle = @from.altitudeAngle;
-            @to.azimuthAngle = @from.azimuthAngle;
-            @to.twist = @from.twist;
-            @to.radius = @from.radius;
-            @to.radiusVariance = @from.radiusVariance;
         }
 
         /// <summary>
@@ -257,14 +223,6 @@ namespace UnityEngine.EventSystems
         private readonly MouseState m_MouseState = new MouseState();
 
         /// <summary>
-        /// Return the current MouseState. Using the default pointer.
-        /// </summary>
-        protected virtual MouseState GetMousePointerEventData()
-        {
-            return GetMousePointerEventData(0);
-        }
-
-        /// <summary>
         /// Return the current MouseState.
         /// </summary>
         protected virtual MouseState GetMousePointerEventData(int id)
@@ -297,24 +255,7 @@ namespace UnityEngine.EventSystems
             leftData.pointerCurrentRaycast = raycast;
             m_RaycastResultCache.Clear();
 
-            // copy the apropriate data into right and middle slots
-            PointerEventData rightData;
-            GetPointerData(kMouseRightId, out rightData, true);
-            rightData.Reset();
-
-            CopyFromTo(leftData, rightData);
-            rightData.button = PointerEventData.InputButton.Right;
-
-            PointerEventData middleData;
-            GetPointerData(kMouseMiddleId, out middleData, true);
-            middleData.Reset();
-
-            CopyFromTo(leftData, middleData);
-            middleData.button = PointerEventData.InputButton.Middle;
-
             m_MouseState.SetButtonState(PointerEventData.InputButton.Left, StateForMouseButton(0), leftData);
-            m_MouseState.SetButtonState(PointerEventData.InputButton.Right, StateForMouseButton(1), rightData);
-            m_MouseState.SetButtonState(PointerEventData.InputButton.Middle, StateForMouseButton(2), middleData);
 
             return m_MouseState;
         }
@@ -374,7 +315,6 @@ namespace UnityEngine.EventSystems
 
                     pointerEvent.eligibleForClick = false;
                     pointerEvent.pointerPress = null;
-                    pointerEvent.rawPointerPress = null;
                 }
                 ExecuteEvents.Execute(pointerEvent.pointerDrag, pointerEvent, ExecuteEvents.dragHandler);
             }

@@ -204,7 +204,6 @@ namespace UnityEngine.EventSystems
                 var hoveredCount = currentPointerData.hovered.Count;
                 for (var i = 0; i < hoveredCount; ++i)
                 {
-                    currentPointerData.fullyExited = true;
                     ExecuteEvents.Execute(currentPointerData.hovered[i], currentPointerData, ExecuteEvents.pointerMoveHandler);
                     ExecuteEvents.Execute(currentPointerData.hovered[i], currentPointerData, ExecuteEvents.pointerExitHandler);
                 }
@@ -251,7 +250,6 @@ namespace UnityEngine.EventSystems
                     if (!m_SendPointerHoverToParent && pointerParent == t.gameObject)
                         break;
 
-                    currentPointerData.fullyExited = t.gameObject != commonRoot && currentPointerData.pointerEnter != newEnterTarget;
                     ExecuteEvents.Execute(t.gameObject, currentPointerData, ExecuteEvents.pointerMoveHandler);
                     ExecuteEvents.Execute(t.gameObject, currentPointerData, ExecuteEvents.pointerExitHandler);
                     currentPointerData.hovered.Remove(t.gameObject);
@@ -275,9 +273,9 @@ namespace UnityEngine.EventSystems
 
                 while (t != null)
                 {
-                    currentPointerData.reentered = t.gameObject == commonRoot && t.gameObject != oldPointerEnter;
+                    var reentered = t.gameObject == commonRoot && t.gameObject != oldPointerEnter;
                     // if we are sending the event to parent, they are already in hover mode at that point. No need to bubble up the event.
-                    if (m_SendPointerHoverToParent && currentPointerData.reentered)
+                    if (m_SendPointerHoverToParent && reentered)
                         break;
 
                     ExecuteEvents.Execute(t.gameObject, currentPointerData, ExecuteEvents.pointerEnterHandler);
@@ -305,7 +303,7 @@ namespace UnityEngine.EventSystems
         protected virtual BaseEventData GetBaseEventData()
         {
             if (m_BaseEventData == null)
-                m_BaseEventData = new BaseEventData(eventSystem);
+                m_BaseEventData = new BaseEventData();
 
             m_BaseEventData.Reset();
             return m_BaseEventData;

@@ -14,6 +14,8 @@ namespace UnityEngine.EventSystems
         private Vector2 m_LastMousePosition;
         private Vector2 m_MousePosition;
 
+        private GameObject m_CurrentFocusedGameObject;
+
         private PointerEventData m_InputPointerEvent;
 
         protected StandaloneInputModule()
@@ -70,7 +72,6 @@ namespace UnityEngine.EventSystems
 
             pointerEvent.eligibleForClick = false;
             pointerEvent.pointerPress = null;
-            pointerEvent.rawPointerPress = null;
             pointerEvent.pointerClick = null;
 
             if (pointerEvent.pointerDrag != null && pointerEvent.dragging)
@@ -120,9 +121,6 @@ namespace UnityEngine.EventSystems
             m_LastMousePosition = input.mousePosition;
 
             var toSelect = eventSystem.currentSelectedGameObject;
-            if (toSelect == null)
-                toSelect = eventSystem.firstSelectedGameObject;
-
             eventSystem.SetSelectedGameObject(toSelect, GetBaseEventData());
         }
 
@@ -139,6 +137,8 @@ namespace UnityEngine.EventSystems
         {
             if (!eventSystem.isFocused && ShouldIgnoreEventsOnNoFocus())
                 return;
+
+            SendUpdateEventToSelectedObject();
 
             // touch needs to take precedence because of the mouse emulation layer
             if (!ProcessTouchEvents() && input.mousePresent)
@@ -216,28 +216,8 @@ namespace UnityEngine.EventSystems
 
                 // Debug.Log("Pressed: " + newPressed);
 
-                float time = Time.unscaledTime;
-
-                if (newPressed == pointerEvent.lastPress)
-                {
-                    var diffTime = time - pointerEvent.clickTime;
-                    if (diffTime < 0.3f)
-                        ++pointerEvent.clickCount;
-                    else
-                        pointerEvent.clickCount = 1;
-
-                    pointerEvent.clickTime = time;
-                }
-                else
-                {
-                    pointerEvent.clickCount = 1;
-                }
-
                 pointerEvent.pointerPress = newPressed;
-                pointerEvent.rawPointerPress = currentOverGo;
                 pointerEvent.pointerClick = newClick;
-
-                pointerEvent.clickTime = time;
 
                 // Save the drag handler as well
                 pointerEvent.pointerDrag = ExecuteEvents.GetEventHandler<IDragHandler>(currentOverGo);
@@ -270,7 +250,6 @@ namespace UnityEngine.EventSystems
 
                 pointerEvent.eligibleForClick = false;
                 pointerEvent.pointerPress = null;
-                pointerEvent.rawPointerPress = null;
                 pointerEvent.pointerClick = null;
 
                 if (pointerEvent.pointerDrag != null && pointerEvent.dragging)
@@ -309,17 +288,21 @@ namespace UnityEngine.EventSystems
             ProcessMove(leftButtonData.buttonData);
             ProcessDrag(leftButtonData.buttonData);
 
-            // Now process right / middle clicks
-            ProcessMousePress(mouseData.GetButtonState(PointerEventData.InputButton.Right).eventData);
-            ProcessDrag(mouseData.GetButtonState(PointerEventData.InputButton.Right).eventData.buttonData);
-            ProcessMousePress(mouseData.GetButtonState(PointerEventData.InputButton.Middle).eventData);
-            ProcessDrag(mouseData.GetButtonState(PointerEventData.InputButton.Middle).eventData.buttonData);
-
             if (!Mathf.Approximately(leftButtonData.buttonData.scrollDelta.sqrMagnitude, 0.0f))
             {
                 var scrollHandler = ExecuteEvents.GetEventHandler<IScrollHandler>(leftButtonData.buttonData.pointerCurrentRaycast.gameObject);
                 ExecuteEvents.ExecuteHierarchy(scrollHandler, leftButtonData.buttonData, ExecuteEvents.scrollHandler);
             }
+        }
+
+        protected bool SendUpdateEventToSelectedObject()
+        {
+            if (eventSystem.currentSelectedGameObject == null)
+                return false;
+
+            var data = GetBaseEventData();
+            ExecuteEvents.Execute(eventSystem.currentSelectedGameObject, data, ExecuteEvents.updateSelectedHandler);
+            return data.used;
         }
 
         /// <summary>
@@ -354,28 +337,8 @@ namespace UnityEngine.EventSystems
 
                 // Debug.Log("Pressed: " + newPressed);
 
-                float time = Time.unscaledTime;
-
-                if (newPressed == pointerEvent.lastPress)
-                {
-                    var diffTime = time - pointerEvent.clickTime;
-                    if (diffTime < 0.3f)
-                        ++pointerEvent.clickCount;
-                    else
-                        pointerEvent.clickCount = 1;
-
-                    pointerEvent.clickTime = time;
-                }
-                else
-                {
-                    pointerEvent.clickCount = 1;
-                }
-
                 pointerEvent.pointerPress = newPressed;
-                pointerEvent.rawPointerPress = currentOverGo;
                 pointerEvent.pointerClick = newClick;
-
-                pointerEvent.clickTime = time;
 
                 // Save the drag handler as well
                 pointerEvent.pointerDrag = ExecuteEvents.GetEventHandler<IDragHandler>(currentOverGo);
@@ -391,6 +354,11 @@ namespace UnityEngine.EventSystems
             {
                 ReleaseMouse(pointerEvent, currentOverGo);
             }
+        }
+
+        protected GameObject GetCurrentFocusedGameObject()
+        {
+            return m_CurrentFocusedGameObject;
         }
     }
 }

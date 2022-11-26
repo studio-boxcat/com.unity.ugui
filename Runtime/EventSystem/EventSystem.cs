@@ -45,10 +45,6 @@ namespace UnityEngine.EventSystems
         }
 
         [SerializeField]
-        [FormerlySerializedAs("m_Selected")]
-        private GameObject m_FirstSelected;
-
-        [SerializeField]
         private int m_DragThreshold = 10;
 
         /// <summary>
@@ -68,15 +64,6 @@ namespace UnityEngine.EventSystems
         public BaseInputModule currentInputModule
         {
             get { return m_CurrentInputModule; }
-        }
-
-        /// <summary>
-        /// Only one object can be selected at a time. Think: controller-selected button.
-        /// </summary>
-        public GameObject firstSelectedGameObject
-        {
-            get { return m_FirstSelected; }
-            set { m_FirstSelected = value; }
         }
 
         /// <summary>
@@ -162,7 +149,7 @@ namespace UnityEngine.EventSystems
             get
             {
                 if (m_DummyData == null)
-                    m_DummyData = new BaseEventData(this);
+                    m_DummyData = new BaseEventData();
 
                 return m_DummyData;
             }

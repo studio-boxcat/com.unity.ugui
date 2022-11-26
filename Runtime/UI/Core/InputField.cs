@@ -3371,14 +3371,14 @@ namespace UnityEngine.UI
             contentType = ContentType.Custom;
         }
 
-        protected override void DoStateTransition(SelectionState state, bool instant)
+        protected override void DoStateTransition(SelectionState state)
         {
             if (m_HasDoneFocusTransition)
                 state = SelectionState.Selected;
             else if (state == SelectionState.Pressed)
                 m_HasDoneFocusTransition = true;
 
-            base.DoStateTransition(state, instant);
+            base.DoStateTransition(state);
         }
 
         /// <summary>

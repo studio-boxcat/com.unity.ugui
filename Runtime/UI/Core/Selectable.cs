@@ -350,7 +350,7 @@ namespace UnityEngine.UI
             }
 
             isPointerDown = false;
-            DoStateTransition(currentSelectionState, true);
+            DoStateTransition(currentSelectionState);
 
             m_EnableCalled = true;
         }
@@ -367,10 +367,10 @@ namespace UnityEngine.UI
         {
 #if UNITY_EDITOR
             if (!Application.isPlaying)
-                DoStateTransition(currentSelectionState, true);
+                DoStateTransition(currentSelectionState);
             else
 #endif
-            DoStateTransition(currentSelectionState, false);
+            DoStateTransition(currentSelectionState);
         }
 
         // Remove from the list.
@@ -413,7 +413,7 @@ namespace UnityEngine.UI
                 TriggerAnimation(m_AnimationTriggers.normalTrigger);
 
                 // And now go to the right state.
-                DoStateTransition(currentSelectionState, true);
+                DoStateTransition(currentSelectionState);
             }
         }
 
@@ -434,8 +434,6 @@ namespace UnityEngine.UI
                     return SelectionState.Pressed;
                 if (hasSelection)
                     return SelectionState.Selected;
-                if (isPointerInside)
-                    return SelectionState.Highlighted;
                 return SelectionState.Normal;
             }
         }
@@ -466,51 +464,34 @@ namespace UnityEngine.UI
         /// Transition the Selectable to the entered state.
         /// </summary>
         /// <param name="state">State to transition to</param>
-        /// <param name="instant">Should the transition occur instantly.</param>
-        protected virtual void DoStateTransition(SelectionState state, bool instant)
+        protected virtual void DoStateTransition(SelectionState state)
         {
-            if (!gameObject.activeInHierarchy)
+            // XXX: 지정된 트랜지션이 없다면 즉시 리턴.
+            if (m_Transition == Transition.None)
                 return;
 
-            Sprite transitionSprite;
-            string triggerName;
-
-            switch (state)
-            {
-                case SelectionState.Normal:
-                    transitionSprite = null;
-                    triggerName = m_AnimationTriggers.normalTrigger;
-                    break;
-                case SelectionState.Highlighted:
-                    transitionSprite = m_SpriteState.highlightedSprite;
-                    triggerName = m_AnimationTriggers.highlightedTrigger;
-                    break;
-                case SelectionState.Pressed:
-                    transitionSprite = m_SpriteState.pressedSprite;
-                    triggerName = m_AnimationTriggers.pressedTrigger;
-                    break;
-                case SelectionState.Selected:
-                    transitionSprite = m_SpriteState.selectedSprite;
-                    triggerName = m_AnimationTriggers.selectedTrigger;
-                    break;
-                case SelectionState.Disabled:
-                    transitionSprite = m_SpriteState.disabledSprite;
-                    triggerName = m_AnimationTriggers.disabledTrigger;
-                    break;
-                default:
-                    transitionSprite = null;
-                    triggerName = string.Empty;
-                    break;
-            }
+            if (!gameObject.activeInHierarchy)
+                return;
 
             switch (m_Transition)
             {
                 case Transition.SpriteSwap:
-                    DoSpriteSwap(transitionSprite);
+                    DoSpriteSwap(state == SelectionState.Pressed ? m_SpriteState.pressedSprite : null);
                     break;
                 case Transition.Animation:
-                    TriggerAnimation(triggerName);
+                    var triggerName = state switch
+                    {
+                        SelectionState.Normal => m_AnimationTriggers.normalTrigger,
+                        SelectionState.Pressed => m_AnimationTriggers.pressedTrigger,
+                        SelectionState.Selected => m_AnimationTriggers.selectedTrigger,
+                        _ => null,
+                    };
+
+                    if (triggerName != null)
+                        TriggerAnimation(triggerName);
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 
@@ -523,11 +504,6 @@ namespace UnityEngine.UI
             /// The UI object can be selected.
             /// </summary>
             Normal,
-
-            /// <summary>
-            /// The UI object is highlighted.
-            /// </summary>
-            Highlighted,
 
             /// <summary>
             /// The UI object is pressed.
@@ -560,10 +536,8 @@ namespace UnityEngine.UI
                 return;
 
             animator.ResetTrigger(m_AnimationTriggers.normalTrigger);
-            animator.ResetTrigger(m_AnimationTriggers.highlightedTrigger);
             animator.ResetTrigger(m_AnimationTriggers.pressedTrigger);
             animator.ResetTrigger(m_AnimationTriggers.selectedTrigger);
-            animator.ResetTrigger(m_AnimationTriggers.disabledTrigger);
 
             animator.SetTrigger(triggername);
 #endif
@@ -627,7 +601,7 @@ namespace UnityEngine.UI
             if (!IsActive() || !IsInteractable())
                 return;
 
-            DoStateTransition(currentSelectionState, false);
+            DoStateTransition(currentSelectionState);
         }
 
         /// <summary>

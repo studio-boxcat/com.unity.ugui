@@ -15,8 +15,7 @@ namespace UnityEngine.EventSystems
         /// </summary>
         public MoveDirection moveDir { get; set; }
 
-        public AxisEventData(EventSystem eventSystem)
-            : base(eventSystem)
+        public AxisEventData()
         {
             moveVector = Vector2.zero;
             moveDir = MoveDirection.None;
