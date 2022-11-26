@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -84,20 +83,6 @@ namespace UnityEditor.UI
                 EditorGUI.BeginDisabledGroup(areMinMaxEqual);
                 EditorGUILayout.Slider(m_Value, m_MinValue.floatValue, m_MaxValue.floatValue);
                 EditorGUI.EndDisabledGroup();
-
-                bool warning = false;
-                foreach (var obj in serializedObject.targetObjects)
-                {
-                    Slider slider = obj as Slider;
-                    Slider.Direction dir = slider.direction;
-                    if (dir == Slider.Direction.LeftToRight || dir == Slider.Direction.RightToLeft)
-                        warning = (slider.navigation.mode != Navigation.Mode.Automatic && (slider.FindSelectableOnLeft() != null || slider.FindSelectableOnRight() != null));
-                    else
-                        warning = (slider.navigation.mode != Navigation.Mode.Automatic && (slider.FindSelectableOnDown() != null || slider.FindSelectableOnUp() != null));
-                }
-
-                if (warning)
-                    EditorGUILayout.HelpBox("The selected slider direction conflicts with navigation. Not all navigation options may work.", MessageType.Warning);
 
                 // Draw the event notification options
                 EditorGUILayout.Space();

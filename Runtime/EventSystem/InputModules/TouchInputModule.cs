@@ -20,13 +20,6 @@ namespace UnityEngine.EventSystems
         [FormerlySerializedAs("m_AllowActivationOnStandalone")]
         private bool m_ForceModuleActive;
 
-        [Obsolete("allowActivationOnStandalone has been deprecated. Use forceModuleActive instead (UnityUpgradable) -> forceModuleActive")]
-        public bool allowActivationOnStandalone
-        {
-            get { return m_ForceModuleActive; }
-            set { m_ForceModuleActive = value; }
-        }
-
         public bool forceModuleActive
         {
             get { return m_ForceModuleActive; }

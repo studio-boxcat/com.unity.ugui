@@ -46,8 +46,6 @@ namespace UnityEngine.EventSystems
         //This is needed for testing
         internal bool sendPointerHoverToParent { get { return m_SendPointerHoverToParent; } set { m_SendPointerHoverToParent = value; } }
 
-        private AxisEventData m_AxisEventData;
-
         private EventSystem m_EventSystem;
         private BaseEventData m_BaseEventData;
 
@@ -299,23 +297,6 @@ namespace UnityEngine.EventSystems
                     if (!m_SendPointerHoverToParent) t = t.parent;
                 }
             }
-        }
-
-        /// <summary>
-        /// Given some input data generate an AxisEventData that can be used by the event system.
-        /// </summary>
-        /// <param name="x">X movement.</param>
-        /// <param name="y">Y movement.</param>
-        /// <param name="deadZone">Dead zone.</param>
-        protected virtual AxisEventData GetAxisEventData(float x, float y, float moveDeadZone)
-        {
-            if (m_AxisEventData == null)
-                m_AxisEventData = new AxisEventData(eventSystem);
-
-            m_AxisEventData.Reset();
-            m_AxisEventData.moveVector = new Vector2(x, y);
-            m_AxisEventData.moveDir = DetermineMoveDirection(x, y, moveDeadZone);
-            return m_AxisEventData;
         }
 
         /// <summary>

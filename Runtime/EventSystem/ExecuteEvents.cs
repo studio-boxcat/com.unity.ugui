@@ -120,13 +120,6 @@ namespace UnityEngine.EventSystems
             handler.OnDeselect(eventData);
         }
 
-        private static readonly EventFunction<IMoveHandler> s_MoveHandler = Execute;
-
-        private static void Execute(IMoveHandler handler, BaseEventData eventData)
-        {
-            handler.OnMove(ValidateEventData<AxisEventData>(eventData));
-        }
-
         private static readonly EventFunction<ISubmitHandler> s_SubmitHandler = Execute;
 
         private static void Execute(ISubmitHandler handler, BaseEventData eventData)
@@ -214,11 +207,6 @@ namespace UnityEngine.EventSystems
         public static EventFunction<IDeselectHandler> deselectHandler
         {
             get { return s_DeselectHandler; }
-        }
-
-        public static EventFunction<IMoveHandler> moveHandler
-        {
-            get { return s_MoveHandler; }
         }
 
         public static EventFunction<ISubmitHandler> submitHandler

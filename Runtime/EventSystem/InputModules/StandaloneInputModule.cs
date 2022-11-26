@@ -1,5 +1,3 @@
-using System;
-using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace UnityEngine.EventSystems
@@ -13,14 +11,8 @@ namespace UnityEngine.EventSystems
     /// </remarks>
     public class StandaloneInputModule : PointerInputModule
     {
-        private float m_PrevActionTime;
-        private Vector2 m_LastMoveVector;
-        private int m_ConsecutiveMoveCount = 0;
-
         private Vector2 m_LastMousePosition;
         private Vector2 m_MousePosition;
-
-        private GameObject m_CurrentFocusedGameObject;
 
         private PointerEventData m_InputPointerEvent;
 
@@ -28,128 +20,10 @@ namespace UnityEngine.EventSystems
         {
         }
 
-        [Obsolete("Mode is no longer needed on input module as it handles both mouse and keyboard simultaneously.", false)]
-        public enum InputMode
-        {
-            Mouse,
-            Buttons
-        }
-
-        [Obsolete("Mode is no longer needed on input module as it handles both mouse and keyboard simultaneously.", false)]
-        public InputMode inputMode
-        {
-            get { return InputMode.Mouse; }
-        }
-
-        [SerializeField]
-        private string m_HorizontalAxis = "Horizontal";
-
-        /// <summary>
-        /// Name of the vertical axis for movement (if axis events are used).
-        /// </summary>
-        [SerializeField]
-        private string m_VerticalAxis = "Vertical";
-
-        /// <summary>
-        /// Name of the submit button.
-        /// </summary>
-        [SerializeField]
-        private string m_SubmitButton = "Submit";
-
-        /// <summary>
-        /// Name of the submit button.
-        /// </summary>
-        [SerializeField]
-        private string m_CancelButton = "Cancel";
-
-        [SerializeField]
-        private float m_InputActionsPerSecond = 10;
-
-        [SerializeField]
-        private float m_RepeatDelay = 0.5f;
-
         [SerializeField]
         [FormerlySerializedAs("m_AllowActivationOnMobileDevice")]
         [HideInInspector]
         private bool m_ForceModuleActive;
-
-        [Obsolete("allowActivationOnMobileDevice has been deprecated. Use forceModuleActive instead (UnityUpgradable) -> forceModuleActive")]
-        public bool allowActivationOnMobileDevice
-        {
-            get { return m_ForceModuleActive; }
-            set { m_ForceModuleActive = value; }
-        }
-
-        /// <summary>
-        /// Force this module to be active.
-        /// </summary>
-        /// <remarks>
-        /// If there is no module active with higher priority (ordered in the inspector) this module will be forced active even if valid enabling conditions are not met.
-        /// </remarks>
-
-        [Obsolete("forceModuleActive has been deprecated. There is no need to force the module awake as StandaloneInputModule works for all platforms")]
-        public bool forceModuleActive
-        {
-            get { return m_ForceModuleActive; }
-            set { m_ForceModuleActive = value; }
-        }
-
-        /// <summary>
-        /// Number of keyboard / controller inputs allowed per second.
-        /// </summary>
-        public float inputActionsPerSecond
-        {
-            get { return m_InputActionsPerSecond; }
-            set { m_InputActionsPerSecond = value; }
-        }
-
-        /// <summary>
-        /// Delay in seconds before the input actions per second repeat rate takes effect.
-        /// </summary>
-        /// <remarks>
-        /// If the same direction is sustained, the inputActionsPerSecond property can be used to control the rate at which events are fired. However, it can be desirable that the first repetition is delayed, so the user doesn't get repeated actions by accident.
-        /// </remarks>
-        public float repeatDelay
-        {
-            get { return m_RepeatDelay; }
-            set { m_RepeatDelay = value; }
-        }
-
-        /// <summary>
-        /// Name of the horizontal axis for movement (if axis events are used).
-        /// </summary>
-        public string horizontalAxis
-        {
-            get { return m_HorizontalAxis; }
-            set { m_HorizontalAxis = value; }
-        }
-
-        /// <summary>
-        /// Name of the vertical axis for movement (if axis events are used).
-        /// </summary>
-        public string verticalAxis
-        {
-            get { return m_VerticalAxis; }
-            set { m_VerticalAxis = value; }
-        }
-
-        /// <summary>
-        /// Maximum number of input events handled per second.
-        /// </summary>
-        public string submitButton
-        {
-            get { return m_SubmitButton; }
-            set { m_SubmitButton = value; }
-        }
-
-        /// <summary>
-        /// Input manager name for the 'cancel' button.
-        /// </summary>
-        public string cancelButton
-        {
-            get { return m_CancelButton; }
-            set { m_CancelButton = value; }
-        }
 
         private bool ShouldIgnoreEventsOnNoFocus()
         {
@@ -224,10 +98,6 @@ namespace UnityEngine.EventSystems
                 return false;
 
             var shouldActivate = m_ForceModuleActive;
-            shouldActivate |= input.GetButtonDown(m_SubmitButton);
-            shouldActivate |= input.GetButtonDown(m_CancelButton);
-            shouldActivate |= !Mathf.Approximately(input.GetAxisRaw(m_HorizontalAxis), 0.0f);
-            shouldActivate |= !Mathf.Approximately(input.GetAxisRaw(m_VerticalAxis), 0.0f);
             shouldActivate |= (m_MousePosition - m_LastMousePosition).sqrMagnitude > 0.0f;
             shouldActivate |= input.GetMouseButtonDown(0);
 
@@ -270,23 +140,9 @@ namespace UnityEngine.EventSystems
             if (!eventSystem.isFocused && ShouldIgnoreEventsOnNoFocus())
                 return;
 
-            bool usedEvent = SendUpdateEventToSelectedObject();
-
-            // case 1004066 - touch / mouse events should be processed before navigation events in case
-            // they change the current selected gameobject and the submit button is a touch / mouse button.
-
             // touch needs to take precedence because of the mouse emulation layer
             if (!ProcessTouchEvents() && input.mousePresent)
                 ProcessMouseEvent();
-
-            if (eventSystem.sendNavigationEvents)
-            {
-                if (!usedEvent)
-                    usedEvent |= SendMoveEventToSelectedObject();
-
-                if (!usedEvent)
-                    SendSubmitEventToSelectedObject();
-            }
         }
 
         private bool ProcessTouchEvents()
@@ -435,101 +291,9 @@ namespace UnityEngine.EventSystems
         /// Calculate and send a submit event to the current selected object.
         /// </summary>
         /// <returns>If the submit event was used by the selected object.</returns>
-        protected bool SendSubmitEventToSelectedObject()
-        {
-            if (eventSystem.currentSelectedGameObject == null)
-                return false;
-
-            var data = GetBaseEventData();
-            if (input.GetButtonDown(m_SubmitButton))
-                ExecuteEvents.Execute(eventSystem.currentSelectedGameObject, data, ExecuteEvents.submitHandler);
-
-            if (input.GetButtonDown(m_CancelButton))
-                ExecuteEvents.Execute(eventSystem.currentSelectedGameObject, data, ExecuteEvents.cancelHandler);
-            return data.used;
-        }
-
-        private Vector2 GetRawMoveVector()
-        {
-            Vector2 move = Vector2.zero;
-            move.x = input.GetAxisRaw(m_HorizontalAxis);
-            move.y = input.GetAxisRaw(m_VerticalAxis);
-
-            if (input.GetButtonDown(m_HorizontalAxis))
-            {
-                if (move.x < 0)
-                    move.x = -1f;
-                if (move.x > 0)
-                    move.x = 1f;
-            }
-            if (input.GetButtonDown(m_VerticalAxis))
-            {
-                if (move.y < 0)
-                    move.y = -1f;
-                if (move.y > 0)
-                    move.y = 1f;
-            }
-            return move;
-        }
-
-        /// <summary>
-        /// Calculate and send a move event to the current selected object.
-        /// </summary>
-        /// <returns>If the move event was used by the selected object.</returns>
-        protected bool SendMoveEventToSelectedObject()
-        {
-            float time = Time.unscaledTime;
-
-            Vector2 movement = GetRawMoveVector();
-            if (Mathf.Approximately(movement.x, 0f) && Mathf.Approximately(movement.y, 0f))
-            {
-                m_ConsecutiveMoveCount = 0;
-                return false;
-            }
-
-            bool similarDir = (Vector2.Dot(movement, m_LastMoveVector) > 0);
-
-            // If direction didn't change at least 90 degrees, wait for delay before allowing consequtive event.
-            if (similarDir && m_ConsecutiveMoveCount == 1)
-            {
-                if (time <= m_PrevActionTime + m_RepeatDelay)
-                    return false;
-            }
-            // If direction changed at least 90 degree, or we already had the delay, repeat at repeat rate.
-            else
-            {
-                if (time <= m_PrevActionTime + 1f / m_InputActionsPerSecond)
-                    return false;
-            }
-
-            var axisEventData = GetAxisEventData(movement.x, movement.y, 0.6f);
-
-            if (axisEventData.moveDir != MoveDirection.None)
-            {
-                ExecuteEvents.Execute(eventSystem.currentSelectedGameObject, axisEventData, ExecuteEvents.moveHandler);
-                if (!similarDir)
-                    m_ConsecutiveMoveCount = 0;
-                m_ConsecutiveMoveCount++;
-                m_PrevActionTime = time;
-                m_LastMoveVector = movement;
-            }
-            else
-            {
-                m_ConsecutiveMoveCount = 0;
-            }
-
-            return axisEventData.used;
-        }
-
         protected void ProcessMouseEvent()
         {
             ProcessMouseEvent(0);
-        }
-
-        [Obsolete("This method is no longer checked, overriding it with return true does nothing!")]
-        protected virtual bool ForceAutoSelect()
-        {
-            return false;
         }
 
         /// <summary>
@@ -539,8 +303,6 @@ namespace UnityEngine.EventSystems
         {
             var mouseData = GetMousePointerEventData(id);
             var leftButtonData = mouseData.GetButtonState(PointerEventData.InputButton.Left).eventData;
-
-            m_CurrentFocusedGameObject = leftButtonData.buttonData.pointerCurrentRaycast.gameObject;
 
             // Process the first mouse button fully
             ProcessMousePress(leftButtonData);
@@ -558,16 +320,6 @@ namespace UnityEngine.EventSystems
                 var scrollHandler = ExecuteEvents.GetEventHandler<IScrollHandler>(leftButtonData.buttonData.pointerCurrentRaycast.gameObject);
                 ExecuteEvents.ExecuteHierarchy(scrollHandler, leftButtonData.buttonData, ExecuteEvents.scrollHandler);
             }
-        }
-
-        protected bool SendUpdateEventToSelectedObject()
-        {
-            if (eventSystem.currentSelectedGameObject == null)
-                return false;
-
-            var data = GetBaseEventData();
-            ExecuteEvents.Execute(eventSystem.currentSelectedGameObject, data, ExecuteEvents.updateSelectedHandler);
-            return data.used;
         }
 
         /// <summary>
@@ -639,11 +391,6 @@ namespace UnityEngine.EventSystems
             {
                 ReleaseMouse(pointerEvent, currentOverGo);
             }
-        }
-
-        protected GameObject GetCurrentFocusedGameObject()
-        {
-            return m_CurrentFocusedGameObject;
         }
     }
 }

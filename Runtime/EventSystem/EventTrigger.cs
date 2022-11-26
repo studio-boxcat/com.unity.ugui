@@ -153,7 +153,6 @@ namespace UnityEngine.EventSystems
         IUpdateSelectedHandler,
         ISelectHandler,
         IDeselectHandler,
-        IMoveHandler,
         ISubmitHandler,
         ICancelHandler
     {
@@ -299,14 +298,6 @@ namespace UnityEngine.EventSystems
         public virtual void OnScroll(PointerEventData eventData)
         {
             Execute(EventTriggerType.Scroll, eventData);
-        }
-
-        /// <summary>
-        /// Called by the EventSystem when a Move event occurs.
-        /// </summary>
-        public virtual void OnMove(AxisEventData eventData)
-        {
-            Execute(EventTriggerType.Move, eventData);
         }
 
         /// <summary>

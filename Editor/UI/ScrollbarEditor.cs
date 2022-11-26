@@ -77,20 +77,6 @@ namespace UnityEditor.UI
                 EditorGUILayout.PropertyField(m_Size);
                 EditorGUILayout.PropertyField(m_NumberOfSteps);
 
-                bool warning = false;
-                foreach (var obj in serializedObject.targetObjects)
-                {
-                    Scrollbar scrollbar = obj as Scrollbar;
-                    Scrollbar.Direction dir = scrollbar.direction;
-                    if (dir == Scrollbar.Direction.LeftToRight || dir == Scrollbar.Direction.RightToLeft)
-                        warning = (scrollbar.navigation.mode != Navigation.Mode.Automatic && scrollbar.navigation.mode != Navigation.Mode.Horizontal && (scrollbar.FindSelectableOnLeft() != null || scrollbar.FindSelectableOnRight() != null));
-                    else
-                        warning = (scrollbar.navigation.mode != Navigation.Mode.Automatic && scrollbar.navigation.mode != Navigation.Mode.Vertical && (scrollbar.FindSelectableOnDown() != null || scrollbar.FindSelectableOnUp() != null));
-                }
-
-                if (warning)
-                    EditorGUILayout.HelpBox("The selected scrollbar direction conflicts with navigation. Not all navigation options may work.", MessageType.Warning);
-
                 EditorGUILayout.Space();
                 // Draw the event notification options
                 EditorGUILayout.PropertyField(m_OnValueChanged);
