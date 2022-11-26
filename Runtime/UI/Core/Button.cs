@@ -153,8 +153,8 @@ namespace UnityEngine.UI
             if (!IsActive() || !IsInteractable())
                 return;
 
-            DoStateTransition(SelectionState.Pressed);
-            DoStateTransition(currentSelectionState);
+            DoStateTransition(true);
+            DoStateTransition(isPointerDown);
         }
     }
 }

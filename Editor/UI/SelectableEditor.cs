@@ -175,13 +175,11 @@ namespace UnityEditor.UI
             // figure out clip names
             var normalName = string.IsNullOrEmpty(animationTriggers.normalTrigger) ? "Normal" : animationTriggers.normalTrigger;
             var pressedName = string.IsNullOrEmpty(animationTriggers.pressedTrigger) ? "Pressed" : animationTriggers.pressedTrigger;
-            var selectedName = string.IsNullOrEmpty(animationTriggers.selectedTrigger) ? "Selected" : animationTriggers.selectedTrigger;
 
             // Create controller and hook up transitions.
             var controller = Animations.AnimatorController.CreateAnimatorControllerAtPath(path);
             GenerateTriggerableTransition(normalName, controller);
             GenerateTriggerableTransition(pressedName, controller);
-            GenerateTriggerableTransition(selectedName, controller);
 
             AssetDatabase.ImportAsset(path);
 

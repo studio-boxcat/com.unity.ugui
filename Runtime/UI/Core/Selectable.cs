@@ -208,7 +208,7 @@ namespace UnityEngine.UI
         }
 
         private bool             isPointerInside   { get; set; }
-        private bool             isPointerDown     { get; set; }
+        public bool              isPointerDown     { get; private set; }
         private bool             hasSelection      { get; set; }
 
         protected Selectable()
@@ -350,7 +350,7 @@ namespace UnityEngine.UI
             }
 
             isPointerDown = false;
-            DoStateTransition(currentSelectionState);
+            DoStateTransition(isPointerDown);
 
             m_EnableCalled = true;
         }
@@ -365,12 +365,7 @@ namespace UnityEngine.UI
 
         private void OnSetProperty()
         {
-#if UNITY_EDITOR
-            if (!Application.isPlaying)
-                DoStateTransition(currentSelectionState);
-            else
-#endif
-            DoStateTransition(currentSelectionState);
+            DoStateTransition(isPointerDown);
         }
 
         // Remove from the list.
@@ -413,7 +408,7 @@ namespace UnityEngine.UI
                 TriggerAnimation(m_AnimationTriggers.normalTrigger);
 
                 // And now go to the right state.
-                DoStateTransition(currentSelectionState);
+                DoStateTransition(isPointerDown);
             }
         }
 
@@ -423,20 +418,6 @@ namespace UnityEngine.UI
         }
 
 #endif // if UNITY_EDITOR
-
-        protected SelectionState currentSelectionState
-        {
-            get
-            {
-                if (!IsInteractable())
-                    return SelectionState.Disabled;
-                if (isPointerDown)
-                    return SelectionState.Pressed;
-                if (hasSelection)
-                    return SelectionState.Selected;
-                return SelectionState.Normal;
-            }
-        }
 
         /// <summary>
         /// Clear any internal state from the Selectable (used when disabling).
@@ -464,7 +445,7 @@ namespace UnityEngine.UI
         /// Transition the Selectable to the entered state.
         /// </summary>
         /// <param name="state">State to transition to</param>
-        protected virtual void DoStateTransition(SelectionState state)
+        protected virtual void DoStateTransition(bool pressed)
         {
             // XXX: 지정된 트랜지션이 없다면 즉시 리턴.
             if (m_Transition == Transition.None)
@@ -476,49 +457,13 @@ namespace UnityEngine.UI
             switch (m_Transition)
             {
                 case Transition.SpriteSwap:
-                    DoSpriteSwap(state == SelectionState.Pressed ? m_SpriteState.pressedSprite : null);
+                    DoSpriteSwap(pressed ? m_SpriteState.pressedSprite : null);
                     break;
                 case Transition.Animation:
-                    var triggerName = state switch
-                    {
-                        SelectionState.Normal => m_AnimationTriggers.normalTrigger,
-                        SelectionState.Pressed => m_AnimationTriggers.pressedTrigger,
-                        SelectionState.Selected => m_AnimationTriggers.selectedTrigger,
-                        _ => null,
-                    };
-
-                    if (triggerName != null)
-                        TriggerAnimation(triggerName);
+                    var triggerName = pressed ? m_AnimationTriggers.pressedTrigger : m_AnimationTriggers.normalTrigger;
+                    TriggerAnimation(triggerName);
                     break;
-                default:
-                    throw new ArgumentOutOfRangeException();
             }
-        }
-
-        /// <summary>
-        /// An enumeration of selected states of objects
-        /// </summary>
-        protected enum SelectionState
-        {
-            /// <summary>
-            /// The UI object can be selected.
-            /// </summary>
-            Normal,
-
-            /// <summary>
-            /// The UI object is pressed.
-            /// </summary>
-            Pressed,
-
-            /// <summary>
-            /// The UI object is selected
-            /// </summary>
-            Selected,
-
-            /// <summary>
-            /// The UI object cannot be selected.
-            /// </summary>
-            Disabled,
         }
 
         void DoSpriteSwap(Sprite newSprite)
@@ -537,7 +482,6 @@ namespace UnityEngine.UI
 
             animator.ResetTrigger(m_AnimationTriggers.normalTrigger);
             animator.ResetTrigger(m_AnimationTriggers.pressedTrigger);
-            animator.ResetTrigger(m_AnimationTriggers.selectedTrigger);
 
             animator.SetTrigger(triggername);
 #endif
@@ -601,7 +545,7 @@ namespace UnityEngine.UI
             if (!IsActive() || !IsInteractable())
                 return;
 
-            DoStateTransition(currentSelectionState);
+            DoStateTransition(isPointerDown);
         }
 
         /// <summary>

@@ -11,7 +11,6 @@ namespace UnityEngine.UI
     {
         private const string kDefaultNormalAnimName      = "Normal";
         private const string kDefaultPressedAnimName     = "Pressed";
-        private const string kDefaultSelectedAnimName    = "Selected";
 
         [FormerlySerializedAs("normalTrigger")]
         [SerializeField]
@@ -20,10 +19,6 @@ namespace UnityEngine.UI
         [FormerlySerializedAs("pressedTrigger")]
         [SerializeField]
         private string m_PressedTrigger = kDefaultPressedAnimName;
-
-        [FormerlySerializedAs("m_HighlightedTrigger")]
-        [SerializeField]
-        private string m_SelectedTrigger = kDefaultSelectedAnimName;
 
         /// <summary>
         /// Trigger to send to animator when entering normal state.
@@ -74,30 +69,5 @@ namespace UnityEngine.UI
         ///</code>
         /// </example>
         public string pressedTrigger     { get { return m_PressedTrigger; } set { m_PressedTrigger = value; } }
-
-        /// <summary>
-        /// Trigger to send to animator when entering selected state.
-        /// </summary>
-        /// <example>
-        /// <code>
-        /// <![CDATA[
-        /// using UnityEngine;
-        /// using System.Collections;
-        /// using UnityEngine.UI; // Required when Using UI elements.
-        ///
-        /// public class ExampleClass : MonoBehaviour
-        /// {
-        ///     public Animator buttonAnimator;
-        ///     public Button button;
-        ///     void SomeFunction()
-        ///     {
-        ///         //Sets the button to the Selected state (Useful when making tutorials).
-        ///         buttonAnimator.SetTrigger(button.animationTriggers.selectedTrigger);
-        ///     }
-        /// }
-        /// ]]>
-        ///</code>
-        /// </example>
-        public string selectedTrigger    { get { return m_SelectedTrigger; } set { m_SelectedTrigger = value; } }
     }
 }
