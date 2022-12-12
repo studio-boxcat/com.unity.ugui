@@ -22,8 +22,6 @@ namespace UnityEngine.UI
         private TextGenerator m_TextCache;
         private TextGenerator m_TextCacheForLayout;
 
-        static protected Material s_DefaultText = null;
-
         // We use this flag instead of Unregistering/Registering the callback to avoid allocation.
         [NonSerialized] protected bool m_DisableFontTextureRebuiltCallback = false;
 
@@ -581,22 +579,9 @@ namespace UnityEngine.UI
             }
         }
 
-#if UNITY_EDITOR
-        protected override void Reset()
-        {
-            AssignDefaultFontIfNecessary();
-        }
-
-#endif
         internal void AssignDefaultFont()
         {
             font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        }
-
-        internal void AssignDefaultFontIfNecessary()
-        {
-            if (font == null)
-                font = Resources.GetBuiltinResource<Font>("Arial.ttf");
         }
 
         /// <summary>

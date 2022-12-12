@@ -7,7 +7,7 @@ namespace UnityEngine.UI
     /// <summary>
     /// Struct for storing Text generation settings.
     /// </summary>
-    public class FontData : ISerializationCallbackReceiver
+    public class FontData
     {
         [SerializeField]
         [FormerlySerializedAs("font")]
@@ -184,16 +184,6 @@ namespace UnityEngine.UI
         {
             get { return m_LineSpacing; }
             set { m_LineSpacing = value; }
-        }
-
-        void ISerializationCallbackReceiver.OnBeforeSerialize()
-        {}
-
-        void ISerializationCallbackReceiver.OnAfterDeserialize()
-        {
-            m_FontSize = Mathf.Clamp(m_FontSize, 0, 300);
-            m_MinSize = Mathf.Clamp(m_MinSize, 0, m_FontSize);
-            m_MaxSize = Mathf.Clamp(m_MaxSize, m_FontSize, 300);
         }
     }
 }
