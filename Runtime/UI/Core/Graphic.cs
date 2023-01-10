@@ -2,11 +2,9 @@ using System;
 #if UNITY_EDITOR
 using System.Reflection;
 #endif
-using System.Collections.Generic;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
-using UnityEngine.UI.CoroutineTween;
 using UnityEngine.Pool;
 
 namespace UnityEngine.UI
@@ -93,7 +91,7 @@ namespace UnityEngine.UI
         {
             get
             {
-                if (s_DefaultUI == null)
+                if (s_DefaultUI is null)
                     s_DefaultUI = Canvas.GetDefaultCanvasMaterial();
                 return s_DefaultUI;
             }
@@ -210,15 +208,11 @@ namespace UnityEngine.UI
         [NonSerialized] private bool m_VertsDirty;
         [NonSerialized] private bool m_MaterialDirty;
 
-        [NonSerialized] protected UnityAction m_OnDirtyLayoutCallback;
         [NonSerialized] protected UnityAction m_OnDirtyVertsCallback;
         [NonSerialized] protected UnityAction m_OnDirtyMaterialCallback;
 
         [NonSerialized] protected static Mesh s_Mesh;
         [NonSerialized] private static readonly VertexHelper s_VertexHelper = new VertexHelper();
-
-        [NonSerialized] protected Mesh m_CachedMesh;
-        [NonSerialized] protected Vector2[] m_CachedUvs;
 
         protected bool useLegacyMeshGeneration { get; set; }
 
@@ -273,9 +267,6 @@ namespace UnityEngine.UI
                 return;
 
             LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
-
-            if (m_OnDirtyLayoutCallback != null)
-                m_OnDirtyLayoutCallback();
         }
 
         /// <summary>
@@ -415,30 +406,7 @@ namespace UnityEngine.UI
 
         private void CacheCanvas()
         {
-            var list = ListPool<Canvas>.Get();
-            gameObject.GetComponentsInParent(false, list);
-            if (list.Count > 0)
-            {
-                // Find the first active and enabled canvas.
-                for (int i = 0; i < list.Count; ++i)
-                {
-                    if (list[i].isActiveAndEnabled)
-                    {
-                        m_Canvas = list[i];
-                        break;
-                    }
-
-                    // if we reached the end and couldn't find an active and enabled canvas, we should return null . case 1171433
-                    if (i == list.Count - 1)
-                        m_Canvas = null;
-                }
-            }
-            else
-            {
-                m_Canvas = null;
-            }
-
-            ListPool<Canvas>.Release(list);
+            m_Canvas = gameObject.GetComponentInParent<Canvas>(false);
         }
 
         /// <summary>
@@ -573,9 +541,6 @@ namespace UnityEngine.UI
 #endif
             GraphicRegistry.UnregisterGraphicForCanvas(canvas, this);
             CanvasUpdateRegistry.UnRegisterCanvasElementForRebuild(this);
-            if (m_CachedMesh)
-                Destroy(m_CachedMesh);
-            m_CachedMesh = null;
 
             base.OnDestroy();
         }
@@ -631,7 +596,7 @@ namespace UnityEngine.UI
         /// </remarks>
         public virtual void Rebuild(CanvasUpdate update)
         {
-            if (canvasRenderer == null || canvasRenderer.cull)
+            if (canvasRenderer is null || canvasRenderer.cull)
                 return;
 
             switch (update)
@@ -735,7 +700,7 @@ namespace UnityEngine.UI
         {
             get
             {
-                if (s_Mesh == null)
+                if (s_Mesh is null)
                 {
                     s_Mesh = new Mesh();
                     s_Mesh.name = "Shared UI Mesh";
@@ -744,9 +709,6 @@ namespace UnityEngine.UI
                 return s_Mesh;
             }
         }
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        [Obsolete("Use OnPopulateMesh instead.", true)]
-        protected virtual void OnFillVBO(System.Collections.Generic.List<UIVertex> vbo) {}
 
         [Obsolete("Use OnPopulateMesh(VertexHelper vh) instead.", false)]
         /// <summary>
@@ -932,24 +894,6 @@ namespace UnityEngine.UI
                 return rectTransform.rect;
             else
                 return RectTransformUtility.PixelAdjustRect(rectTransform, canvas);
-        }
-
-        /// <summary>
-        /// Add a listener to receive notification when the graphics layout is dirtied.
-        /// </summary>
-        /// <param name="action">The method to call when invoked.</param>
-        public void RegisterDirtyLayoutCallback(UnityAction action)
-        {
-            m_OnDirtyLayoutCallback += action;
-        }
-
-        /// <summary>
-        /// Remove a listener from receiving notifications when the graphics layout are dirtied
-        /// </summary>
-        /// <param name="action">The method to call when invoked.</param>
-        public void UnregisterDirtyLayoutCallback(UnityAction action)
-        {
-            m_OnDirtyLayoutCallback -= action;
         }
 
         /// <summary>

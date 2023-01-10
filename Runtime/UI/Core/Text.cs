@@ -8,7 +8,7 @@ namespace UnityEngine.UI
     /// <summary>
     /// The default Graphic to draw font data to screen.
     /// </summary>
-    public partial class Text : MaskableGraphic, ILayoutElement
+    public class Text : MaskableGraphic, ILayoutElement
     {
         [SerializeField] private FontData m_FontData;
 

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using UnityEngine.Serialization;
 using UnityEngine.U2D;
 
@@ -15,7 +14,7 @@ namespace UnityEngine.UI
     /// <summary>
     ///   Displays a Sprite inside the UI System.
     /// </summary>
-    public class Image : MaskableGraphic, ISerializationCallbackReceiver, ILayoutElement, ICanvasRaycastFilter
+    public class Image : MaskableGraphic, ILayoutElement
     {
         /// <summary>
         /// Image fill type controls how to display the image.
@@ -228,8 +227,6 @@ namespace UnityEngine.UI
             Left,
         }
 
-        static protected Material s_ETC1DefaultUI = null;
-
         [FormerlySerializedAs("m_Frame")]
         [SerializeField]
         private Sprite m_Sprite;
@@ -279,7 +276,7 @@ namespace UnityEngine.UI
             get { return m_Sprite; }
             set
             {
-                if (m_Sprite != null)
+                if (m_Sprite is not null)
                 {
                     if (m_Sprite != value)
                     {
@@ -291,7 +288,7 @@ namespace UnityEngine.UI
                         TrackSprite();
                     }
                 }
-                else if (value != null)
+                else if (value is not null)
                 {
                     m_SkipLayoutUpdate = value.rect.size == Vector2.zero;
                     m_SkipMaterialUpdate = value.texture == null;
@@ -576,49 +573,8 @@ namespace UnityEngine.UI
         /// </example>
         public int fillOrigin { get { return m_FillOrigin; } set { if (SetPropertyUtility.SetStruct(ref m_FillOrigin, value)) SetVerticesDirty(); } }
 
-        // Not serialized until we support read-enabled sprites better.
-        private float m_AlphaHitTestMinimumThreshold = 0;
-
         // Whether this is being tracked for Atlas Binding.
         private bool m_Tracked = false;
-
-        [Obsolete("eventAlphaThreshold has been deprecated. Use eventMinimumAlphaThreshold instead (UnityUpgradable) -> alphaHitTestMinimumThreshold")]
-
-        /// <summary>
-        /// Obsolete. You should use UI.Image.alphaHitTestMinimumThreshold instead.
-        /// The alpha threshold specifies the minimum alpha a pixel must have for the event to considered a "hit" on the Image.
-        /// </summary>
-        public float eventAlphaThreshold { get { return 1 - alphaHitTestMinimumThreshold; } set { alphaHitTestMinimumThreshold = 1 - value; } }
-
-        /// <summary>
-        /// The alpha threshold specifies the minimum alpha a pixel must have for the event to considered a "hit" on the Image.
-        /// </summary>
-        /// <remarks>
-        /// Alpha values less than the threshold will cause raycast events to pass through the Image. An value of 1 would cause only fully opaque pixels to register raycast events on the Image. The alpha tested is retrieved from the image sprite only, while the alpha of the Image [[UI.Graphic.color]] is disregarded.
-        ///
-        /// alphaHitTestMinimumThreshold defaults to 0; all raycast events inside the Image rectangle are considered a hit. In order for greater than 0 to values to work, the sprite used by the Image must have readable pixels. This can be achieved by enabling Read/Write enabled in the advanced Texture Import Settings for the sprite and disabling atlassing for the sprite.
-        /// </remarks>
-        /// <example>
-        /// <code>
-        /// <![CDATA[
-        /// using UnityEngine;
-        /// using System.Collections;
-        /// using UnityEngine.UI; // Required when Using UI elements.
-        ///
-        /// public class ExampleClass : MonoBehaviour
-        /// {
-        ///     public Image theButton;
-        ///
-        ///     // Use this for initialization
-        ///     void Start()
-        ///     {
-        ///         theButton.alphaHitTestMinimumThreshold = 0.5f;
-        ///     }
-        /// }
-        /// ]]>
-        ///</code>
-        /// </example>
-        public float alphaHitTestMinimumThreshold { get { return m_AlphaHitTestMinimumThreshold; } set { m_AlphaHitTestMinimumThreshold = value; } }
 
         /// Controls whether or not to use the generated mesh from the sprite importer.
         [SerializeField] private bool m_UseSpriteMesh;
@@ -636,23 +592,6 @@ namespace UnityEngine.UI
         protected Image()
         {
             useLegacyMeshGeneration = false;
-        }
-
-        /// <summary>
-        /// Cache of the default Canvas Ericsson Texture Compression 1 (ETC1) and alpha Material.
-        /// </summary>
-        /// <remarks>
-        /// Stores the ETC1 supported Canvas Material that is returned from GetETC1SupportedCanvasMaterial().
-        /// Note: Always specify the UI/DefaultETC1 Shader in the Always Included Shader list, to use the ETC1 and alpha Material.
-        /// </remarks>
-        static public Material defaultETC1GraphicMaterial
-        {
-            get
-            {
-                if (s_ETC1DefaultUI == null)
-                    s_ETC1DefaultUI = Canvas.GetETC1SupportedCanvasMaterial();
-                return s_ETC1DefaultUI;
-            }
         }
 
         /// <summary>
@@ -741,15 +680,6 @@ namespace UnityEngine.UI
             {
                 if (m_Material != null)
                     return m_Material;
-#if UNITY_EDITOR
-                if (Application.isPlaying && activeSprite && activeSprite.associatedAlphaSplitTexture != null)
-                    return defaultETC1GraphicMaterial;
-#else
-
-                if (activeSprite && activeSprite.associatedAlphaSplitTexture != null)
-                    return defaultETC1GraphicMaterial;
-#endif
-
                 return defaultMaterial;
             }
 
@@ -757,28 +687,6 @@ namespace UnityEngine.UI
             {
                 base.material = value;
             }
-        }
-
-        /// <summary>
-        /// See ISerializationCallbackReceiver.
-        /// </summary>
-        public virtual void OnBeforeSerialize() {}
-
-        /// <summary>
-        /// See ISerializationCallbackReceiver.
-        /// </summary>
-        public virtual void OnAfterDeserialize()
-        {
-            if (m_FillOrigin < 0)
-                m_FillOrigin = 0;
-            else if (m_FillMethod == FillMethod.Horizontal && m_FillOrigin > 1)
-                m_FillOrigin = 0;
-            else if (m_FillMethod == FillMethod.Vertical && m_FillOrigin > 1)
-                m_FillOrigin = 0;
-            else if (m_FillOrigin > 3)
-                m_FillOrigin = 0;
-
-            m_FillAmount = Mathf.Clamp(m_FillAmount, 0f, 1f);
         }
 
         private void PreserveSpriteAspectRatio(ref Rect rect, Vector2 spriteSize)
@@ -1767,88 +1675,6 @@ namespace UnityEngine.UI
         /// See ILayoutElement.layoutPriority.
         /// </summary>
         public virtual int layoutPriority { get { return 0; } }
-
-        /// <summary>
-        /// Calculate if the ray location for this image is a valid hit location. Takes into account a Alpha test threshold.
-        /// </summary>
-        /// <param name="screenPoint">The screen point to check against</param>
-        /// <param name="eventCamera">The camera in which to use to calculate the coordinating position</param>
-        /// <returns>If the location is a valid hit or not.</returns>
-        /// <remarks> Also see See:ICanvasRaycastFilter.</remarks>
-        public virtual bool IsRaycastLocationValid(Vector2 screenPoint, Camera eventCamera)
-        {
-            if (alphaHitTestMinimumThreshold <= 0)
-                return true;
-
-            if (alphaHitTestMinimumThreshold > 1)
-                return false;
-
-            if (activeSprite == null)
-                return true;
-
-            Vector2 local;
-            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, screenPoint, eventCamera, out local))
-                return false;
-
-            Rect rect = GetPixelAdjustedRect();
-
-            // Convert to have lower left corner as reference point.
-            local.x += rectTransform.pivot.x * rect.width;
-            local.y += rectTransform.pivot.y * rect.height;
-
-            local = MapCoordinate(local, rect);
-
-            // Convert local coordinates to texture space.
-            Rect spriteRect = activeSprite.textureRect;
-            float x = (spriteRect.x + local.x) / activeSprite.texture.width;
-            float y = (spriteRect.y + local.y) / activeSprite.texture.height;
-
-            try
-            {
-                return activeSprite.texture.GetPixelBilinear(x, y).a >= alphaHitTestMinimumThreshold;
-            }
-            catch (UnityException e)
-            {
-                Debug.LogError("Using alphaHitTestMinimumThreshold greater than 0 on Image whose sprite texture cannot be read. " + e.Message + " Also make sure to disable sprite packing for this sprite.", this);
-                return true;
-            }
-        }
-
-        private Vector2 MapCoordinate(Vector2 local, Rect rect)
-        {
-            Rect spriteRect = activeSprite.rect;
-            if (type == Type.Simple || type == Type.Filled)
-                return new Vector2(local.x * spriteRect.width / rect.width, local.y * spriteRect.height / rect.height);
-
-            Vector4 border = activeSprite.border;
-            Vector4 adjustedBorder = GetAdjustedBorders(border / pixelsPerUnit, rect);
-
-            for (int i = 0; i < 2; i++)
-            {
-                if (local[i] <= adjustedBorder[i])
-                    continue;
-
-                if (rect.size[i] - local[i] <= adjustedBorder[i + 2])
-                {
-                    local[i] -= (rect.size[i] - spriteRect.size[i]);
-                    continue;
-                }
-
-                if (type == Type.Sliced)
-                {
-                    float lerp = Mathf.InverseLerp(adjustedBorder[i], rect.size[i] - adjustedBorder[i + 2], local[i]);
-                    local[i] = Mathf.Lerp(border[i], spriteRect.size[i] - border[i + 2], lerp);
-                }
-                else
-                {
-                    local[i] -= adjustedBorder[i];
-                    local[i] = Mathf.Repeat(local[i], spriteRect.size[i] - border[i] - border[i + 2]);
-                    local[i] += border[i];
-                }
-            }
-
-            return local;
-        }
 
         // To track textureless images, which will be rebuild if sprite atlas manager registered a Sprite Atlas that will give this image new texture
         static List<Image> m_TrackedTexturelessImages = new List<Image>();
