@@ -16,29 +16,6 @@ namespace UnityEngine.UI
         protected const int kNoEventMaskSet = -1;
 
         /// <summary>
-        /// Type of raycasters to check against to check for canvas blocking elements.
-        /// </summary>
-        public enum BlockingObjects
-        {
-            /// <summary>
-            /// Perform no raycasts.
-            /// </summary>
-            None = 0,
-            /// <summary>
-            /// Perform a 2D raycast check to check for blocking 2D elements
-            /// </summary>
-            TwoD = 1,
-            /// <summary>
-            /// Perform a 3D raycast check to check for blocking 3D elements
-            /// </summary>
-            ThreeD = 2,
-            /// <summary>
-            /// Perform a 2D and a 3D raycasts to check for blocking 2D and 3D elements.
-            /// </summary>
-            All = 3,
-        }
-
-        /// <summary>
         /// Priority of the raycaster based upon sort order.
         /// </summary>
         /// <returns>
@@ -73,23 +50,6 @@ namespace UnityEngine.UI
                 return base.renderOrderPriority;
             }
         }
-
-        [FormerlySerializedAs("ignoreReversedGraphics")]
-        [SerializeField]
-        private bool m_IgnoreReversedGraphics = true;
-        [FormerlySerializedAs("blockingObjects")]
-        [SerializeField]
-        private BlockingObjects m_BlockingObjects = BlockingObjects.None;
-
-        /// <summary>
-        /// Whether Graphics facing away from the raycaster are checked for raycasts.
-        /// </summary>
-        public bool ignoreReversedGraphics { get {return m_IgnoreReversedGraphics; } set { m_IgnoreReversedGraphics = value; } }
-
-        /// <summary>
-        /// The type of objects that are checked to determine if they block graphic raycasts.
-        /// </summary>
-        public BlockingObjects blockingObjects { get {return m_BlockingObjects; } set { m_BlockingObjects = value; } }
 
         [SerializeField]
         protected LayerMask m_BlockingMask = kNoEventMaskSet;
@@ -196,41 +156,6 @@ namespace UnityEngine.UI
             if (currentEventCamera != null)
                 ray = currentEventCamera.ScreenPointToRay(eventPosition);
 
-            if (canvas.renderMode != RenderMode.ScreenSpaceOverlay && blockingObjects != BlockingObjects.None)
-            {
-                float distanceToClipPlane = 100.0f;
-
-                if (currentEventCamera != null)
-                {
-                    float projectionDirection = ray.direction.z;
-                    distanceToClipPlane = Mathf.Approximately(0.0f, projectionDirection)
-                        ? Mathf.Infinity
-                        : Mathf.Abs((currentEventCamera.farClipPlane - currentEventCamera.nearClipPlane) / projectionDirection);
-                }
-#if PACKAGE_PHYSICS
-                if (blockingObjects == BlockingObjects.ThreeD || blockingObjects == BlockingObjects.All)
-                {
-                    if (ReflectionMethodsCache.Singleton.raycast3D != null)
-                    {
-                        var hits = ReflectionMethodsCache.Singleton.raycast3DAll(ray, distanceToClipPlane, (int)m_BlockingMask);
-                        if (hits.Length > 0)
-                            hitDistance = hits[0].distance;
-                    }
-                }
-#endif
-#if PACKAGE_PHYSICS2D
-                if (blockingObjects == BlockingObjects.TwoD || blockingObjects == BlockingObjects.All)
-                {
-                    if (ReflectionMethodsCache.Singleton.raycast2D != null)
-                    {
-                        var hits = ReflectionMethodsCache.Singleton.getRayIntersectionAll(ray, distanceToClipPlane, (int)m_BlockingMask);
-                        if (hits.Length > 0)
-                            hitDistance = hits[0].distance;
-                    }
-                }
-#endif
-            }
-
             m_RaycastResults.Clear();
 
             Raycast(canvas, currentEventCamera, eventPosition, canvasGraphics, m_RaycastResults);
@@ -239,25 +164,7 @@ namespace UnityEngine.UI
             for (var index = 0; index < totalCount; index++)
             {
                 var go = m_RaycastResults[index].gameObject;
-                bool appendGraphic = true;
 
-                if (ignoreReversedGraphics)
-                {
-                    if (currentEventCamera == null)
-                    {
-                        // If we dont have a camera we know that we should always be facing forward
-                        var dir = go.transform.rotation * Vector3.forward;
-                        appendGraphic = Vector3.Dot(Vector3.forward, dir) > 0;
-                    }
-                    else
-                    {
-                        // If we have a camera compare the direction against the cameras forward.
-                        var cameraForward = currentEventCamera.transform.rotation * Vector3.forward * currentEventCamera.nearClipPlane;
-                        appendGraphic = Vector3.Dot(go.transform.position - currentEventCamera.transform.position - cameraForward, go.transform.forward) >= 0;
-                    }
-                }
-
-                if (appendGraphic)
                 {
                     float distance = 0;
                     Transform trans = go.transform;
