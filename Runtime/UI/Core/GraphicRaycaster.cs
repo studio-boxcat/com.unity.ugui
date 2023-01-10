@@ -51,14 +51,6 @@ namespace UnityEngine.UI
             }
         }
 
-        [SerializeField]
-        protected LayerMask m_BlockingMask = kNoEventMaskSet;
-
-        /// <summary>
-        /// The type of objects specified through LayerMask that are checked to determine if they block graphic raycasts.
-        /// </summary>
-        public LayerMask blockingMask { get { return m_BlockingMask; } set { m_BlockingMask = value; } }
-
         private Canvas m_Canvas;
 
         protected GraphicRaycaster()
