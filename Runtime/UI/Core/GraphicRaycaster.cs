@@ -104,7 +104,7 @@ namespace UnityEngine.UI
         protected GraphicRaycaster()
         {}
 
-        private Canvas canvas
+        public Canvas canvas
         {
             get
             {
