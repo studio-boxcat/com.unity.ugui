@@ -135,36 +135,6 @@ namespace UnityEngine.EventSystems
         }
 
         /// <summary>
-        /// Given an input movement, determine the best MoveDirection.
-        /// </summary>
-        /// <param name="x">X movement.</param>
-        /// <param name="y">Y movement.</param>
-        protected static MoveDirection DetermineMoveDirection(float x, float y)
-        {
-            return DetermineMoveDirection(x, y, 0.6f);
-        }
-
-        /// <summary>
-        /// Given an input movement, determine the best MoveDirection.
-        /// </summary>
-        /// <param name="x">X movement.</param>
-        /// <param name="y">Y movement.</param>
-        /// <param name="deadZone">Dead zone.</param>
-        protected static MoveDirection DetermineMoveDirection(float x, float y, float deadZone)
-        {
-            // if vector is too small... just return
-            if (new Vector2(x, y).sqrMagnitude < deadZone * deadZone)
-                return MoveDirection.None;
-
-            if (Mathf.Abs(x) > Mathf.Abs(y))
-            {
-                return x > 0 ? MoveDirection.Right : MoveDirection.Left;
-            }
-
-            return y > 0 ? MoveDirection.Up : MoveDirection.Down;
-        }
-
-        /// <summary>
         /// Given 2 GameObjects, return a common root GameObject (or null).
         /// </summary>
         /// <param name="g1">GameObject to compare</param>

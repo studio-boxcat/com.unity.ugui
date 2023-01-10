@@ -361,20 +361,6 @@ namespace UnityEngine.EventSystems
     }
 
     /// <summary>
-    /// Interface to implement if you wish to receive OnMove callbacks.
-    /// </summary>
-    /// <remarks>
-    /// Criteria for this event is implementation dependent. For example see StandAloneInputModule.
-    /// </remarks>
-    public interface IMoveHandler : IEventSystemHandler
-    {
-        /// <summary>
-        /// Called by a BaseInputModule when a move event occurs.
-        /// </summary>
-        void OnMove(AxisEventData eventData);
-    }
-
-    /// <summary>
     /// Interface to implement if you wish to receive OnSubmit callbacks.
     /// </summary>
     /// <remarks>
