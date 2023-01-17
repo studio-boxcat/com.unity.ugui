@@ -75,7 +75,7 @@ namespace UnityEngine.UI
         /// </summary>
         /// <param name="eventData">Current event data</param>
         /// <param name="resultAppendList">List of hit objects to append new results to.</param>
-        public override void Raycast(PointerEventData eventData, List<RaycastResult> resultAppendList)
+        public override void Raycast(Vector2 screenPosition, List<RaycastResult> resultAppendList)
         {
             if (canvas == null)
                 return;
@@ -92,7 +92,7 @@ namespace UnityEngine.UI
             else
                 displayIndex = currentEventCamera.targetDisplay;
 
-            var eventPosition = MultipleDisplayUtilities.RelativeMouseAtScaled(eventData.position);
+            var eventPosition = MultipleDisplayUtilities.RelativeMouseAtScaled(screenPosition);
             if (eventPosition != Vector3.zero)
             {
                 // We support multiple display and display identification based on event position.
@@ -107,7 +107,7 @@ namespace UnityEngine.UI
             {
                 // The multiple display system is not supported on all platforms, when it is not supported the returned position
                 // will be all zeros so when the returned index is 0 we will default to the event data to be safe.
-                eventPosition = eventData.position;
+                eventPosition = screenPosition;
 
 #if UNITY_EDITOR
                 if (Display.activeEditorGameViewTarget != displayIndex)

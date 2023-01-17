@@ -84,7 +84,7 @@ namespace UnityEngine.EventSystems
             }
             else
             {
-                eventSystem.RaycastAll(pointerData, m_RaycastResultCache);
+                eventSystem.RaycastAll(pointerData.position, m_RaycastResultCache);
 
                 var raycast = FindFirstRaycast(m_RaycastResultCache);
                 pointerData.pointerCurrentRaycast = raycast;
@@ -250,7 +250,7 @@ namespace UnityEngine.EventSystems
             }
             leftData.scrollDelta = input.mouseScrollDelta;
             leftData.button = PointerEventData.InputButton.Left;
-            eventSystem.RaycastAll(leftData, m_RaycastResultCache);
+            eventSystem.RaycastAll(leftData.position, m_RaycastResultCache);
             var raycast = FindFirstRaycast(m_RaycastResultCache);
             leftData.pointerCurrentRaycast = raycast;
             m_RaycastResultCache.Clear();

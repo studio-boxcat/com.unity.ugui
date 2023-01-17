@@ -216,7 +216,7 @@ namespace UnityEngine.EventSystems
         /// </summary>
         /// <param name="eventData">Current pointer data.</param>
         /// <param name="raycastResults">List of 'hits' to populate.</param>
-        public void RaycastAll(PointerEventData eventData, List<RaycastResult> raycastResults)
+        public void RaycastAll(Vector2 screenPosition, List<RaycastResult> raycastResults)
         {
             raycastResults.Clear();
             var modules = RaycasterManager.GetRaycasters();
@@ -227,7 +227,7 @@ namespace UnityEngine.EventSystems
                 if (module == null || !module.IsActive())
                     continue;
 
-                module.Raycast(eventData, raycastResults);
+                module.Raycast(screenPosition, raycastResults);
             }
 
             raycastResults.Sort(s_RaycastComparer);
