@@ -406,7 +406,22 @@ namespace UnityEngine.UI
 
         private void CacheCanvas()
         {
-            m_Canvas = gameObject.GetComponentInParent<Canvas>(false);
+            var current = gameObject.transform;
+            while (current is not null)
+            {
+                if (current.TryGetComponent(out Canvas canvas)
+                    && canvas.isActiveAndEnabled)
+                {
+                    m_Canvas = canvas;
+                    return;
+                }
+                else
+                {
+                    current = current.parent;
+                }
+            }
+
+            m_Canvas = null;
         }
 
         /// <summary>
