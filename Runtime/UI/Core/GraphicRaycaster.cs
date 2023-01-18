@@ -68,7 +68,7 @@ namespace UnityEngine.UI
             }
         }
 
-        [NonSerialized] private List<Graphic> m_RaycastResults = new List<Graphic>();
+        static List<Graphic> m_RaycastResults = new List<Graphic>();
 
         /// <summary>
         /// Perform the raycast against the list of graphics associated with the Canvas.
