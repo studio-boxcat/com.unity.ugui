@@ -22,11 +22,6 @@ namespace UnityEngine.EventSystems
         public BaseRaycaster module;
 
         /// <summary>
-        /// Distance to the hit.
-        /// </summary>
-        public float distance;
-
-        /// <summary>
         /// Hit index
         /// </summary>
         public float index;
@@ -62,19 +57,9 @@ namespace UnityEngine.EventSystems
         public Vector3 worldPosition;
 
         /// <summary>
-        /// The normal at the hit location of the raycast.
-        /// </summary>
-        public Vector3 worldNormal;
-
-        /// <summary>
         /// The screen position from which the raycast was generated.
         /// </summary>
         public Vector2 screenPosition;
-
-        /// <summary>
-        /// The display index from which the raycast was generated.
-        /// </summary>
-        public int displayIndex;
 
         /// <summary>
         /// Is there an associated module and a hit GameObject.
@@ -91,13 +76,10 @@ namespace UnityEngine.EventSystems
         {
             gameObject = null;
             module = null;
-            distance = 0;
             index = 0;
             depth = 0;
             sortingLayer = 0;
             sortingOrder = 0;
-            worldNormal = Vector3.up;
-            worldPosition = Vector3.zero;
             screenPosition = Vector3.zero;
         }
 
@@ -108,11 +90,8 @@ namespace UnityEngine.EventSystems
 
             return "Name: " + gameObject + "\n" +
                 "module: " + module + "\n" +
-                "distance: " + distance + "\n" +
                 "index: " + index + "\n" +
                 "depth: " + depth + "\n" +
-                "worldNormal: " + worldNormal + "\n" +
-                "worldPosition: " + worldPosition + "\n" +
                 "screenPosition: " + screenPosition + "\n" +
                 "module.sortOrderPriority: " + module.sortOrderPriority + "\n" +
                 "module.renderOrderPriority: " + module.renderOrderPriority + "\n" +

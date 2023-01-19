@@ -170,7 +170,7 @@ namespace UnityEngine.EventSystems
             {
                 var lhsEventCamera = lhs.module.eventCamera;
                 var rhsEventCamera = rhs.module.eventCamera;
-                if (lhsEventCamera != null && rhsEventCamera != null && lhsEventCamera.depth != rhsEventCamera.depth)
+                if (lhsEventCamera.depth != rhsEventCamera.depth)
                 {
                     // need to reverse the standard compareTo
                     if (lhsEventCamera.depth < rhsEventCamera.depth)
@@ -202,9 +202,6 @@ namespace UnityEngine.EventSystems
             // comparing depth only makes sense if the two raycast results have the same root canvas (case 912396)
             if (lhs.depth != rhs.depth && lhs.module.rootRaycaster == rhs.module.rootRaycaster)
                 return rhs.depth.CompareTo(lhs.depth);
-
-            if (lhs.distance != rhs.distance)
-                return lhs.distance.CompareTo(rhs.distance);
 
             return lhs.index.CompareTo(rhs.index);
         }

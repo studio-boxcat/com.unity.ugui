@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
+using JetBrains.Annotations;
+using Sirenix.OdinInspector;
+using UnityEngine.Assertions;
 using UnityEngine.EventSystems;
-using UnityEngine.Serialization;
 
 namespace UnityEngine.UI
 {
@@ -51,24 +52,23 @@ namespace UnityEngine.UI
             }
         }
 
-        private Canvas m_Canvas;
+        [SerializeField, Required, ChildGameObjectsOnly, NotNull]
+        Canvas m_Canvas;
 
-        protected GraphicRaycaster()
-        {}
-
-        public Canvas canvas
-        {
-            get
-            {
-                if (m_Canvas != null)
-                    return m_Canvas;
-
-                m_Canvas = GetComponent<Canvas>();
-                return m_Canvas;
-            }
-        }
+        public Canvas canvas => m_Canvas;
 
         static List<Graphic> m_RaycastResults = new List<Graphic>();
+
+        protected override void Awake()
+        {
+            base.Awake();
+
+            if (m_Canvas is null)
+            {
+                TryGetComponent(out m_Canvas);
+                Assert.IsNotNull(m_Canvas);
+            }
+        }
 
         /// <summary>
         /// Perform the raycast against the list of graphics associated with the Canvas.
@@ -77,17 +77,15 @@ namespace UnityEngine.UI
         /// <param name="resultAppendList">List of hit objects to append new results to.</param>
         public override void Raycast(Vector2 screenPosition, List<RaycastResult> resultAppendList)
         {
-            if (canvas == null)
-                return;
-
             var canvasGraphics = GraphicRegistry.GetRaycastableGraphicsForCanvas(canvas);
             if (canvasGraphics == null || canvasGraphics.Count == 0)
                 return;
 
             int displayIndex;
             var currentEventCamera = eventCamera; // Property can call Camera.main, so cache the reference
+            Assert.IsNotNull(currentEventCamera);
 
-            if (canvas.renderMode == RenderMode.ScreenSpaceOverlay || currentEventCamera == null)
+            if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
                 displayIndex = canvas.targetDisplay;
             else
                 displayIndex = currentEventCamera.targetDisplay;
@@ -119,38 +117,15 @@ namespace UnityEngine.UI
             }
 
             // Convert to view space
-            Vector2 pos;
-            if (currentEventCamera == null)
-            {
-                // Multiple display support only when not the main display. For display 0 the reported
-                // resolution is always the desktops resolution since its part of the display API,
-                // so we use the standard none multiple display method. (case 741751)
-                float w = Screen.width;
-                float h = Screen.height;
-                if (displayIndex > 0 && displayIndex < Display.displays.Length)
-                {
-                    w = Display.displays[displayIndex].systemWidth;
-                    h = Display.displays[displayIndex].systemHeight;
-                }
-                pos = new Vector2(eventPosition.x / w, eventPosition.y / h);
-            }
-            else
-                pos = currentEventCamera.ScreenToViewportPoint(eventPosition);
+            Vector2 pos = currentEventCamera.ScreenToViewportPoint(eventPosition);
 
             // If it's outside the camera's viewport, do nothing
             if (pos.x < 0f || pos.x > 1f || pos.y < 0f || pos.y > 1f)
                 return;
 
-            float hitDistance = float.MaxValue;
-
-            Ray ray = new Ray();
-
-            if (currentEventCamera != null)
-                ray = currentEventCamera.ScreenPointToRay(eventPosition);
-
             m_RaycastResults.Clear();
 
-            Raycast(canvas, currentEventCamera, eventPosition, canvasGraphics, m_RaycastResults);
+            Raycast(currentEventCamera, eventPosition, canvasGraphics, m_RaycastResults);
 
             int totalCount = m_RaycastResults.Count;
             for (var index = 0; index < totalCount; index++)
@@ -158,63 +133,38 @@ namespace UnityEngine.UI
                 var go = m_RaycastResults[index].gameObject;
 
                 {
-                    float distance = 0;
-                    Transform trans = go.transform;
-                    Vector3 transForward = trans.forward;
-
-                    if (currentEventCamera == null || canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-                        distance = 0;
-                    else
-                    {
-                        // http://geomalgorithms.com/a06-_intersect-2.html
-                        distance = (Vector3.Dot(transForward, trans.position - ray.origin) / Vector3.Dot(transForward, ray.direction));
-
-                        // Check to see if the go is behind the camera.
-                        if (distance < 0)
-                            continue;
-                    }
-
-                    if (distance >= hitDistance)
-                        continue;
-
                     var castResult = new RaycastResult
                     {
                         gameObject = go,
                         module = this,
-                        distance = distance,
                         screenPosition = eventPosition,
-                        displayIndex = displayIndex,
                         index = resultAppendList.Count,
                         depth = m_RaycastResults[index].depth,
                         sortingLayer = canvas.sortingLayerID,
                         sortingOrder = canvas.sortingOrder,
-                        worldPosition = ray.origin + ray.direction * distance,
-                        worldNormal = -transForward
                     };
                     resultAppendList.Add(castResult);
                 }
             }
         }
 
-        /// <summary>
-        /// The camera that will generate rays for this raycaster.
-        /// </summary>
-        /// <returns>
-        /// - Null if Camera mode is ScreenSpaceOverlay or ScreenSpaceCamera and has no camera.
-        /// - canvas.worldCanvas if not null
-        /// - Camera.main.
-        /// </returns>
+        Camera m_EventCameraCache;
+
         public override Camera eventCamera
         {
             get
             {
-                var canvas = this.canvas;
-                var renderMode = canvas.renderMode;
-                if (renderMode == RenderMode.ScreenSpaceOverlay
-                    || (renderMode == RenderMode.ScreenSpaceCamera && canvas.worldCamera == null))
-                    return null;
+                if (m_EventCameraCache is not null)
+                {
+                    Assert.AreEqual(m_EventCameraCache, m_Canvas.worldCamera);
+                    return m_EventCameraCache;
+                }
 
-                return canvas.worldCamera ?? Camera.main;
+                Assert.IsNotNull(m_Canvas);
+                Assert.AreNotEqual(RenderMode.ScreenSpaceOverlay, m_Canvas.renderMode);
+                m_EventCameraCache = m_Canvas.worldCamera;
+                Assert.IsNotNull(m_EventCameraCache);
+                return m_EventCameraCache;
             }
         }
 
@@ -222,7 +172,7 @@ namespace UnityEngine.UI
         /// Perform a raycast into the screen and collect all graphics underneath it.
         /// </summary>
         [NonSerialized] static readonly List<Graphic> s_SortedGraphics = new List<Graphic>();
-        private static void Raycast(Canvas canvas, Camera eventCamera, Vector2 pointerPosition, IList<Graphic> foundGraphics, List<Graphic> results)
+        private static void Raycast([NotNull] Camera eventCamera, Vector2 pointerPosition, IList<Graphic> foundGraphics, List<Graphic> results)
         {
             // Necessary for the event system
             int totalCount = foundGraphics.Count;
@@ -237,7 +187,7 @@ namespace UnityEngine.UI
                 if (!RectTransformUtility.RectangleContainsScreenPoint(graphic.rectTransform, pointerPosition, eventCamera, graphic.raycastPadding))
                     continue;
 
-                if (eventCamera != null && eventCamera.WorldToScreenPoint(graphic.rectTransform.position).z > eventCamera.farClipPlane)
+                if (eventCamera.WorldToScreenPoint(graphic.rectTransform.position).z > eventCamera.farClipPlane)
                     continue;
 
                 if (graphic.Raycast(pointerPosition, eventCamera))
@@ -253,5 +203,13 @@ namespace UnityEngine.UI
 
             s_SortedGraphics.Clear();
         }
+
+#if UNITY_EDITOR
+        protected override void Reset()
+        {
+            base.Reset();
+            TryGetComponent(out m_Canvas);
+        }
+#endif
     }
 }
