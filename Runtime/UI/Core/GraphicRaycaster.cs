@@ -148,25 +148,7 @@ namespace UnityEngine.UI
             }
         }
 
-        Camera m_EventCameraCache;
-
-        public override Camera eventCamera
-        {
-            get
-            {
-                if (m_EventCameraCache is not null)
-                {
-                    Assert.AreEqual(m_EventCameraCache, m_Canvas.worldCamera);
-                    return m_EventCameraCache;
-                }
-
-                Assert.IsNotNull(m_Canvas);
-                Assert.AreNotEqual(RenderMode.ScreenSpaceOverlay, m_Canvas.renderMode);
-                m_EventCameraCache = m_Canvas.worldCamera;
-                Assert.IsNotNull(m_EventCameraCache);
-                return m_EventCameraCache;
-            }
-        }
+        public override Camera eventCamera => m_Canvas.worldCamera;
 
         /// <summary>
         /// Perform a raycast into the screen and collect all graphics underneath it.
