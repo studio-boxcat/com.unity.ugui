@@ -71,24 +71,15 @@ namespace UnityEngine.UI
         /// </summary>
         public override bool Raycast(Vector2 screenPosition, out RaycastResult result)
         {
-            var hitGraphic = Raycast(screenPosition);
-            if (hitGraphic is not null)
-            {
-                result = new RaycastResult(hitGraphic, this, screenPosition);
-                return true;
-            }
-            else
-            {
-                result = default;
-                return false;
-            }
+            result = Raycast(screenPosition);
+            return result.graphic is not null;
         }
 
-        Graphic Raycast(Vector2 screenPosition)
+        RaycastResult Raycast(Vector2 screenPosition)
         {
             var canvasGraphics = GraphicRegistry.GetRaycastableGraphicsForCanvas(canvas);
             if (canvasGraphics == null || canvasGraphics.Count == 0)
-                return null;
+                return default;
 
             int displayIndex;
             var currentEventCamera = eventCamera; // Property can call Camera.main, so cache the reference
@@ -108,7 +99,7 @@ namespace UnityEngine.UI
 
                 // Discard events that are not part of this display so the user does not interact with multiple displays at once.
                 if (eventDisplayIndex != displayIndex)
-                    return null;
+                    return default;
             }
             else
             {
@@ -118,7 +109,7 @@ namespace UnityEngine.UI
 
 #if UNITY_EDITOR
                 if (Display.activeEditorGameViewTarget != displayIndex)
-                    return null;
+                    return default;
                 eventPosition.z = Display.activeEditorGameViewTarget;
 #endif
 
@@ -130,10 +121,12 @@ namespace UnityEngine.UI
 
             // If it's outside the camera's viewport, do nothing
             if (pos.x < 0f || pos.x > 1f || pos.y < 0f || pos.y > 1f)
-                return null;
+                return default;
 
-            return Raycast(currentEventCamera, eventPosition, canvasGraphics, out var hitGraphic)
-                ? hitGraphic : null;
+            if (Raycast(currentEventCamera, eventPosition, canvasGraphics, out var hitGraphic) == false)
+                return default;
+
+            return new RaycastResult(hitGraphic, this, displayIndex, eventPosition);
         }
 
         public override Camera eventCamera => m_Canvas.worldCamera;

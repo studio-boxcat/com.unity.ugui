@@ -20,6 +20,11 @@ namespace UnityEngine.EventSystems
         public GraphicRaycaster module;
 
         /// <summary>
+        /// The display index from which the raycast was generated.
+        /// </summary>
+        public int displayIndex;
+
+        /// <summary>
         /// The screen position from which the raycast was generated.
         /// </summary>
         public Vector2 screenPosition;
@@ -32,11 +37,12 @@ namespace UnityEngine.EventSystems
             get { return module != null && graphic != null; }
         }
 
-        public RaycastResult(Graphic graphic, GraphicRaycaster module, Vector2 screenPosition)
+        public RaycastResult(Graphic graphic, GraphicRaycaster module, int displayIndex, Vector2 screenPosition)
         {
             this.gameObject = graphic?.gameObject;
             this.graphic = graphic;
             this.module = module;
+            this.displayIndex = displayIndex;
             this.screenPosition = screenPosition;
         }
 

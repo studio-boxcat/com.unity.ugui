@@ -8,7 +8,7 @@ namespace UnityEngine.EventSystems
     public static class QuickRaycast
     {
         static readonly List<RaycasterComparisonData> _raycasterBuffer = new();
-        static readonly Dictionary<Camera, Vector2?> _eventPositionCache = new();
+        static readonly Dictionary<Camera, (Vector2, int)?> _eventPositionCache = new();
 
         public static bool Raycast(Vector2 screenPosition, Camera targetCamera, out RaycastResult raycastResult)
         {
@@ -50,14 +50,15 @@ namespace UnityEngine.EventSystems
                 if (graphics == null || graphics.Count == 0)
                     continue;
 
-                if (_eventPositionCache.TryGetValue(eventCamera, out var eventPosition) == false)
-                    eventPosition = _eventPositionCache[eventCamera] = CalculateEventPosition(eventCamera, screenPosition);
-                if (eventPosition == null)
+                if (_eventPositionCache.TryGetValue(eventCamera, out var eventPositionValue) == false)
+                    eventPositionValue = _eventPositionCache[eventCamera] = CalculateEventPosition(eventCamera, screenPosition);
+                if (eventPositionValue == null)
                     continue;
 
-                if (GraphicRaycaster.Raycast(eventCamera, eventPosition.Value, graphics, out var hitGraphic))
+                var (eventPosition, displayIndex) = eventPositionValue.Value;
+                if (GraphicRaycaster.Raycast(eventCamera, eventPosition, graphics, out var hitGraphic))
                 {
-                    raycastResult = new RaycastResult(hitGraphic, raycaster, eventPosition.Value);
+                    raycastResult = new RaycastResult(hitGraphic, raycaster, displayIndex, eventPosition);
                     ClearBuffers();
                     return true;
                 }
@@ -96,7 +97,7 @@ namespace UnityEngine.EventSystems
             _eventPositionCache.Clear();
         }
 
-        static Vector2? CalculateEventPosition(Camera currentEventCamera, Vector2 screenPosition)
+        static (Vector2, int)? CalculateEventPosition(Camera currentEventCamera, Vector2 screenPosition)
         {
             var displayIndex = currentEventCamera.targetDisplay;
 
@@ -133,7 +134,7 @@ namespace UnityEngine.EventSystems
             if (pos.x < 0f || pos.x > 1f || pos.y < 0f || pos.y > 1f)
                 return null;
 
-            return eventPosition;
+            return (eventPosition, displayIndex);
         }
 
         class RaycasterComparisonData
