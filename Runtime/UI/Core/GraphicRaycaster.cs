@@ -14,8 +14,6 @@ namespace UnityEngine.UI
     /// </summary>
     public class GraphicRaycaster : BaseRaycaster
     {
-        protected const int kNoEventMaskSet = -1;
-
         /// <summary>
         /// Priority of the raycaster based upon sort order.
         /// </summary>
@@ -57,8 +55,6 @@ namespace UnityEngine.UI
 
         public Canvas canvas => m_Canvas;
 
-        static List<Graphic> m_RaycastResults = new List<Graphic>();
-
         protected override void Awake()
         {
             base.Awake();
@@ -73,13 +69,26 @@ namespace UnityEngine.UI
         /// <summary>
         /// Perform the raycast against the list of graphics associated with the Canvas.
         /// </summary>
-        /// <param name="eventData">Current event data</param>
-        /// <param name="resultAppendList">List of hit objects to append new results to.</param>
-        public override void Raycast(Vector2 screenPosition, List<RaycastResult> resultAppendList)
+        public override bool Raycast(Vector2 screenPosition, out RaycastResult result)
+        {
+            var hitGraphic = Raycast(screenPosition);
+            if (hitGraphic is not null)
+            {
+                result = new RaycastResult(hitGraphic, this, screenPosition);
+                return true;
+            }
+            else
+            {
+                result = default;
+                return false;
+            }
+        }
+
+        Graphic Raycast(Vector2 screenPosition)
         {
             var canvasGraphics = GraphicRegistry.GetRaycastableGraphicsForCanvas(canvas);
             if (canvasGraphics == null || canvasGraphics.Count == 0)
-                return;
+                return null;
 
             int displayIndex;
             var currentEventCamera = eventCamera; // Property can call Camera.main, so cache the reference
@@ -99,7 +108,7 @@ namespace UnityEngine.UI
 
                 // Discard events that are not part of this display so the user does not interact with multiple displays at once.
                 if (eventDisplayIndex != displayIndex)
-                    return;
+                    return null;
             }
             else
             {
@@ -109,7 +118,7 @@ namespace UnityEngine.UI
 
 #if UNITY_EDITOR
                 if (Display.activeEditorGameViewTarget != displayIndex)
-                    return;
+                    return null;
                 eventPosition.z = Display.activeEditorGameViewTarget;
 #endif
 
@@ -121,31 +130,10 @@ namespace UnityEngine.UI
 
             // If it's outside the camera's viewport, do nothing
             if (pos.x < 0f || pos.x > 1f || pos.y < 0f || pos.y > 1f)
-                return;
+                return null;
 
-            m_RaycastResults.Clear();
-
-            Raycast(currentEventCamera, eventPosition, canvasGraphics, m_RaycastResults);
-
-            int totalCount = m_RaycastResults.Count;
-            for (var index = 0; index < totalCount; index++)
-            {
-                var go = m_RaycastResults[index].gameObject;
-
-                {
-                    var castResult = new RaycastResult
-                    {
-                        gameObject = go,
-                        module = this,
-                        screenPosition = eventPosition,
-                        index = resultAppendList.Count,
-                        depth = m_RaycastResults[index].depth,
-                        sortingLayer = canvas.sortingLayerID,
-                        sortingOrder = canvas.sortingOrder,
-                    };
-                    resultAppendList.Add(castResult);
-                }
-            }
+            return Raycast(currentEventCamera, eventPosition, canvasGraphics, out var hitGraphic)
+                ? hitGraphic : null;
         }
 
         public override Camera eventCamera => m_Canvas.worldCamera;
@@ -154,16 +142,22 @@ namespace UnityEngine.UI
         /// Perform a raycast into the screen and collect all graphics underneath it.
         /// </summary>
         [NonSerialized] static readonly List<Graphic> s_SortedGraphics = new List<Graphic>();
-        private static void Raycast([NotNull] Camera eventCamera, Vector2 pointerPosition, IList<Graphic> foundGraphics, List<Graphic> results)
+        public static bool Raycast([NotNull] Camera eventCamera, Vector2 pointerPosition, IList<Graphic> foundGraphics, out Graphic result)
         {
+            Assert.AreEqual(0, s_SortedGraphics.Count);
+
             // Necessary for the event system
+            Graphic maxDepthGraphic = null;
+            int maxDepth = -1; // -1 means it hasn't been processed by the canvas, which means it isn't actually drawn
             int totalCount = foundGraphics.Count;
             for (int i = 0; i < totalCount; ++i)
             {
                 Graphic graphic = foundGraphics[i];
+                var graphicDepth = graphic.depth;
+                if (graphicDepth < maxDepth)
+                    continue;
 
-                // -1 means it hasn't been processed by the canvas, which means it isn't actually drawn
-                if (!graphic.raycastTarget || graphic.canvasRenderer.cull || graphic.depth == -1)
+                if (!graphic.raycastTarget || graphic.canvasRenderer.cull)
                     continue;
 
                 if (!RectTransformUtility.RectangleContainsScreenPoint(graphic.rectTransform, pointerPosition, eventCamera, graphic.raycastPadding))
@@ -174,16 +168,13 @@ namespace UnityEngine.UI
 
                 if (graphic.Raycast(pointerPosition, eventCamera))
                 {
-                    s_SortedGraphics.Add(graphic);
+                    maxDepthGraphic = graphic;
+                    maxDepth = graphicDepth;
                 }
             }
 
-            s_SortedGraphics.Sort((g1, g2) => g2.depth.CompareTo(g1.depth));
-            totalCount = s_SortedGraphics.Count;
-            for (int i = 0; i < totalCount; ++i)
-                results.Add(s_SortedGraphics[i]);
-
-            s_SortedGraphics.Clear();
+            result = maxDepthGraphic;
+            return result is not null;
         }
 
 #if UNITY_EDITOR

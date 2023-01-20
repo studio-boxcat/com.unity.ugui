@@ -16,9 +16,7 @@ namespace UnityEngine.EventSystems
         /// <summary>
         /// Raycast against the scene.
         /// </summary>
-        /// <param name="eventData">Current event data.</param>
-        /// <param name="resultAppendList">List of hit Objects.</param>
-        public abstract void Raycast(Vector2 screenPosition, List<RaycastResult> resultAppendList);
+        public abstract bool Raycast(Vector2 screenPosition, out RaycastResult result);
 
         /// <summary>
         /// The camera that will generate rays for this raycaster.

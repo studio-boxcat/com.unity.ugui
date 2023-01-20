@@ -78,17 +78,14 @@ namespace UnityEngine.EventSystems
 
             pointerData.button = PointerEventData.InputButton.Left;
 
-            if (input.phase == TouchPhase.Canceled)
+            if (input.phase == TouchPhase.Canceled
+                || QuickRaycast.RaycastAll(pointerData.position, out var raycastResult) == false)
             {
-                pointerData.pointerCurrentRaycast = new RaycastResult();
+                pointerData.pointerCurrentRaycast = default;
             }
             else
             {
-                eventSystem.RaycastAll(pointerData.position, m_RaycastResultCache);
-
-                var raycast = FindFirstRaycast(m_RaycastResultCache);
-                pointerData.pointerCurrentRaycast = raycast;
-                m_RaycastResultCache.Clear();
+                pointerData.pointerCurrentRaycast = raycastResult;
             }
 
             pointerData.radius = Vector2.one * input.radius;
@@ -250,10 +247,8 @@ namespace UnityEngine.EventSystems
             }
             leftData.scrollDelta = input.mouseScrollDelta;
             leftData.button = PointerEventData.InputButton.Left;
-            eventSystem.RaycastAll(leftData.position, m_RaycastResultCache);
-            var raycast = FindFirstRaycast(m_RaycastResultCache);
-            leftData.pointerCurrentRaycast = raycast;
-            m_RaycastResultCache.Clear();
+            leftData.pointerCurrentRaycast = QuickRaycast.RaycastAll(leftData.position, out var raycastResult)
+                ? raycastResult : default;
 
             m_MouseState.SetButtonState(PointerEventData.InputButton.Left, StateForMouseButton(0), leftData);
 

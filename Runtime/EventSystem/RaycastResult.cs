@@ -1,3 +1,5 @@
+using UnityEngine.UI;
+
 namespace UnityEngine.EventSystems
 {
     /// <summary>
@@ -5,56 +7,17 @@ namespace UnityEngine.EventSystems
     /// </summary>
     public struct RaycastResult
     {
-        private GameObject m_GameObject; // Game object hit by the raycast
-
         /// <summary>
         /// The GameObject that was hit by the raycast.
         /// </summary>
-        public GameObject gameObject
-        {
-            get { return m_GameObject; }
-            set { m_GameObject = value; }
-        }
+        public GameObject gameObject;
+
+        public Graphic graphic;
 
         /// <summary>
         /// BaseRaycaster that raised the hit.
         /// </summary>
-        public BaseRaycaster module;
-
-        /// <summary>
-        /// Hit index
-        /// </summary>
-        public float index;
-
-        /// <summary>
-        /// Used by raycasters where elements may have the same unit distance, but have specific ordering.
-        /// </summary>
-        public int depth;
-
-        /// <summary>
-        /// The SortingLayer of the hit object.
-        /// </summary>
-        /// <remarks>
-        /// For UI.Graphic elements this will be the values from that graphic's Canvas
-        /// For 3D objects this will always be 0.
-        /// For 2D objects if a 2D Renderer (Sprite, Tilemap, SpriteShape) is attached to the same object as the hit collider that sortingLayerID will be used.
-        /// </remarks>
-        public int sortingLayer;
-
-        /// <summary>
-        /// The SortingOrder for the hit object.
-        /// </summary>
-        /// <remarks>
-        /// For Graphic elements this will be the values from that graphics Canvas
-        /// For 3D objects this will always be 0.
-        /// For 2D objects if a 2D Renderer (Sprite, Tilemap, SpriteShape) is attached to the same object as the hit collider that sortingOrder will be used.
-        /// </remarks>
-        public int sortingOrder;
-
-        /// <summary>
-        /// The world position of the where the raycast has hit.
-        /// </summary>
-        public Vector3 worldPosition;
+        public GraphicRaycaster module;
 
         /// <summary>
         /// The screen position from which the raycast was generated.
@@ -66,21 +29,15 @@ namespace UnityEngine.EventSystems
         /// </summary>
         public bool isValid
         {
-            get { return module != null && gameObject != null; }
+            get { return module != null && graphic != null; }
         }
 
-        /// <summary>
-        /// Reset the result.
-        /// </summary>
-        public void Clear()
+        public RaycastResult(Graphic graphic, GraphicRaycaster module, Vector2 screenPosition)
         {
-            gameObject = null;
-            module = null;
-            index = 0;
-            depth = 0;
-            sortingLayer = 0;
-            sortingOrder = 0;
-            screenPosition = Vector3.zero;
+            this.gameObject = graphic?.gameObject;
+            this.graphic = graphic;
+            this.module = module;
+            this.screenPosition = screenPosition;
         }
 
         public override string ToString()
@@ -88,15 +45,11 @@ namespace UnityEngine.EventSystems
             if (!isValid)
                 return "";
 
-            return "Name: " + gameObject + "\n" +
+            return "Name: " + graphic.name + "\n" +
                 "module: " + module + "\n" +
-                "index: " + index + "\n" +
-                "depth: " + depth + "\n" +
                 "screenPosition: " + screenPosition + "\n" +
                 "module.sortOrderPriority: " + module.sortOrderPriority + "\n" +
-                "module.renderOrderPriority: " + module.renderOrderPriority + "\n" +
-                "sortingLayer: " + sortingLayer + "\n" +
-                "sortingOrder: " + sortingOrder;
+                "module.renderOrderPriority: " + module.renderOrderPriority;
         }
     }
 }

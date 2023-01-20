@@ -36,9 +36,6 @@ namespace UnityEngine.EventSystems
     /// </example>
     public abstract class BaseInputModule : UIBehaviour
     {
-        [NonSerialized]
-        protected List<RaycastResult> m_RaycastResultCache = new List<RaycastResult>();
-
         /// <summary>
         /// True if pointer hover events will be sent to the parent
         /// </summary>
@@ -117,22 +114,6 @@ namespace UnityEngine.EventSystems
         /// Process the current tick for the module.
         /// </summary>
         public abstract void Process();
-
-        /// <summary>
-        /// Return the first valid RaycastResult.
-        /// </summary>
-        protected static RaycastResult FindFirstRaycast(List<RaycastResult> candidates)
-        {
-            var candidatesCount = candidates.Count;
-            for (var i = 0; i < candidatesCount; ++i)
-            {
-                if (candidates[i].gameObject == null)
-                    continue;
-
-                return candidates[i];
-            }
-            return new RaycastResult();
-        }
 
         /// <summary>
         /// Given 2 GameObjects, return a common root GameObject (or null).
