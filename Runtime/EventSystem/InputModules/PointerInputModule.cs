@@ -315,14 +315,6 @@ namespace UnityEngine.EventSystems
             }
         }
 
-        public override bool IsPointerOverGameObject(int pointerId)
-        {
-            var lastPointer = GetLastPointerEventData(pointerId);
-            if (lastPointer != null)
-                return lastPointer.pointerEnter != null;
-            return false;
-        }
-
         /// <summary>
         /// Clear all pointers and deselect any selected objects in the EventSystem.
         /// </summary>

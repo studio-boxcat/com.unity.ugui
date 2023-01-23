@@ -261,16 +261,6 @@ namespace UnityEngine.EventSystems
         }
 
         /// <summary>
-        /// If the module is pointer based, then override this to return true if the pointer is over an event system object.
-        /// </summary>
-        /// <param name="pointerId">Pointer ID</param>
-        /// <returns>Is the given pointer over an event system object?</returns>
-        public virtual bool IsPointerOverGameObject(int pointerId)
-        {
-            return false;
-        }
-
-        /// <summary>
         /// Should the module be activated.
         /// </summary>
         public virtual bool ShouldActivateModule()
