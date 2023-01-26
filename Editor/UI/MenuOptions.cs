@@ -337,7 +337,7 @@ namespace UnityEditor.UI
         static public GameObject CreateNewUI()
         {
             // Root for the UI
-            var root = ObjectFactory.CreateGameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            var root = ObjectFactory.CreateGameObject("Canvas", typeof(Canvas), typeof(CanvasRenderer), typeof(CanvasScaler), typeof(GraphicRaycaster));
             root.layer = LayerMask.NameToLayer(kUILayerName);
             Canvas canvas = root.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
