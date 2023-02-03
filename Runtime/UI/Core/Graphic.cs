@@ -827,8 +827,7 @@ namespace UnityEngine.UI
                 t.GetComponents(components);
                 for (var i = 0; i < components.Count; i++)
                 {
-                    var canvas = components[i] as Canvas;
-                    if (canvas != null && canvas.overrideSorting)
+                    if (components[i] is Canvas {overrideSorting: true})
                         continueTraversal = false;
 
                     var filter = components[i] as ICanvasRaycastFilter;
@@ -838,8 +837,7 @@ namespace UnityEngine.UI
 
                     var raycastValid = true;
 
-                    var group = components[i] as CanvasGroup;
-                    if (group != null)
+                    if (components[i] is CanvasGroup group)
                     {
                         if (!group.enabled)
                             continue;
