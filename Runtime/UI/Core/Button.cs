@@ -22,6 +22,8 @@ namespace UnityEngine.UI
         [SerializeField]
         private ButtonClickedEvent m_OnClick = new ButtonClickedEvent();
 
+        public event Action<Button> OnClick;
+
         protected Button()
         {}
 
@@ -67,6 +69,7 @@ namespace UnityEngine.UI
 
             UISystemProfilerApi.AddMarker("Button.onClick", this);
             m_OnClick.Invoke();
+            OnClick?.Invoke(this);
         }
 
         /// <summary>
