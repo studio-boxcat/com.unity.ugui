@@ -9,6 +9,7 @@ namespace UnityEngine.UI
 {
     [AddComponentMenu("Event/Graphic Raycaster")]
     [RequireComponent(typeof(Canvas))]
+    [RequireComponent(typeof(CanvasRenderer))]
     /// <summary>
     /// A derived BaseRaycaster to raycast against Graphic elements.
     /// </summary>
