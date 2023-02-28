@@ -8,7 +8,7 @@ namespace UnityEngine.EventSystems
     public static class QuickRaycast
     {
         static readonly List<RaycasterComparisonData> _raycasterBuffer = new();
-        static readonly Dictionary<Camera, Vector2?> _eventPositionCache = new();
+        static readonly Dictionary<Camera, bool> _eligibleCameraCache = new();
 
         public static bool Raycast(Vector2 screenPosition, Camera targetCamera, out RaycastResult raycastResult)
         {
@@ -80,9 +80,9 @@ namespace UnityEngine.EventSystems
                 ClearBuffers();
             }
 
-            if (_eventPositionCache.Count > 0)
+            if (_eligibleCameraCache.Count > 0)
             {
-                Debug.LogError("_eventPositionCache 가 비어있지 않습니다.");
+                Debug.LogError("_eligibleCameraCache 가 비어있지 않습니다.");
                 ClearBuffers();
             }
         }
@@ -92,11 +92,11 @@ namespace UnityEngine.EventSystems
             foreach (var item in _raycasterBuffer)
                 RaycasterComparisonData.Release(item);
             _raycasterBuffer.Clear();
-            _eventPositionCache.Clear();
+            _eligibleCameraCache.Clear();
         }
 
         private static bool RaycastToGraphicRaycaster(
-            BaseRaycaster raycaster, Camera eventCamera, Canvas canvas, Vector2 screenPosition,
+            BaseRaycaster raycaster, Camera camera, Canvas canvas, Vector2 screenPosition,
             out RaycastResult raycastResult)
         {
             Assert.AreNotEqual(RenderMode.ScreenSpaceOverlay, canvas.renderMode);
@@ -107,31 +107,22 @@ namespace UnityEngine.EventSystems
                 return false;
             }
 
-            if (_eventPositionCache.TryGetValue(eventCamera, out var eventPositionValue) == false)
-                eventPositionValue = _eventPositionCache[eventCamera] =
-                    CalculateEventPosition(eventCamera, screenPosition);
-            if (eventPositionValue == null)
+            if (_eligibleCameraCache.TryGetValue(camera, out var isCameraEligible) == false)
+                isCameraEligible = _eligibleCameraCache[camera] = RaycastUtils.IsInside(camera, screenPosition);
+            if (isCameraEligible == false)
             {
                 raycastResult = default;
                 return false;
             }
 
-            var eventPosition = eventPositionValue.Value;
-            if (GraphicRaycaster.Raycast(eventCamera, eventPosition, graphics, out var hitGraphic))
+            if (GraphicRaycaster.Raycast(camera, screenPosition, graphics, out var hitGraphic))
             {
-                raycastResult = new RaycastResult(hitGraphic, raycaster, eventPosition);
+                raycastResult = new RaycastResult(hitGraphic, raycaster, screenPosition);
                 return true;
             }
 
             raycastResult = default;
             return false;
-
-            static Vector2? CalculateEventPosition(Camera currentEventCamera, Vector2 screenPosition)
-            {
-                return RaycastUtils.TranslateScreenPosition(screenPosition, currentEventCamera, out var eventPosition)
-                    ? eventPosition
-                    : null;
-            }
         }
 
         class RaycasterComparisonData

@@ -55,15 +55,14 @@ namespace UnityEngine.EventSystems
         {
             var eventCamera = m_EventCamera;
 
-            if (RaycastUtils.TranslateScreenPosition(
-                    screenPosition, eventCamera, out var eventPosition) == false)
+            if (RaycastUtils.IsInside(eventCamera, screenPosition) == false)
             {
                 ray = default;
                 distance = default;
                 return default;
             }
 
-            ray = eventCamera.ScreenPointToRay(eventPosition);
+            ray = eventCamera.ScreenPointToRay(screenPosition);
             distance = eventCamera.farClipPlane - eventCamera.nearClipPlane;
             return true;
         }
