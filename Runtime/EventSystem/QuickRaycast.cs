@@ -8,7 +8,7 @@ namespace UnityEngine.EventSystems
     public static class QuickRaycast
     {
         static readonly List<RaycasterComparisonData> _raycasterBuffer = new();
-        static readonly Dictionary<Camera, (Vector2, int)?> _eventPositionCache = new();
+        static readonly Dictionary<Camera, Vector2?> _eventPositionCache = new();
 
         public static bool Raycast(Vector2 screenPosition, Camera targetCamera, out RaycastResult raycastResult)
         {
@@ -16,10 +16,8 @@ namespace UnityEngine.EventSystems
 
             // Raycaster 모으기.
             var modules = RaycasterManager.GetRaycasters();
-            foreach (GraphicRaycaster module in modules)
+            foreach (var module in modules)
             {
-                if (!module.IsActive()) continue;
-
                 var eventCamera = module.eventCamera;
                 if (targetCamera is not null && ReferenceEquals(eventCamera, targetCamera) == false)
                     continue;
@@ -43,22 +41,8 @@ namespace UnityEngine.EventSystems
             foreach (var item in _raycasterBuffer)
             {
                 var raycaster = item.Raycaster;
-                var eventCamera = item.Camera;
-
-                Assert.AreNotEqual(RenderMode.ScreenSpaceOverlay, item.Canvas.renderMode);
-                var graphics = GraphicRegistry.GetGraphicsForCanvas(item.Canvas);
-                if (graphics == null || graphics.Count == 0)
-                    continue;
-
-                if (_eventPositionCache.TryGetValue(eventCamera, out var eventPositionValue) == false)
-                    eventPositionValue = _eventPositionCache[eventCamera] = CalculateEventPosition(eventCamera, screenPosition);
-                if (eventPositionValue == null)
-                    continue;
-
-                var (eventPosition, displayIndex) = eventPositionValue.Value;
-                if (GraphicRaycaster.Raycast(eventCamera, eventPosition, graphics, out var hitGraphic))
+                if (Raycast(raycaster, item, screenPosition, out raycastResult))
                 {
-                    raycastResult = new RaycastResult(hitGraphic, raycaster, displayIndex, eventPosition);
                     ClearBuffers();
                     return true;
                 }
@@ -67,6 +51,20 @@ namespace UnityEngine.EventSystems
             raycastResult = default;
             ClearBuffers();
             return false;
+
+            static bool Raycast(
+                BaseRaycaster raycaster, RaycasterComparisonData data, Vector2 screenPosition,
+                out RaycastResult raycastResult)
+            {
+                // For GraphicRaycaster, we will call optimized Raycast method.
+                if (raycaster is GraphicRaycaster)
+                {
+                    return RaycastToGraphicRaycaster(raycaster, data.Camera, data.Canvas, screenPosition,
+                        out raycastResult);
+                }
+
+                return raycaster.Raycast(screenPosition, out raycastResult);
+            }
         }
 
         public static bool RaycastAll(Vector2 screenPosition, out RaycastResult raycastResult)
@@ -74,7 +72,7 @@ namespace UnityEngine.EventSystems
             return Raycast(screenPosition, null, out raycastResult);
         }
 
-        static void EnsureBufferCleared()
+        private static void EnsureBufferCleared()
         {
             if (_raycasterBuffer.Count > 0)
             {
@@ -89,7 +87,7 @@ namespace UnityEngine.EventSystems
             }
         }
 
-        static void ClearBuffers()
+        private static void ClearBuffers()
         {
             foreach (var item in _raycasterBuffer)
                 RaycasterComparisonData.Release(item);
@@ -97,51 +95,50 @@ namespace UnityEngine.EventSystems
             _eventPositionCache.Clear();
         }
 
-        static (Vector2, int)? CalculateEventPosition(Camera currentEventCamera, Vector2 screenPosition)
+        private static bool RaycastToGraphicRaycaster(
+            BaseRaycaster raycaster, Camera eventCamera, Canvas canvas, Vector2 screenPosition,
+            out RaycastResult raycastResult)
         {
-            var displayIndex = currentEventCamera.targetDisplay;
-
-            var eventPosition = MultipleDisplayUtilities.RelativeMouseAtScaled(screenPosition);
-            if (eventPosition != Vector3.zero)
+            Assert.AreNotEqual(RenderMode.ScreenSpaceOverlay, canvas.renderMode);
+            var graphics = GraphicRegistry.GetGraphicsForCanvas(canvas);
+            if (graphics == null || graphics.Count == 0)
             {
-                // We support multiple display and display identification based on event position.
-
-                int eventDisplayIndex = (int) eventPosition.z;
-
-                // Discard events that are not part of this display so the user does not interact with multiple displays at once.
-                if (eventDisplayIndex != displayIndex)
-                    return null;
-            }
-            else
-            {
-                // The multiple display system is not supported on all platforms, when it is not supported the returned position
-                // will be all zeros so when the returned index is 0 we will default to the event data to be safe.
-                eventPosition = screenPosition;
-
-#if UNITY_EDITOR
-                if (Display.activeEditorGameViewTarget != displayIndex)
-                    return null;
-                eventPosition.z = Display.activeEditorGameViewTarget;
-#endif
-
-                // We dont really know in which display the event occured. We will process the event assuming it occured in our display.
+                raycastResult = default;
+                return false;
             }
 
-            // Convert to view space
-            Vector2 pos = currentEventCamera.ScreenToViewportPoint(eventPosition);
+            if (_eventPositionCache.TryGetValue(eventCamera, out var eventPositionValue) == false)
+                eventPositionValue = _eventPositionCache[eventCamera] =
+                    CalculateEventPosition(eventCamera, screenPosition);
+            if (eventPositionValue == null)
+            {
+                raycastResult = default;
+                return false;
+            }
 
-            // If it's outside the camera's viewport, do nothing
-            if (pos.x < 0f || pos.x > 1f || pos.y < 0f || pos.y > 1f)
-                return null;
+            var eventPosition = eventPositionValue.Value;
+            if (GraphicRaycaster.Raycast(eventCamera, eventPosition, graphics, out var hitGraphic))
+            {
+                raycastResult = new RaycastResult(hitGraphic, raycaster, eventPosition);
+                return true;
+            }
 
-            return (eventPosition, displayIndex);
+            raycastResult = default;
+            return false;
+
+            static Vector2? CalculateEventPosition(Camera currentEventCamera, Vector2 screenPosition)
+            {
+                return RaycastUtils.TranslateScreenPosition(screenPosition, currentEventCamera, out var eventPosition)
+                    ? eventPosition
+                    : null;
+            }
         }
 
         class RaycasterComparisonData
         {
             static readonly Stack<RaycasterComparisonData> _pool = new();
 
-            public static RaycasterComparisonData Rent(GraphicRaycaster raycaster, Camera eventCamera)
+            public static RaycasterComparisonData Rent(BaseRaycaster raycaster, Camera eventCamera)
             {
                 if (_pool.TryPop(out var data))
                 {
@@ -160,15 +157,13 @@ namespace UnityEngine.EventSystems
                 _pool.Push(data);
             }
 
-            public GraphicRaycaster Raycaster;
+            public BaseRaycaster Raycaster;
             public Camera Camera;
 
             Canvas _canvas;
-            public Canvas Canvas => _canvas ??= Raycaster.canvas;
+            public Canvas Canvas => _canvas ??= ((GraphicRaycaster) Raycaster).canvas;
 
             float _cameraDepth = float.NaN;
-            int _sortOrderPriority = int.MaxValue;
-            int _renderOrderPriority = int.MaxValue;
             int _sortingLayerID = int.MaxValue;
             int _sortingLayerValue = int.MaxValue;
             int _sortingOrder = int.MaxValue;
@@ -176,13 +171,13 @@ namespace UnityEngine.EventSystems
             int _canvasRendererDepth = int.MaxValue;
 
 
-            public RaycasterComparisonData(GraphicRaycaster raycaster, Camera eventCamera)
+            public RaycasterComparisonData(BaseRaycaster raycaster, Camera eventCamera)
             {
                 Raycaster = raycaster;
                 Camera = eventCamera;
             }
 
-            public void Init(GraphicRaycaster raycaster, Camera eventCamera)
+            public void Init(BaseRaycaster raycaster, Camera eventCamera)
             {
                 Assert.IsNotNull(raycaster);
                 Assert.IsNotNull(eventCamera);
@@ -191,8 +186,6 @@ namespace UnityEngine.EventSystems
                 Camera = eventCamera;
                 _canvas = default;
                 _cameraDepth = float.NaN;
-                _sortOrderPriority = int.MaxValue;
-                _renderOrderPriority = int.MaxValue;
                 _sortingLayerID = int.MaxValue;
                 _sortingLayerValue = int.MaxValue;
                 _sortingOrder = int.MaxValue;
@@ -213,52 +206,31 @@ namespace UnityEngine.EventSystems
                 if (other._cameraDepth == float.NaN)
                     other._cameraDepth = other.Camera.depth;
 
-                if (_cameraDepth != other._cameraDepth)
+                if (_cameraDepth == other._cameraDepth)
+                    throw new Exception("Given cameras are different but have the same depth.");
+
+                result = _cameraDepth < other._cameraDepth ? 1 : -1;
+                return true;
+            }
+
+            public bool CompareRaycasterType(RaycasterComparisonData other, out int result)
+            {
+                if (Raycaster is not GraphicRaycaster)
                 {
-                    result = _cameraDepth < other._cameraDepth ? 1 : -1;
+                    Assert.IsTrue(other.Raycaster is GraphicRaycaster);
+                    result = 1;
+                    return true;
+                }
+
+                if (other.Raycaster is not GraphicRaycaster)
+                {
+                    Assert.IsTrue(Raycaster is GraphicRaycaster);
+                    result = -1;
                     return true;
                 }
 
                 result = default;
                 return false;
-            }
-
-            public bool CompareSortOrderPriority(RaycasterComparisonData other, out int compareResult)
-            {
-                if (_sortOrderPriority == int.MaxValue)
-                    _sortOrderPriority = Raycaster.sortOrderPriority;
-                if (other._sortOrderPriority == int.MaxValue)
-                    other._sortOrderPriority = other.Raycaster.sortOrderPriority;
-
-                if (_sortOrderPriority != other._sortOrderPriority)
-                {
-                    compareResult = other._sortOrderPriority.CompareTo(_sortOrderPriority);
-                    return true;
-                }
-                else
-                {
-                    compareResult = default;
-                    return false;
-                }
-            }
-
-            public bool CompareRenderOrderPriority(RaycasterComparisonData other, out int compareResult)
-            {
-                if (_renderOrderPriority == int.MaxValue)
-                    _renderOrderPriority = Raycaster.renderOrderPriority;
-                if (other._renderOrderPriority == int.MaxValue)
-                    other._renderOrderPriority = other.Raycaster.renderOrderPriority;
-
-                if (_renderOrderPriority != other._renderOrderPriority)
-                {
-                    compareResult = other._renderOrderPriority.CompareTo(_renderOrderPriority);
-                    return true;
-                }
-                else
-                {
-                    compareResult = default;
-                    return false;
-                }
             }
 
             public bool CompareSortingLayerValue(RaycasterComparisonData other, out int result)
@@ -348,14 +320,12 @@ namespace UnityEngine.EventSystems
             {
                 Assert.AreNotEqual(lhs.Raycaster, rhs.Raycaster);
 
-                // 카메라가 다르고 뎁스도 다른 경우, 뎁스로 비교.
+                // If the cameras are different and the depths are different, compare by depth.
                 if (lhs.CompareCameraDepth(rhs, out var compareResult))
                     return compareResult;
 
-                // 아래부터는 카메라가 동일하거나 뎁스가 동일한 경우.
-                if (lhs.CompareSortOrderPriority(rhs, out compareResult))
-                    return compareResult;
-                if (lhs.CompareRenderOrderPriority(rhs, out compareResult))
+                // If the raycasters are different and one is a GraphicRaycaster, compare by raycaster type.
+                if (lhs.CompareRaycasterType(rhs, out compareResult))
                     return compareResult;
 
                 var lhsCanvas = lhs.Canvas;

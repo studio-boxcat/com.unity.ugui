@@ -1,5 +1,3 @@
-using UnityEngine.UI;
-
 namespace UnityEngine.EventSystems
 {
     /// <summary>
@@ -12,50 +10,34 @@ namespace UnityEngine.EventSystems
         /// </summary>
         public GameObject gameObject;
 
-        public Graphic graphic;
+        public Component collider;
 
         /// <summary>
         /// BaseRaycaster that raised the hit.
         /// </summary>
-        public GraphicRaycaster module;
-
-        /// <summary>
-        /// The display index from which the raycast was generated.
-        /// </summary>
-        public int displayIndex;
+        public BaseRaycaster module;
 
         /// <summary>
         /// The screen position from which the raycast was generated.
         /// </summary>
         public Vector2 screenPosition;
 
-        /// <summary>
-        /// Is there an associated module and a hit GameObject.
-        /// </summary>
-        public bool isValid
+        public RaycastResult(Component collider, BaseRaycaster module, Vector2 screenPosition)
         {
-            get { return module != null && graphic != null; }
-        }
-
-        public RaycastResult(Graphic graphic, GraphicRaycaster module, int displayIndex, Vector2 screenPosition)
-        {
-            this.gameObject = graphic?.gameObject;
-            this.graphic = graphic;
+            this.gameObject = collider?.gameObject;
+            this.collider = collider;
             this.module = module;
-            this.displayIndex = displayIndex;
             this.screenPosition = screenPosition;
         }
 
         public override string ToString()
         {
-            if (!isValid)
+            if (module == null || collider == null)
                 return "";
 
-            return "Name: " + graphic.name + "\n" +
-                "module: " + module + "\n" +
-                "screenPosition: " + screenPosition + "\n" +
-                "module.sortOrderPriority: " + module.sortOrderPriority + "\n" +
-                "module.renderOrderPriority: " + module.renderOrderPriority;
+            return "Name: " + collider.name + "\n" +
+                   "module: " + module + "\n" +
+                   "screenPosition: " + screenPosition;
         }
     }
 }
