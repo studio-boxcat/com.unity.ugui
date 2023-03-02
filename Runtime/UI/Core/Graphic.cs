@@ -382,7 +382,7 @@ namespace UnityEngine.UI
                 // null-reference check is sufficient.
                 if (ReferenceEquals(m_RectTransform, null))
                 {
-                    m_RectTransform = GetComponent<RectTransform>();
+                    m_RectTransform = (RectTransform) transform;
                 }
                 return m_RectTransform;
             }
