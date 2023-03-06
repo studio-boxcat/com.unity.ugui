@@ -36,7 +36,7 @@ namespace UnityEngine.UI
 
         public TextGenerator cachedTextGenerator
         {
-            get { return m_TextCache ?? (m_TextCache = (m_Text.Length != 0 ? new TextGenerator(m_Text.Length) : new TextGenerator())); }
+            get { return m_TextCache ??= TextGeneratorPool.Rent(); }
         }
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace UnityEngine.UI
         /// </summary>
         public TextGenerator cachedTextGeneratorForLayout
         {
-            get { return m_TextCacheForLayout ?? (m_TextCacheForLayout = new TextGenerator()); }
+            get { return m_TextCacheForLayout ??= TextGeneratorPool.Rent(); }
         }
 
         /// <summary>
@@ -571,6 +571,23 @@ namespace UnityEngine.UI
             base.OnDisable();
         }
 
+        protected override void OnDestroy()
+        {
+            if (m_TextCache != null)
+            {
+                TextGeneratorPool.Return(m_TextCache);
+                m_TextCache = null;
+            }
+
+            if (m_TextCacheForLayout != null)
+            {
+                TextGeneratorPool.Return(m_TextCacheForLayout);
+                m_TextCacheForLayout = null;
+            }
+
+            base.OnDestroy();
+        }
+
         protected override void UpdateGeometry()
         {
             if (font != null)
@@ -639,7 +656,7 @@ namespace UnityEngine.UI
             }
         }
 
-        readonly UIVertex[] m_TempVerts = new UIVertex[4];
+        static readonly UIVertex[] m_TempVerts = new UIVertex[4];
         protected override void OnPopulateMesh(VertexHelper toFill)
         {
             if (font == null)
