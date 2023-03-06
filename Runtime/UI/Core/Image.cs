@@ -894,7 +894,7 @@ namespace UnityEngine.UI
             // Calculate the drawing offset based on the difference between the two pivots.
             var drawOffset = (rectPivot - spritePivot) * drawingSize;
 
-            var color32 = color;
+            Color32 color32 = color;
             vh.Clear();
 
             Vector2[] vertices = activeSprite.vertices;
