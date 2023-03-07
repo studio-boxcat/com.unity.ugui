@@ -44,6 +44,7 @@ namespace UnityEngine.UI
         private List<Vector3> m_Positions;
         private List<Color32> m_Colors;
         private List<Vector4> m_Uv0S;
+        private List<Vector4> m_Uv1S;
         private List<int> m_Indices;
 
         private bool m_ListsInitalized = false;
@@ -57,7 +58,11 @@ namespace UnityEngine.UI
 
             m_Positions.AddRange(m.vertices);
             m_Colors.AddRange(m.colors32);
-            m.GetUVs(0, m_Uv0S);
+            List<Vector4> tempUVList = new List<Vector4>();
+            m.GetUVs(0, tempUVList);
+            m_Uv0S.AddRange(tempUVList);
+            m.GetUVs(1, tempUVList);
+            m_Uv1S.AddRange(tempUVList);
             m_Indices.AddRange(m.GetIndices(0));
         }
 
@@ -68,6 +73,7 @@ namespace UnityEngine.UI
                 m_Positions = ListPool<Vector3>.Get();
                 m_Colors = ListPool<Color32>.Get();
                 m_Uv0S = ListPool<Vector4>.Get();
+                m_Uv1S = ListPool<Vector4>.Get();
                 m_Indices = ListPool<int>.Get();
                 m_ListsInitalized = true;
             }
@@ -83,11 +89,13 @@ namespace UnityEngine.UI
                 ListPool<Vector3>.Release(m_Positions);
                 ListPool<Color32>.Release(m_Colors);
                 ListPool<Vector4>.Release(m_Uv0S);
+                ListPool<Vector4>.Release(m_Uv1S);
                 ListPool<int>.Release(m_Indices);
 
                 m_Positions = null;
                 m_Colors = null;
                 m_Uv0S = null;
+                m_Uv1S = null;
                 m_Indices = null;
 
                 m_ListsInitalized = false;
@@ -105,6 +113,7 @@ namespace UnityEngine.UI
                 m_Positions.Clear();
                 m_Colors.Clear();
                 m_Uv0S.Clear();
+                m_Uv1S.Clear();
                 m_Indices.Clear();
             }
         }
@@ -137,6 +146,7 @@ namespace UnityEngine.UI
             vertex.position = m_Positions[i];
             vertex.color = m_Colors[i];
             vertex.uv0 = m_Uv0S[i];
+            vertex.uv1 = m_Uv1S[i];
         }
 
         /// <summary>
@@ -151,6 +161,7 @@ namespace UnityEngine.UI
             m_Positions[i] = vertex.position;
             m_Colors[i] = vertex.color;
             m_Uv0S[i] = vertex.uv0;
+            m_Uv1S[i] = vertex.uv1;
         }
 
         /// <summary>
@@ -168,6 +179,7 @@ namespace UnityEngine.UI
             mesh.SetVertices(m_Positions);
             mesh.SetColors(m_Colors);
             mesh.SetUVs(0, m_Uv0S);
+            mesh.SetUVs(1, m_Uv1S);
             mesh.SetTriangles(m_Indices, 0);
             mesh.RecalculateBounds();
         }
@@ -183,13 +195,25 @@ namespace UnityEngine.UI
         /// <param name="uv3">UV3 of the vert</param>
         /// <param name="normal">Normal of the vert.</param>
         /// <param name="tangent">Tangent of the vert</param>
-        public void AddVert(Vector3 position, Color32 color, Vector4 uv0)
+        public void AddVert(Vector3 position, Color32 color, Vector4 uv0, Vector4 uv1)
         {
             InitializeListIfRequired();
 
             m_Positions.Add(position);
             m_Colors.Add(color);
             m_Uv0S.Add(uv0);
+            m_Uv1S.Add(uv1);
+        }
+
+        /// <summary>
+        /// Add a single vertex to the stream.
+        /// </summary>
+        /// <param name="position">Position of the vert</param>
+        /// <param name="color">Color of the vert</param>
+        /// <param name="uv0">UV of the vert</param>
+        public void AddVert(Vector3 position, Color32 color, Vector4 uv0)
+        {
+            AddVert(position, color, uv0, Vector4.zero);
         }
 
         /// <summary>
@@ -198,7 +222,7 @@ namespace UnityEngine.UI
         /// <param name="v">The vertex to add</param>
         public void AddVert(UIVertex v)
         {
-            AddVert(v.position, v.color, v.uv0);
+            AddVert(v.position, v.color, v.uv0, v.uv1);
         }
 
         /// <summary>
@@ -263,7 +287,7 @@ namespace UnityEngine.UI
             InitializeListIfRequired();
 
             CanvasRenderer.SplitUIVertexStreams(verts, m_Positions, m_Colors, m_Uv0S, m_Uv1S, m_Normals, m_Tangents, m_Indices);
-            ClearFakeBuffers();
+            ClearFakeNormalsAndTangents();
         }
 
         /// <summary>
@@ -279,11 +303,10 @@ namespace UnityEngine.UI
             CanvasRenderer.CreateUIVertexStream(stream, m_Positions, m_Colors, m_Uv0S, m_Uv1S, m_Normals, m_Tangents, m_Indices);
         }
 
-        private static readonly List<Vector4> m_Uv1S = new();
         private static readonly List<Vector3> m_Normals = new();
         private static readonly List<Vector4> m_Tangents = new();
 
-        private static void ClearFakeBuffers()
+        private static void ClearFakeNormalsAndTangents()
         {
             m_Normals.Clear();
             m_Tangents.Clear();
