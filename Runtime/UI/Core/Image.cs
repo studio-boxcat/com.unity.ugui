@@ -863,7 +863,7 @@ namespace UnityEngine.UI
             Vector4 v = GetDrawingDimensions(lPreserveAspect);
             var uv = (activeSprite != null) ? Sprites.DataUtility.GetOuterUV(activeSprite) : Vector4.zero;
 
-            var color32 = color;
+            Color32 color32 = color;
             vh.Clear();
             vh.AddVert(new Vector3(v.x, v.y), color32, new Vector2(uv.x, uv.y));
             vh.AddVert(new Vector3(v.x, v.w), color32, new Vector2(uv.x, uv.w));
