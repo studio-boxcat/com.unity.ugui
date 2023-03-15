@@ -15,7 +15,6 @@ namespace UnityEngine.UI
         :
         UIBehaviour,
         IPointerDownHandler, IPointerUpHandler,
-        IPointerEnterHandler, IPointerExitHandler,
         ISelectHandler, IDeselectHandler
     {
         private bool m_EnableCalled = false;
@@ -66,8 +65,7 @@ namespace UnityEngine.UI
         [SerializeField]
         private Graphic m_TargetGraphic;
 
-
-        private bool m_GroupsAllowInteraction = true;
+        private InteractabilityResolver m_GroupsAllowInteraction;
 
         /// <summary>
         /// The type of transition that will be applied to the targetGraphic when the state changes.
@@ -92,7 +90,7 @@ namespace UnityEngine.UI
         /// ]]>
         ///</code>
         /// </example>
-        public Transition        transition        { get { return m_Transition; } set { if (SetPropertyUtility.SetStruct(ref m_Transition, value))        OnSetProperty(); } }
+        public Transition        transition        { get { return m_Transition; } set { if (SetPropertyUtility.SetEnum(ref m_Transition, value))        OnSetProperty(); } }
 
         /// <summary>
         /// The SpriteState for this selectable object.
@@ -194,7 +192,6 @@ namespace UnityEngine.UI
             }
         }
 
-        private bool             isPointerInside   { get; set; }
         public bool              isPointerDown     { get; private set; }
         private bool             hasSelection      { get; set; }
 
@@ -255,39 +252,16 @@ namespace UnityEngine.UI
 
         protected override void OnCanvasGroupChanged()
         {
-            // Figure out if parent groups allow interaction
-            // If no interaction is alowed... then we need
-            // to not do that :)
-            var groupAllowInteraction = true;
-            Transform t = transform;
-            while (t is not null)
+            // When the pointer is currently down, we need to re-evaluate the interaction state immediately to apple the correct state.
+            if (isPointerDown)
             {
-                if (t.TryGetComponent(out CanvasGroup canvasGroup) == false)
-                {
-                    t = t.parent;
-                    continue;
-                }
-
-                // if the parent group does not allow interaction
-                // we need to break
-                if (canvasGroup.enabled && !canvasGroup.interactable)
-                {
-                    groupAllowInteraction = false;
-                    break;
-                }
-
-                // if this is a 'fresh' group, then break
-                // as we should not consider parents
-                if (canvasGroup.ignoreParentGroups)
-                    break;
-
-                t = t.parent;
+                var interactable = m_GroupsAllowInteraction.Reevaluate(this);
+                if (interactable == false) OnSetProperty();
             }
-
-            if (groupAllowInteraction != m_GroupsAllowInteraction)
+            // Otherwise we can just mark the interaction state as dirty and it will be re-evaluated the next time it is needed.
+            else
             {
-                m_GroupsAllowInteraction = groupAllowInteraction;
-                OnSetProperty();
+                m_GroupsAllowInteraction.SetDirty();
             }
         }
 
@@ -318,7 +292,7 @@ namespace UnityEngine.UI
         /// </example>
         public virtual bool IsInteractable()
         {
-            return m_GroupsAllowInteraction && m_Interactable;
+            return m_Interactable && m_GroupsAllowInteraction.IsInteractable(this);
         }
 
         // Call from unity if animation properties have changed
@@ -400,7 +374,6 @@ namespace UnityEngine.UI
         /// </summary>
         protected virtual void InstantClearState()
         {
-            isPointerInside = false;
             isPointerDown = false;
             hasSelection = false;
 
@@ -466,52 +439,13 @@ namespace UnityEngine.UI
         }
 
         /// <summary>
-        /// Returns whether the selectable is currently 'highlighted' or not.
-        /// </summary>
-        /// <remarks>
-        /// Use this to check if the selectable UI element is currently highlighted.
-        /// </remarks>
-        /// <example>
-        /// <code>
-        /// <![CDATA[
-        /// //Create a UI element. To do this go to Create>UI and select from the list. Attach this script to the UI GameObject to see this script working. The script also works with non-UI elements, but highlighting works better with UI.
-        ///
-        /// using UnityEngine;
-        /// using UnityEngine.Events;
-        /// using UnityEngine.EventSystems;
-        /// using UnityEngine.UI;
-        ///
-        /// //Use the Selectable class as a base class to access the IsHighlighted method
-        /// public class Example : Selectable
-        /// {
-        ///     //Use this to check what Events are happening
-        ///     BaseEventData m_BaseEvent;
-        ///
-        ///     void Update()
-        ///     {
-        ///         //Check if the GameObject is being highlighted
-        ///         if (IsHighlighted())
-        ///         {
-        ///             //Output that the GameObject was highlighted, or do something else
-        ///             Debug.Log("Selectable is Highlighted");
-        ///         }
-        ///     }
-        /// }
-        /// ]]>
-        ///</code>
-        /// </example>
-        protected bool IsHighlighted()
-        {
-            if (!IsActive() || !IsInteractable())
-                return false;
-            return isPointerInside && !isPointerDown && !hasSelection;
-        }
-
-        /// <summary>
         /// Whether the current selectable is being pressed.
         /// </summary>
         protected bool IsPressed()
         {
+            // If the pointer is not down, we are not pressed anyway.
+            if (isPointerDown == false)
+                return false;
             if (!IsActive() || !IsInteractable())
                 return false;
             return isPointerDown;
@@ -594,63 +528,6 @@ namespace UnityEngine.UI
                 return;
 
             isPointerDown = false;
-            EvaluateAndTransitionToSelectionState();
-        }
-
-        /// <summary>
-        /// Evaluate current state and transition to appropriate state.
-        /// New state could be pressed or hover depending on pressed state.
-        /// </summary>
-        /// <example>
-        /// <code>
-        /// <![CDATA[
-        /// using UnityEngine;
-        /// using System.Collections;
-        /// using UnityEngine.UI;
-        /// using UnityEngine.EventSystems;// Required when using Event data.
-        ///
-        /// public class ExampleClass : MonoBehaviour, IPointerEnterHandler// required interface when using the OnPointerEnter method.
-        /// {
-        ///     //Do this when the cursor enters the rect area of this selectable UI object.
-        ///     public void OnPointerEnter(PointerEventData eventData)
-        ///     {
-        ///         Debug.Log("The cursor entered the selectable UI element.");
-        ///     }
-        /// }
-        /// ]]>
-        ///</code>
-        /// </example>
-        public virtual void OnPointerEnter(PointerEventData eventData)
-        {
-            isPointerInside = true;
-            EvaluateAndTransitionToSelectionState();
-        }
-
-        /// <summary>
-        /// Evaluate current state and transition to normal state.
-        /// </summary>
-        /// <example>
-        /// <code>
-        /// <![CDATA[
-        /// using UnityEngine;
-        /// using System.Collections;
-        /// using UnityEngine.UI;
-        /// using UnityEngine.EventSystems;// Required when using Event data.
-        ///
-        /// public class ExampleClass : MonoBehaviour, IPointerExitHandler// required interface when using the OnPointerExit method.
-        /// {
-        ///     //Do this when the cursor exits the rect area of this selectable UI object.
-        ///     public void OnPointerExit(PointerEventData eventData)
-        ///     {
-        ///         Debug.Log("The cursor exited the selectable UI element.");
-        ///     }
-        /// }
-        /// ]]>
-        ///</code>
-        /// </example>
-        public virtual void OnPointerExit(PointerEventData eventData)
-        {
-            isPointerInside = false;
             EvaluateAndTransitionToSelectionState();
         }
 

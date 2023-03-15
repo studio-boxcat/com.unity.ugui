@@ -399,7 +399,7 @@ namespace UnityEngine.UI
         /// - A tiled image with sections of the sprite repeated.
         /// - As a partial image, useful for wipes, fades, timers, status bars etc.
         /// </remarks>
-        public Type type { get { return m_Type; } set { if (SetPropertyUtility.SetStruct(ref m_Type, value)) SetVerticesDirty(); } }
+        public Type type { get { return m_Type; } set { if (SetPropertyUtility.SetEnum(ref m_Type, value)) SetVerticesDirty(); } }
 
         [SerializeField] private bool m_PreserveAspect = false;
 
@@ -440,7 +440,7 @@ namespace UnityEngine.UI
 
         /// Filling method for filled sprites.
         [SerializeField] private FillMethod m_FillMethod = FillMethod.Radial360;
-        public FillMethod fillMethod { get { return m_FillMethod; } set { if (SetPropertyUtility.SetStruct(ref m_FillMethod, value)) { SetVerticesDirty(); m_FillOrigin = 0; } } }
+        public FillMethod fillMethod { get { return m_FillMethod; } set { if (SetPropertyUtility.SetEnum(ref m_FillMethod, value)) { SetVerticesDirty(); m_FillOrigin = 0; } } }
 
         /// Amount of the Image shown. 0-1 range with 0 being nothing shown, and 1 being the full Image.
         [Range(0, 1)]

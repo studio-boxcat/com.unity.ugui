@@ -65,7 +65,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// The direction of the scrollbar from minimum to maximum value.
         /// </summary>
-        public Direction direction { get { return m_Direction; } set { if (SetPropertyUtility.SetStruct(ref m_Direction, value)) UpdateVisuals(); } }
+        public Direction direction { get { return m_Direction; } set { if (SetPropertyUtility.SetEnum(ref m_Direction, value)) UpdateVisuals(); } }
 
         protected Scrollbar()
         {}

@@ -143,7 +143,7 @@ namespace UnityEngine.UI
         /// ]]>
         ///</code>
         /// </example>
-        public Direction direction { get { return m_Direction; } set { if (SetPropertyUtility.SetStruct(ref m_Direction, value)) UpdateVisuals(); } }
+        public Direction direction { get { return m_Direction; } set { if (SetPropertyUtility.SetEnum(ref m_Direction, value)) UpdateVisuals(); } }
 
         [SerializeField]
         private float m_MinValue = 0;

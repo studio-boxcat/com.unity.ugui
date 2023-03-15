@@ -43,7 +43,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// The mode to use to enforce the aspect ratio.
         /// </summary>
-        public AspectMode aspectMode { get { return m_AspectMode; } set { if (SetPropertyUtility.SetStruct(ref m_AspectMode, value)) SetDirty(); } }
+        public AspectMode aspectMode { get { return m_AspectMode; } set { if (SetPropertyUtility.SetEnum(ref m_AspectMode, value)) SetDirty(); } }
 
         [SerializeField] private float m_AspectRatio = 1;
 

@@ -686,7 +686,7 @@ namespace UnityEngine.UI
         /// ]]>
         ///</code>
         /// </example>
-        public EndEditEvent onEndEdit { get { return m_OnDidEndEdit; } set { SetPropertyUtility.SetClass(ref m_OnDidEndEdit, value); } }
+        public EndEditEvent onEndEdit { get { return m_OnDidEndEdit; } set { m_OnDidEndEdit = value; } }
 
         /// <summary>
         /// The Unity Event to call when editing has ended
@@ -725,7 +725,7 @@ namespace UnityEngine.UI
         /// ]]>
         ///</code>
         /// </example>
-        public SubmitEvent onSubmit { get { return m_OnSubmit; } set { SetPropertyUtility.SetClass(ref m_OnSubmit, value); } }
+        public SubmitEvent onSubmit { get { return m_OnSubmit; } set { m_OnSubmit = value; } }
 
         [Obsolete("onValueChange has been renamed to onValueChanged")]
         public OnChangeEvent onValueChange { get { return onValueChanged; } set { onValueChanged = value; } }
@@ -759,7 +759,7 @@ namespace UnityEngine.UI
         /// ]]>
         ///</code>
         /// </example>
-        public OnChangeEvent onValueChanged { get { return m_OnValueChanged; } set { SetPropertyUtility.SetClass(ref m_OnValueChanged, value); } }
+        public OnChangeEvent onValueChanged { get { return m_OnValueChanged; } set { m_OnValueChanged = value; } }
 
         /// <summary>
         /// The function to call to validate the input characters.
@@ -795,7 +795,7 @@ namespace UnityEngine.UI
         /// ]]>
         ///</code>
         /// </example>
-        public OnValidateInput onValidateInput { get { return m_OnValidateInput; } set { SetPropertyUtility.SetClass(ref m_OnValidateInput, value); } }
+        public OnValidateInput onValidateInput { get { return m_OnValidateInput; } set { m_OnValidateInput = value; } }
 
         /// <summary>
         /// How many characters the input field is limited to. 0 = infinite.
@@ -862,7 +862,7 @@ namespace UnityEngine.UI
         /// ]]>
         ///</code>
         /// </example>
-        public ContentType contentType { get { return m_ContentType; } set { if (SetPropertyUtility.SetStruct(ref m_ContentType, value)) EnforceContentType(); } }
+        public ContentType contentType { get { return m_ContentType; } set { if (SetPropertyUtility.SetEnum(ref m_ContentType, value)) EnforceContentType(); } }
 
         /// <summary>
         /// The LineType used by the InputField.
@@ -906,7 +906,7 @@ namespace UnityEngine.UI
             get { return m_LineType; }
             set
             {
-                if (SetPropertyUtility.SetStruct(ref m_LineType, value))
+                if (SetPropertyUtility.SetEnum(ref m_LineType, value))
                 {
                     SetToCustomIfContentTypeIsNot(ContentType.Standard, ContentType.Autocorrected);
                     EnforceTextHOverflow();
@@ -917,7 +917,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// The type of input expected. See InputField.InputType.
         /// </summary>
-        public InputType inputType { get { return m_InputType; } set { if (SetPropertyUtility.SetStruct(ref m_InputType, value)) SetToCustom(); } }
+        public InputType inputType { get { return m_InputType; } set { if (SetPropertyUtility.SetEnum(ref m_InputType, value)) SetToCustom(); } }
 
         /// <summary>
         /// The TouchScreenKeyboard being used to edit the Input Field.
@@ -932,7 +932,7 @@ namespace UnityEngine.UI
             get { return m_KeyboardType; }
             set
             {
-                if (SetPropertyUtility.SetStruct(ref m_KeyboardType, value))
+                if (SetPropertyUtility.SetEnum(ref m_KeyboardType, value))
                     SetToCustom();
             }
         }
@@ -940,7 +940,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// The type of validation to perform on a character
         /// </summary>
-        public CharacterValidation characterValidation { get { return m_CharacterValidation; } set { if (SetPropertyUtility.SetStruct(ref m_CharacterValidation, value)) SetToCustom(); } }
+        public CharacterValidation characterValidation { get { return m_CharacterValidation; } set { if (SetPropertyUtility.SetEnum(ref m_CharacterValidation, value)) SetToCustom(); } }
 
         /// <summary>
         /// Set the InputField to be read only.

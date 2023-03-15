@@ -14,11 +14,15 @@ namespace UnityEngine.UI
         /// <summary>
         /// Pressed sprite.
         /// </summary>
-        public Sprite pressedSprite     { get { return m_PressedSprite; } set { m_PressedSprite = value; } }
+        public Sprite pressedSprite
+        {
+            get => m_PressedSprite;
+            set => m_PressedSprite = value;
+        }
 
         public bool Equals(SpriteState other)
         {
-            return pressedSprite == other.pressedSprite;
+            return ReferenceEquals(pressedSprite, other.pressedSprite);
         }
     }
 }

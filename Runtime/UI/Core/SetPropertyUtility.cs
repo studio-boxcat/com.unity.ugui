@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine.Events;
 
 namespace UnityEngine.UI
 {
@@ -15,7 +14,7 @@ namespace UnityEngine.UI
             return true;
         }
 
-        public static bool SetStruct<T>(ref T currentValue, T newValue) where T : struct
+        public static bool SetEnum<T>(ref T currentValue, T newValue) where T : Enum
         {
             if (EqualityComparer<T>.Default.Equals(currentValue, newValue))
                 return false;
@@ -24,9 +23,54 @@ namespace UnityEngine.UI
             return true;
         }
 
-        public static bool SetClass<T>(ref T currentValue, T newValue) where T : class
+        public static bool SetStruct(ref bool currentValue, bool newValue)
         {
-            if ((currentValue == null && newValue == null) || (currentValue != null && currentValue.Equals(newValue)))
+            if (currentValue == newValue)
+                return false;
+
+            currentValue = newValue;
+            return true;
+        }
+
+        public static bool SetStruct(ref char currentValue, char newValue)
+        {
+            if (currentValue == newValue)
+                return false;
+
+            currentValue = newValue;
+            return true;
+        }
+
+        public static bool SetStruct(ref int currentValue, int newValue)
+        {
+            if (currentValue == newValue)
+                return false;
+
+            currentValue = newValue;
+            return true;
+        }
+
+        public static bool SetStruct(ref float currentValue, float newValue)
+        {
+            if (currentValue == newValue)
+                return false;
+
+            currentValue = newValue;
+            return true;
+        }
+
+        public static bool SetStruct<T>(ref T currentValue, T newValue) where T : struct, IEquatable<T>
+        {
+            if (currentValue.Equals(newValue))
+                return false;
+
+            currentValue = newValue;
+            return true;
+        }
+
+        public static bool SetClass<T>(ref T currentValue, T newValue) where T : UnityEngine.Object
+        {
+            if (ReferenceEquals(currentValue, newValue))
                 return false;
 
             currentValue = newValue;
