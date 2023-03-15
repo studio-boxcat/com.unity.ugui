@@ -219,41 +219,22 @@ namespace UnityEngine.EventSystems
             get { return s_CancelHandler; }
         }
 
-        private static void GetEventChain(GameObject root, IList<Transform> eventChain)
+        public static bool Execute<T>(GameObject target, BaseEventData eventData, EventFunction<T> functor) where T : class, IEventSystemHandler
         {
-            eventChain.Clear();
-            if (root == null)
-                return;
+            if (target == null || !target.activeInHierarchy)
+                return false;
 
-            var t = root.transform;
-            while (t != null)
+            var internalHandlers = ListPool<T>.Get();
+            target.GetComponents(internalHandlers);
+
+            var executed = false;
+            foreach (var arg in internalHandlers)
             {
-                eventChain.Add(t);
-                t = t.parent;
-            }
-        }
-
-        public static bool Execute<T>(GameObject target, BaseEventData eventData, EventFunction<T> functor) where T : IEventSystemHandler
-        {
-            var internalHandlers = ListPool<IEventSystemHandler>.Get();
-            GetEventList<T>(target, internalHandlers);
-            //  if (s_InternalHandlers.Count > 0)
-            //      Debug.Log("Executinng " + typeof (T) + " on " + target);
-
-            var internalHandlersCount = internalHandlers.Count;
-            for (var i = 0; i < internalHandlersCount; i++)
-            {
-                T arg;
-                try
-                {
-                    arg = (T)internalHandlers[i];
-                }
-                catch (Exception e)
-                {
-                    var temp = internalHandlers[i];
-                    Debug.LogException(new Exception(string.Format("Type {0} expected {1} received.", typeof(T).Name, temp.GetType().Name), e));
+                // If the object is disabled, don't execute the event.
+                if (arg is Behaviour {isActiveAndEnabled: false})
                     continue;
-                }
+
+                executed = true;
 
                 try
                 {
@@ -265,98 +246,79 @@ namespace UnityEngine.EventSystems
                 }
             }
 
-            var handlerCount = internalHandlers.Count;
-            ListPool<IEventSystemHandler>.Release(internalHandlers);
-            return handlerCount > 0;
+            ListPool<T>.Release(internalHandlers);
+            return executed;
         }
 
-        /// <summary>
-        /// Execute the specified event on the first game object underneath the current touch.
-        /// </summary>
-        private static readonly List<Transform> s_InternalTransformList = new List<Transform>(30);
-
-        public static GameObject ExecuteHierarchy<T>(GameObject root, BaseEventData eventData, EventFunction<T> callbackFunction) where T : IEventSystemHandler
+        public static GameObject ExecuteHierarchy<T>(GameObject root, BaseEventData eventData, EventFunction<T> callbackFunction) where T : class, IEventSystemHandler
         {
-            GetEventChain(root, s_InternalTransformList);
+            if (root == null)
+                return null;
 
-            var internalTransformListCount = s_InternalTransformList.Count;
-            for (var i = 0; i < internalTransformListCount; i++)
+            var t = root.transform;
+            while (t is not null)
             {
-                var transform = s_InternalTransformList[i];
-                if (Execute(transform.gameObject, eventData, callbackFunction))
-                    return transform.gameObject;
+                var go = t.gameObject;
+                if (Execute(go, eventData, callbackFunction))
+                    return go;
+
+                t = t.parent;
             }
+
             return null;
-        }
-
-        private static bool ShouldSendToComponent<T>(Component component) where T : IEventSystemHandler
-        {
-            var valid = component is T;
-            if (!valid)
-                return false;
-
-            var behaviour = component as Behaviour;
-            if (behaviour != null)
-                return behaviour.isActiveAndEnabled;
-            return true;
-        }
-
-        /// <summary>
-        /// Get the specified object's event event.
-        /// </summary>
-        private static void GetEventList<T>(GameObject go, IList<IEventSystemHandler> results) where T : IEventSystemHandler
-        {
-            // Debug.LogWarning("GetEventList<" + typeof(T).Name + ">");
-            if (results == null)
-                throw new ArgumentException("Results array is null", "results");
-
-            if (go == null || !go.activeInHierarchy)
-                return;
-
-            var components = ListPool<Component>.Get();
-            go.GetComponents(components);
-
-            var componentsCount = components.Count;
-            for (var i = 0; i < componentsCount; i++)
-            {
-                if (!ShouldSendToComponent<T>(components[i]))
-                    continue;
-
-                // Debug.Log(string.Format("{2} found! On {0}.{1}", go, s_GetComponentsScratch[i].GetType(), typeof(T)));
-                results.Add(components[i] as IEventSystemHandler);
-            }
-            ListPool<Component>.Release(components);
-            // Debug.LogWarning("end GetEventList<" + typeof(T).Name + ">");
-        }
-
-        /// <summary>
-        /// Whether the specified game object will be able to handle the specified event.
-        /// </summary>
-        public static bool CanHandleEvent<T>(GameObject go) where T : IEventSystemHandler
-        {
-            var internalHandlers = ListPool<IEventSystemHandler>.Get();
-            GetEventList<T>(go, internalHandlers);
-            var handlerCount = internalHandlers.Count;
-            ListPool<IEventSystemHandler>.Release(internalHandlers);
-            return handlerCount != 0;
         }
 
         /// <summary>
         /// Bubble the specified event on the game object, figuring out which object will actually receive the event.
         /// </summary>
-        public static GameObject GetEventHandler<T>(GameObject root) where T : IEventSystemHandler
+        public static GameObject GetEventHandler<T>(GameObject root) where T : class, IEventSystemHandler
         {
             if (root == null)
                 return null;
 
-            Transform t = root.transform;
-            while (t != null)
+            var t = root.transform;
+            var buffer = ListPool<T>.Get();
+
+            while (t is not null)
             {
-                if (CanHandleEvent<T>(t.gameObject))
-                    return t.gameObject;
+                var go = t.gameObject;
+                if (CanHandleEvent(go, buffer))
+                {
+                    ListPool<T>.Release(buffer);
+                    return go;
+                }
+
                 t = t.parent;
             }
+
+            ListPool<T>.Release(buffer);
             return null;
+
+            static bool CanHandleEvent(GameObject go, List<T> buffer)
+            {
+                if (!go.activeInHierarchy)
+                    return false;
+
+                go.GetComponents(buffer);
+
+                foreach (var component in buffer)
+                {
+                    // When component is a Behaviour, we need to check if it is enabled.
+                    if (component is Behaviour behaviour)
+                    {
+                        if (behaviour.isActiveAndEnabled)
+                            return true;
+                    }
+                    // If not, we can just return true as it's not possible to be disabled.
+                    else
+                    {
+                        return true;
+                    }
+                }
+
+                // If we get here, it means that the game object has no components that can handle the event.
+                return false;
+            }
         }
     }
 }
