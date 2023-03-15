@@ -247,7 +247,6 @@ namespace UnityEngine.UI
                 m_TargetGraphic = GetComponent<Graphic>();
         }
 
-        private static readonly List<CanvasGroup> m_CanvasGroupCache = new List<CanvasGroup>();
         protected override void OnCanvasGroupChanged()
         {
             // Figure out if parent groups allow interaction
@@ -255,25 +254,25 @@ namespace UnityEngine.UI
             // to not do that :)
             var groupAllowInteraction = true;
             Transform t = transform;
-            while (t != null)
+            while (t is not null)
             {
-                t.GetComponents(m_CanvasGroupCache);
-                bool shouldBreak = false;
-                for (var i = 0; i < m_CanvasGroupCache.Count; i++)
+                if (t.TryGetComponent(out CanvasGroup canvasGroup) == false)
                 {
-                    // if the parent group does not allow interaction
-                    // we need to break
-                    if (m_CanvasGroupCache[i].enabled && !m_CanvasGroupCache[i].interactable)
-                    {
-                        groupAllowInteraction = false;
-                        shouldBreak = true;
-                    }
-                    // if this is a 'fresh' group, then break
-                    // as we should not consider parents
-                    if (m_CanvasGroupCache[i].ignoreParentGroups)
-                        shouldBreak = true;
+                    t = t.parent;
+                    continue;
                 }
-                if (shouldBreak)
+
+                // if the parent group does not allow interaction
+                // we need to break
+                if (canvasGroup.enabled && !canvasGroup.interactable)
+                {
+                    groupAllowInteraction = false;
+                    break;
+                }
+
+                // if this is a 'fresh' group, then break
+                // as we should not consider parents
+                if (canvasGroup.ignoreParentGroups)
                     break;
 
                 t = t.parent;
