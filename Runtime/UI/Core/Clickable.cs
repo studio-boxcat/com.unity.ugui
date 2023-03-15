@@ -1,15 +1,18 @@
-using System;
+using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
 using UnityEngine.EventSystems;
 
 namespace UnityEngine.UI
 {
+    public interface IClickHandler
+    {
+        void OnClick(Clickable sender);
+    }
+
     [DisallowMultipleComponent]
     public class Clickable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerClickHandler
     {
-        public event Action<Object> OnClick;
-
         [SerializeField, ValidateInput(nameof(SetInteractable))]
         bool _interactable = true;
 
@@ -53,6 +56,8 @@ namespace UnityEngine.UI
             _eligibleForClick = false;
         }
 
+        static readonly List<IClickHandler> _handlerBuffer = new();
+
         void IPointerClickHandler.OnPointerClick(PointerEventData eventData)
         {
             if (eventData.button != PointerEventData.InputButton.Left) return;
@@ -63,7 +68,14 @@ namespace UnityEngine.UI
                 return;
             }
 
-            OnClick?.Invoke(this);
+            GetComponents(_handlerBuffer);
+            foreach (var handler in _handlerBuffer)
+            {
+                // If handler is disabled, just skip it.
+                if (handler is Behaviour {isActiveAndEnabled: false})
+                    continue;
+                handler.OnClick(this);
+            }
         }
     }
 }
