@@ -5,7 +5,6 @@ namespace UnityEngine.UI
         bool _valid;
         bool _interactable;
 
-        public bool IsDirty() => !_valid;
         public void SetDirty() => _valid = false;
 
         public bool IsInteractable(Component component)

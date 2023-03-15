@@ -12,13 +12,15 @@ namespace UnityEngine.UI
                     continue;
                 }
 
-                // if the parent group does not allow interaction
-                // we need to break
-                if (canvasGroup.enabled && !canvasGroup.interactable)
+                // If the group is not enabled, we just ignore it.
+                if (canvasGroup.enabled == false)
+                    continue;
+
+                // Interaction is not allowed if the group is not interactable.
+                if (canvasGroup.interactable == false)
                     return false;
 
-                // if this is a 'fresh' group, then break
-                // as we should not consider parents
+                // If ignoreParentGroups is true, we should not consider the parent groups.
                 if (canvasGroup.ignoreParentGroups)
                     return true;
 
