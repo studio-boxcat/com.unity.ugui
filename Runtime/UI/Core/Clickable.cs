@@ -13,7 +13,7 @@ namespace UnityEngine.UI
     [DisallowMultipleComponent]
     public class Clickable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerClickHandler
     {
-        [SerializeField, ValidateInput(nameof(SetInteractable))]
+        [SerializeField, OnValueChanged(nameof(SetInteractable))]
         bool _interactable = true;
 
         bool _eligibleForClick;
