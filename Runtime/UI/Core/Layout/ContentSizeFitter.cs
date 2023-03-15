@@ -65,20 +65,18 @@ namespace UnityEngine.UI
         protected ContentSizeFitter()
         {}
 
-        protected override void OnEnable()
+        protected virtual void OnEnable()
         {
-            base.OnEnable();
             SetDirty();
         }
 
-        protected override void OnDisable()
+        protected virtual void OnDisable()
         {
             m_Tracker.Clear();
             LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
-            base.OnDisable();
         }
 
-        protected override void OnRectTransformDimensionsChange()
+        protected virtual void OnRectTransformDimensionsChange()
         {
             SetDirty();
         }
@@ -128,7 +126,7 @@ namespace UnityEngine.UI
         }
 
     #if UNITY_EDITOR
-        protected override void OnValidate()
+        protected virtual void OnValidate()
         {
             SetDirty();
         }

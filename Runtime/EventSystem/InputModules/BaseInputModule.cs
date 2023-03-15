@@ -97,17 +97,15 @@ namespace UnityEngine.EventSystems
             get { return m_EventSystem; }
         }
 
-        protected override void OnEnable()
+        protected virtual void OnEnable()
         {
-            base.OnEnable();
             m_EventSystem = GetComponent<EventSystem>();
             m_EventSystem.UpdateModules();
         }
 
-        protected override void OnDisable()
+        protected virtual void OnDisable()
         {
             m_EventSystem.UpdateModules();
-            base.OnDisable();
         }
 
         /// <summary>

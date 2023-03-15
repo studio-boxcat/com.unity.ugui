@@ -71,34 +71,30 @@ namespace UnityEngine.UI
             }
         }
 
-        protected override void OnEnable()
+        protected virtual void OnEnable()
         {
-            base.OnEnable();
             if (graphic != null)
                 graphic.SetVerticesDirty();
         }
 
-        protected override void OnDisable()
+        protected virtual void OnDisable()
         {
             if (graphic != null)
                 graphic.SetVerticesDirty();
-            base.OnDisable();
         }
 
         /// <summary>
         /// Called from the native side any time a animation property is changed.
         /// </summary>
-        protected override void OnDidApplyAnimationProperties()
+        protected virtual void OnDidApplyAnimationProperties()
         {
             if (graphic != null)
                 graphic.SetVerticesDirty();
-            base.OnDidApplyAnimationProperties();
         }
 
 #if UNITY_EDITOR
-        protected override void OnValidate()
+        protected virtual void OnValidate()
         {
-            base.OnValidate();
             if (graphic != null)
                 graphic.SetVerticesDirty();
         }

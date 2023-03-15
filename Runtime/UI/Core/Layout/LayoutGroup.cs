@@ -131,23 +131,21 @@ namespace UnityEngine.UI
                 m_Padding = new RectOffset();
         }
 
-        protected override void OnEnable()
+        protected virtual void OnEnable()
         {
-            base.OnEnable();
             SetDirty();
         }
 
-        protected override void OnDisable()
+        protected virtual void OnDisable()
         {
             m_Tracker.Clear();
             LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
-            base.OnDisable();
         }
 
         /// <summary>
         /// Callback for when properties have been changed by animation.
         /// </summary>
-        protected override void OnDidApplyAnimationProperties()
+        protected virtual void OnDidApplyAnimationProperties()
         {
             SetDirty();
         }
@@ -325,9 +323,8 @@ namespace UnityEngine.UI
             }
         }
 
-        protected override void OnRectTransformDimensionsChange()
+        protected virtual void OnRectTransformDimensionsChange()
         {
-            base.OnRectTransformDimensionsChange();
             if (isRootLayoutGroup)
                 SetDirty();
         }
@@ -371,7 +368,7 @@ namespace UnityEngine.UI
         }
 
     #if UNITY_EDITOR
-        protected override void OnValidate()
+        protected virtual void OnValidate()
         {
             SetDirty();
         }

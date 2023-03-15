@@ -1180,10 +1180,9 @@ namespace UnityEngine.UI
             base.OnDisable();
         }
 
-        protected override void OnDestroy()
+        protected virtual void OnDestroy()
         {
             CanvasUpdateRegistry.UnRegisterCanvasElementForRebuild(this);
-            base.OnDestroy();
         }
 
         IEnumerator CaretBlink()

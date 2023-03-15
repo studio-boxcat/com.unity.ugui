@@ -568,10 +568,8 @@ namespace UnityEngine.UI
             m_VSliderWidth = (m_VerticalScrollbarRect == null ? 0 : m_VerticalScrollbarRect.rect.width);
         }
 
-        protected override void OnEnable()
+        protected virtual void OnEnable()
         {
-            base.OnEnable();
-
             if (m_HorizontalScrollbar)
                 m_HorizontalScrollbar.onValueChanged.AddListener(SetHorizontalNormalizedPosition);
             if (m_VerticalScrollbar)
@@ -581,7 +579,7 @@ namespace UnityEngine.UI
             SetDirty();
         }
 
-        protected override void OnDisable()
+        protected virtual void OnDisable()
         {
             CanvasUpdateRegistry.UnRegisterCanvasElementForRebuild(this);
 
@@ -596,7 +594,6 @@ namespace UnityEngine.UI
             m_Tracker.Clear();
             m_Velocity = Vector2.zero;
             LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
-            base.OnDisable();
         }
 
         /// <summary>
@@ -1083,7 +1080,7 @@ namespace UnityEngine.UI
             return (1 - (1 / ((Mathf.Abs(overStretching) * 0.55f / viewSize) + 1))) * viewSize * Mathf.Sign(overStretching);
         }
 
-        protected override void OnRectTransformDimensionsChange()
+        protected virtual void OnRectTransformDimensionsChange()
         {
             SetDirty();
         }
@@ -1448,7 +1445,7 @@ namespace UnityEngine.UI
         }
 
         #if UNITY_EDITOR
-        protected override void OnValidate()
+        protected virtual void OnValidate()
         {
             SetDirtyCaching();
         }

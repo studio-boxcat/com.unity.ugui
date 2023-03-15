@@ -5,21 +5,6 @@ namespace UnityEngine.EventSystems
     /// </summary>
     public abstract class UIBehaviour : MonoBehaviour
     {
-        protected virtual void Awake()
-        {}
-
-        protected virtual void OnEnable()
-        {}
-
-        protected virtual void Start()
-        {}
-
-        protected virtual void OnDisable()
-        {}
-
-        protected virtual void OnDestroy()
-        {}
-
         /// <summary>
         /// Returns true if the GameObject and the Component are active.
         /// </summary>
@@ -27,37 +12,6 @@ namespace UnityEngine.EventSystems
         {
             return isActiveAndEnabled;
         }
-
-#if UNITY_EDITOR
-        protected virtual void OnValidate()
-        {}
-
-        protected virtual void Reset()
-        {}
-#endif
-        /// <summary>
-        /// This callback is called when the dimensions of an associated RectTransform change. It is always called before Awake, OnEnable, or Start. The call is also made to all child RectTransforms, regardless of whether their dimensions change (which depends on how they are anchored).
-        /// </summary>
-        protected virtual void OnRectTransformDimensionsChange()
-        {}
-
-        protected virtual void OnBeforeTransformParentChanged()
-        {}
-
-        protected virtual void OnTransformParentChanged()
-        {}
-
-        protected virtual void OnDidApplyAnimationProperties()
-        {}
-
-        protected virtual void OnCanvasGroupChanged()
-        {}
-
-        /// <summary>
-        /// Called when the state of the parent Canvas is changed.
-        /// </summary>
-        protected virtual void OnCanvasHierarchyChanged()
-        {}
 
         /// <summary>
         /// Returns true if the native representation of the behaviour has been destroyed.

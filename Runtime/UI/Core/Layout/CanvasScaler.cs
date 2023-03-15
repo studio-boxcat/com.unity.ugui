@@ -234,9 +234,8 @@ namespace UnityEngine.UI
 
         protected CanvasScaler() {}
 
-        protected override void OnEnable()
+        protected virtual void OnEnable()
         {
-            base.OnEnable();
             m_Canvas = GetComponent<Canvas>();
             Handle();
             Canvas.preWillRenderCanvases += Canvas_preWillRenderCanvases;
@@ -247,12 +246,11 @@ namespace UnityEngine.UI
             Handle();
         }
 
-        protected override void OnDisable()
+        protected virtual void OnDisable()
         {
             SetScaleFactor(1);
             SetReferencePixelsPerUnit(100);
             Canvas.preWillRenderCanvases -= Canvas_preWillRenderCanvases;
-            base.OnDisable();
         }
 
         ///<summary>
@@ -394,7 +392,7 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
-        protected override void OnValidate()
+        protected virtual void OnValidate()
         {
             m_ScaleFactor = Mathf.Max(0.01f, m_ScaleFactor);
             m_DefaultSpriteDPI = Mathf.Max(1, m_DefaultSpriteDPI);

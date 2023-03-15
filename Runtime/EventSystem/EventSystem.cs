@@ -164,13 +164,12 @@ namespace UnityEngine.EventSystems
             SetSelectedGameObject(selected, baseEventDataCache);
         }
 
-        protected override void OnEnable()
+        protected virtual void OnEnable()
         {
-            base.OnEnable();
             m_EventSystems.Add(this);
         }
 
-        protected override void OnDisable()
+        protected virtual void OnDisable()
         {
             if (m_CurrentInputModule != null)
             {
@@ -179,8 +178,6 @@ namespace UnityEngine.EventSystems
             }
 
             m_EventSystems.Remove(this);
-
-            base.OnDisable();
         }
 
         private void TickModules()

@@ -139,11 +139,10 @@ namespace UnityEngine.UI
         public virtual void GraphicUpdateComplete()
         {}
 
-        protected override void OnDestroy()
+        protected virtual void OnDestroy()
         {
             if (m_Group != null)
                 m_Group.EnsureValidState();
-            base.OnDestroy();
         }
 
         protected override void OnEnable()
@@ -308,7 +307,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// Assume the correct visual state.
         /// </summary>
-        protected override void Start()
+        protected virtual void Start()
         {
             PlayEffect();
         }

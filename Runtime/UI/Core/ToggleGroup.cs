@@ -35,16 +35,14 @@ namespace UnityEngine.UI
         /// Because all the Toggles have registered themselves in the OnEnabled, Start should check to
         /// make sure at least one Toggle is active in groups that do not AllowSwitchOff
         /// </summary>
-        protected override void Start()
+        protected virtual void Start()
         {
             EnsureValidState();
-            base.Start();
         }
 
-        protected override void OnEnable()
+        protected virtual void OnEnable()
         {
             EnsureValidState();
-            base.OnEnable();
         }
 
         private void ValidateToggleIsInGroup(Toggle toggle)

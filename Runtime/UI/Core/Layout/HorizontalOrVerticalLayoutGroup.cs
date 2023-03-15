@@ -239,10 +239,8 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
-        protected override void Reset()
+        protected virtual void Reset()
         {
-            base.Reset();
-
             // For new added components we want these to be set to false,
             // so that the user's sizes won't be overwritten before they
             // have a chance to turn these settings off.

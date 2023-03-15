@@ -70,9 +70,8 @@ namespace UnityEngine.UI
         [Obsolete("Not used anymore.")]
         public virtual void OnSiblingGraphicEnabledDisabled() {}
 
-        protected override void OnEnable()
+        protected virtual void OnEnable()
         {
-            base.OnEnable();
             if (graphic != null)
             {
                 graphic.canvasRenderer.hasPopInstruction = true;
@@ -86,13 +85,12 @@ namespace UnityEngine.UI
             MaskUtilities.NotifyStencilStateChanged(this);
         }
 
-        protected override void OnDisable()
+        protected virtual void OnDisable()
         {
             // we call base OnDisable first here
             // as we need to have the IsActive return the
             // correct value when we notify the children
             // that the mask state has changed.
-            base.OnDisable();
             if (graphic != null)
             {
                 graphic.SetMaterialDirty();
@@ -112,10 +110,8 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
-        protected override void OnValidate()
+        protected virtual void OnValidate()
         {
-            base.OnValidate();
-
             if (!IsActive())
                 return;
 

@@ -244,13 +244,13 @@ namespace UnityEngine.UI
         }
 #endif
 
-        protected override void Awake()
+        protected virtual void Awake()
         {
             if (m_TargetGraphic == null)
                 m_TargetGraphic = GetComponent<Graphic>();
         }
 
-        protected override void OnCanvasGroupChanged()
+        protected virtual void OnCanvasGroupChanged()
         {
             // When the pointer is currently down, we need to re-evaluate the interaction state immediately to apple the correct state.
             if (isPointerDown)
@@ -296,19 +296,17 @@ namespace UnityEngine.UI
         }
 
         // Call from unity if animation properties have changed
-        protected override void OnDidApplyAnimationProperties()
+        protected virtual void OnDidApplyAnimationProperties()
         {
             OnSetProperty();
         }
 
         // Select on enable and add to the list.
-        protected override void OnEnable()
+        protected virtual void OnEnable()
         {
             //Check to avoid multiple OnEnable() calls for each selectable
             if (m_EnableCalled)
                 return;
-
-            base.OnEnable();
 
             if (EventSystem.current && EventSystem.current.currentSelectedGameObject == gameObject)
             {
@@ -321,10 +319,8 @@ namespace UnityEngine.UI
             m_EnableCalled = true;
         }
 
-        protected override void OnTransformParentChanged()
+        protected virtual void OnTransformParentChanged()
         {
-            base.OnTransformParentChanged();
-
             // If our parenting changes figure out if we are under a new CanvasGroup.
             OnCanvasGroupChanged();
         }
@@ -335,14 +331,13 @@ namespace UnityEngine.UI
         }
 
         // Remove from the list.
-        protected override void OnDisable()
+        protected virtual void OnDisable()
         {
             //Check to avoid multiple OnDisable() calls for each selectable
             if (!m_EnableCalled)
                 return;
 
             InstantClearState();
-            base.OnDisable();
 
             m_EnableCalled = false;
         }
@@ -356,13 +351,13 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
-        protected override void OnValidate()
+        protected virtual void OnValidate()
         {
             if (m_TargetGraphic == null)
                 TryGetComponent(out m_TargetGraphic);
         }
 
-        protected override void Reset()
+        protected virtual void Reset()
         {
             TryGetComponent(out m_TargetGraphic);
         }

@@ -318,7 +318,7 @@ namespace UnityEngine.UI
             m_RaycastTargetCache = m_RaycastTarget;
         }
 
-        protected override void OnRectTransformDimensionsChange()
+        protected virtual void OnRectTransformDimensionsChange()
         {
             if (gameObject.activeInHierarchy)
             {
@@ -333,16 +333,14 @@ namespace UnityEngine.UI
             }
         }
 
-        protected override void OnBeforeTransformParentChanged()
+        protected virtual void OnBeforeTransformParentChanged()
         {
             GraphicRegistry.DisableGraphicForCanvas(canvas, this);
             LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
         }
 
-        protected override void OnTransformParentChanged()
+        protected virtual void OnTransformParentChanged()
         {
-            base.OnTransformParentChanged();
-
             m_Canvas = null;
 
             if (!IsActive())
@@ -515,9 +513,8 @@ namespace UnityEngine.UI
         /// <summary>
         /// Mark the Graphic and the canvas as having been changed.
         /// </summary>
-        protected override void OnEnable()
+        protected virtual void OnEnable()
         {
-            base.OnEnable();
             CacheCanvas();
             GraphicRegistry.RegisterGraphicForCanvas(canvas, this);
 
@@ -533,7 +530,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// Clear references.
         /// </summary>
-        protected override void OnDisable()
+        protected virtual void OnDisable()
         {
 #if UNITY_EDITOR
             GraphicRebuildTracker.UnTrackGraphic(this);
@@ -545,22 +542,18 @@ namespace UnityEngine.UI
                 canvasRenderer.Clear();
 
             LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
-
-            base.OnDisable();
         }
 
-        protected override void OnDestroy()
+        protected virtual void OnDestroy()
         {
 #if UNITY_EDITOR
             GraphicRebuildTracker.UnTrackGraphic(this);
 #endif
             GraphicRegistry.UnregisterGraphicForCanvas(canvas, this);
             CanvasUpdateRegistry.UnRegisterCanvasElementForRebuild(this);
-
-            base.OnDestroy();
         }
 
-        protected override void OnCanvasHierarchyChanged()
+        protected virtual void OnCanvasHierarchyChanged()
         {
             // Use m_Cavas so we dont auto call CacheCanvas
             Canvas currentCanvas = m_Canvas;
@@ -786,7 +779,7 @@ namespace UnityEngine.UI
             m_SkipLayoutUpdate = false;
         }
 
-        protected override void Reset()
+        protected virtual void Reset()
         {
             SetAllDirty();
         }
@@ -795,7 +788,7 @@ namespace UnityEngine.UI
 
         // Call from unity if animation properties have changed
 
-        protected override void OnDidApplyAnimationProperties()
+        protected virtual void OnDidApplyAnimationProperties()
         {
             SetAllDirty();
         }
@@ -868,9 +861,8 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
-        protected override void OnValidate()
+        protected virtual void OnValidate()
         {
-            base.OnValidate();
             SetAllDirty();
         }
 

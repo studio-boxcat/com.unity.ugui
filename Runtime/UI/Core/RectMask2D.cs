@@ -128,21 +128,19 @@ namespace UnityEngine.UI
         protected RectMask2D()
         {}
 
-        protected override void OnEnable()
+        protected virtual void OnEnable()
         {
-            base.OnEnable();
             m_ShouldRecalculateClipRects = true;
             ClipperRegistry.Register(this);
             MaskUtilities.Notify2DMaskStateChanged(this);
         }
 
-        protected override void OnDisable()
+        protected virtual void OnDisable()
         {
             // we call base OnDisable first here
             // as we need to have the IsActive return the
             // correct value when we notify the children
             // that the mask state has changed.
-            base.OnDisable();
             m_ClipTargets.Clear();
             m_MaskableTargets.Clear();
             m_Clippers.Clear();
@@ -150,16 +148,14 @@ namespace UnityEngine.UI
             MaskUtilities.Notify2DMaskStateChanged(this);
         }
 
-        protected override void OnDestroy()
+        protected virtual void OnDestroy()
         {
             ClipperRegistry.Unregister(this);
-            base.OnDestroy();
         }
 
 #if UNITY_EDITOR
-        protected override void OnValidate()
+        protected virtual void OnValidate()
         {
-            base.OnValidate();
             m_ShouldRecalculateClipRects = true;
 
             // Dont allow negative softness.
@@ -342,17 +338,15 @@ namespace UnityEngine.UI
             m_ForceClip = true;
         }
 
-        protected override void OnTransformParentChanged()
+        protected virtual void OnTransformParentChanged()
         {
             m_Canvas = null;
-            base.OnTransformParentChanged();
             m_ShouldRecalculateClipRects = true;
         }
 
-        protected override void OnCanvasHierarchyChanged()
+        protected virtual void OnCanvasHierarchyChanged()
         {
             m_Canvas = null;
-            base.OnCanvasHierarchyChanged();
             m_ShouldRecalculateClipRects = true;
         }
     }

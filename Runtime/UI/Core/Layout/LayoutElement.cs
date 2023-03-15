@@ -177,29 +177,27 @@ namespace UnityEngine.UI
         protected LayoutElement()
         {}
 
-        protected override void OnEnable()
-        {
-            base.OnEnable();
-            SetDirty();
-        }
-
-        protected override void OnTransformParentChanged()
+        protected virtual void OnEnable()
         {
             SetDirty();
         }
 
-        protected override void OnDisable()
-        {
-            SetDirty();
-            base.OnDisable();
-        }
-
-        protected override void OnDidApplyAnimationProperties()
+        protected virtual void OnTransformParentChanged()
         {
             SetDirty();
         }
 
-        protected override void OnBeforeTransformParentChanged()
+        protected virtual void OnDisable()
+        {
+            SetDirty();
+        }
+
+        protected virtual void OnDidApplyAnimationProperties()
+        {
+            SetDirty();
+        }
+
+        protected virtual void OnBeforeTransformParentChanged()
         {
             SetDirty();
         }
@@ -218,7 +216,7 @@ namespace UnityEngine.UI
         }
 
     #if UNITY_EDITOR
-        protected override void OnValidate()
+        protected virtual void OnValidate()
         {
             SetDirty();
         }

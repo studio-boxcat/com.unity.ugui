@@ -78,32 +78,27 @@ namespace UnityEngine.UI
 
         protected AspectRatioFitter() {}
 
-        protected override void OnEnable()
+        protected virtual void OnEnable()
         {
-            base.OnEnable();
             m_DoesParentExist = rectTransform.parent ? true : false;
             SetDirty();
         }
 
-        protected override void Start()
+        protected virtual void Start()
         {
-            base.Start();
             //Disable the component if the aspect mode is not valid or the object state/setup is not supported with AspectRatio setup.
             if (!IsComponentValidOnObject() || !IsAspectModeValid())
                 this.enabled = false;
         }
 
-        protected override void OnDisable()
+        protected virtual void OnDisable()
         {
             m_Tracker.Clear();
             LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
-            base.OnDisable();
         }
 
-        protected override void OnTransformParentChanged()
+        protected virtual void OnTransformParentChanged()
         {
-            base.OnTransformParentChanged();
-
             m_DoesParentExist = rectTransform.parent ? true : false;
             SetDirty();
         }
@@ -124,7 +119,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// Function called when this RectTransform or parent RectTransform has changed dimensions.
         /// </summary>
-        protected override void OnRectTransformDimensionsChange()
+        protected virtual void OnRectTransformDimensionsChange()
         {
             UpdateRect();
         }
@@ -245,7 +240,7 @@ namespace UnityEngine.UI
         }
 
     #if UNITY_EDITOR
-        protected override void OnValidate()
+        protected virtual void OnValidate()
         {
             m_AspectRatio = Mathf.Clamp(m_AspectRatio, 0.001f, 1000f);
             m_DelayedSetDirty = true;

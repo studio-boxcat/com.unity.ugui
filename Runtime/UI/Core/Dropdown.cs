@@ -444,11 +444,10 @@ namespace UnityEngine.UI
                 m_Template.gameObject.SetActive(false);
         }
 
-        protected override void Start()
+        protected virtual void Start()
         {
             m_AlphaTweenRunner = new TweenRunner<FloatTween>();
             m_AlphaTweenRunner.Init(this);
-            base.Start();
 
             RefreshShownValue();
         }

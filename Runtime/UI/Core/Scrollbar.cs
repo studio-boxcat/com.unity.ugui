@@ -249,10 +249,8 @@ namespace UnityEngine.UI
             }
         }
 
-        protected override void OnRectTransformDimensionsChange()
+        protected virtual void OnRectTransformDimensionsChange()
         {
-            base.OnRectTransformDimensionsChange();
-
             //This can be invoked before OnEnabled is called. So we shouldn't be accessing other objects, before OnEnable is called.
             if (!IsActive())
                 return;
