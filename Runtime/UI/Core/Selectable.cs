@@ -17,8 +17,6 @@ namespace UnityEngine.UI
         IPointerDownHandler, IPointerUpHandler,
         ISelectHandler, IDeselectHandler
     {
-        private bool m_EnableCalled = false;
-
         /// <summary>
         ///Transition mode for a Selectable.
         /// </summary>
@@ -195,9 +193,6 @@ namespace UnityEngine.UI
         public bool              isPointerDown     { get; private set; }
         private bool             hasSelection      { get; set; }
 
-        protected Selectable()
-        {}
-
         /// <summary>
         /// Convenience function that converts the referenced Graphic to a Image, if possible.
         /// </summary>
@@ -304,10 +299,6 @@ namespace UnityEngine.UI
         // Select on enable and add to the list.
         protected virtual void OnEnable()
         {
-            //Check to avoid multiple OnEnable() calls for each selectable
-            if (m_EnableCalled)
-                return;
-
             if (EventSystem.current && EventSystem.current.currentSelectedGameObject == gameObject)
             {
                 hasSelection = true;
@@ -315,8 +306,6 @@ namespace UnityEngine.UI
 
             isPointerDown = false;
             DoStateTransition(isPointerDown);
-
-            m_EnableCalled = true;
         }
 
         protected virtual void OnTransformParentChanged()
@@ -333,13 +322,7 @@ namespace UnityEngine.UI
         // Remove from the list.
         protected virtual void OnDisable()
         {
-            //Check to avoid multiple OnDisable() calls for each selectable
-            if (!m_EnableCalled)
-                return;
-
             InstantClearState();
-
-            m_EnableCalled = false;
         }
 
         void OnApplicationFocus(bool hasFocus)
