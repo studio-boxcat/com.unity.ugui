@@ -235,9 +235,15 @@ namespace UnityEngine.UI
         ///</code>
         /// </example>
 #if PACKAGE_ANIMATION
+        Animator m_Animator;
         public Animator animator
         {
-            get { return GetComponent<Animator>(); }
+            get
+            {
+                if (m_Animator is null)
+                    TryGetComponent(out m_Animator);
+                return m_Animator;
+            }
         }
 #endif
 
@@ -378,29 +384,13 @@ namespace UnityEngine.UI
 #if UNITY_EDITOR
         protected override void OnValidate()
         {
-            base.OnValidate();
-
-            // OnValidate can be called before OnEnable, this makes it unsafe to access other components
-            // since they might not have been initialized yet.
-            // OnSetProperty potentially access Animator or Graphics. (case 618186)
-            if (isActiveAndEnabled)
-            {
-                if (!interactable && EventSystem.current != null && EventSystem.current.currentSelectedGameObject == gameObject)
-                    EventSystem.current.SetSelectedGameObject(null);
-                // Need to clear out the override image on the target...
-                DoSpriteSwap(null);
-
-                // If the transition mode got changed, we need to clear all the transitions, since we don't know what the old transition mode was.
-                TriggerAnimation(AnimationTriggers.Normal);
-
-                // And now go to the right state.
-                DoStateTransition(isPointerDown);
-            }
+            if (m_TargetGraphic == null)
+                TryGetComponent(out m_TargetGraphic);
         }
 
         protected override void Reset()
         {
-            m_TargetGraphic = GetComponent<Graphic>();
+            TryGetComponent(out m_TargetGraphic);
         }
 
 #endif // if UNITY_EDITOR
@@ -461,7 +451,11 @@ namespace UnityEngine.UI
         void TriggerAnimation(int triggerId)
         {
 #if PACKAGE_ANIMATION
-            if (transition != Transition.Animation || animator == null || !animator.isActiveAndEnabled || !animator.hasBoundPlayables)
+            if (transition != Transition.Animation)
+                return;
+
+            var animator = this.animator; // Cache animator to avoid multiple lookups.
+            if (animator is null || !animator.isActiveAndEnabled || !animator.hasBoundPlayables)
                 return;
 
             animator.ResetTrigger(AnimationTriggers.Normal);
