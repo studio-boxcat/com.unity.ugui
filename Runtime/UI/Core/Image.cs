@@ -276,9 +276,9 @@ namespace UnityEngine.UI
             get { return m_Sprite; }
             set
             {
-                if (m_Sprite is not null)
+                if (m_Sprite != null)
                 {
-                    if (m_Sprite != value)
+                    if (!ReferenceEquals(m_Sprite, value))
                     {
                         m_SkipLayoutUpdate = m_Sprite.rect.size.Equals(value ? value.rect.size : Vector2.zero);
                         m_SkipMaterialUpdate = m_Sprite.texture == (value ? value.texture : null);
@@ -288,7 +288,7 @@ namespace UnityEngine.UI
                         TrackSprite();
                     }
                 }
-                else if (value is not null)
+                else if (value != null)
                 {
                     m_SkipLayoutUpdate = value.rect.size == Vector2.zero;
                     m_SkipMaterialUpdate = value.texture == null;
