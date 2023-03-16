@@ -5,7 +5,25 @@ using UnityEngine.EventSystems;
 
 namespace UnityEngine.UI
 {
-    public interface IClickHandler
+    public interface IClickablePressedHandler
+    {
+        /// <summary>
+        /// Called when the pointer is pressed down on the Clickable.
+        /// Only interactable Clickable will receive this event.
+        /// </summary>
+        void OnPressed(Clickable sender);
+    }
+
+    public interface IClickableReleasedHandler
+    {
+        /// <summary>
+        /// Called when the pointer is released on the Clickable, where the pointer was eligible for click when pressed down.
+        /// Even after interactable is set to false, this event will be called.
+        /// </summary>
+        void OnReleased(Clickable sender);
+    }
+
+    public interface IClickableClickHandler
     {
         void OnClick(Clickable sender);
     }
@@ -16,11 +34,21 @@ namespace UnityEngine.UI
         [SerializeField, OnValueChanged(nameof(SetInteractable))]
         bool _interactable = true;
 
+        bool _isPointerDowned;
         bool _eligibleForClick;
         InteractabilityResolver _groupsAllowInteraction;
 
-        void OnEnable() => _eligibleForClick = false;
-        void OnDisable() => _eligibleForClick = false;
+        void OnEnable()
+        {
+            _isPointerDowned = false;
+            _eligibleForClick = false;
+        }
+
+        void OnDisable()
+        {
+            _isPointerDowned = false;
+            _eligibleForClick = false;
+        }
 
         void OnTransformParentChanged() => _groupsAllowInteraction.SetDirty();
         void OnCanvasGroupChanged() => _groupsAllowInteraction.SetDirty();
@@ -42,21 +70,29 @@ namespace UnityEngine.UI
 
         void IPointerDownHandler.OnPointerDown(PointerEventData eventData)
         {
+            Assert.IsFalse(_isPointerDowned);
             Assert.IsFalse(_eligibleForClick);
+
             if (eventData.button != PointerEventData.InputButton.Left) return;
             if (IsInteractable() == false) return;
 
+            _isPointerDowned = true;
             _eligibleForClick = true;
+            InvokePressedEvent(this);
         }
 
         void IPointerUpHandler.OnPointerUp(PointerEventData eventData)
         {
             if (eventData.button != PointerEventData.InputButton.Left) return;
 
+            var wasPointerDowned = _isPointerDowned;
+            _isPointerDowned = false;
             _eligibleForClick = false;
-        }
 
-        static readonly List<IClickHandler> _handlerBuffer = new();
+            // If interactable was set to false when pointer was downed, we should not invoke released event.
+            if (wasPointerDowned)
+                InvokeReleasedEvent(this);
+        }
 
         void IPointerClickHandler.OnPointerClick(PointerEventData eventData)
         {
@@ -68,13 +104,45 @@ namespace UnityEngine.UI
                 return;
             }
 
-            GetComponents(_handlerBuffer);
-            foreach (var handler in _handlerBuffer)
+            InvokeClickEvent(this);
+        }
+
+        static readonly List<IClickablePressedHandler> _pressedHandlerBuffer = new();
+        static void InvokePressedEvent(Clickable target)
+        {
+            target.GetComponents(_pressedHandlerBuffer);
+            foreach (var handler in _pressedHandlerBuffer)
             {
                 // If handler is disabled, just skip it.
                 if (handler is Behaviour {isActiveAndEnabled: false})
                     continue;
-                handler.OnClick(this);
+                handler.OnPressed(target);
+            }
+        }
+
+        static readonly List<IClickableReleasedHandler> _releasedHandlerBuffer = new();
+        static void InvokeReleasedEvent(Clickable target)
+        {
+            target.GetComponents(_releasedHandlerBuffer);
+            foreach (var handler in _releasedHandlerBuffer)
+            {
+                // If handler is disabled, just skip it.
+                if (handler is Behaviour {isActiveAndEnabled: false})
+                    continue;
+                handler.OnReleased(target);
+            }
+        }
+
+        static readonly List<IClickableClickHandler> _clickHandlerBuffer = new();
+        static void InvokeClickEvent(Clickable target)
+        {
+            target.GetComponents(_clickHandlerBuffer);
+            foreach (var handler in _clickHandlerBuffer)
+            {
+                // If handler is disabled, just skip it.
+                if (handler is Behaviour {isActiveAndEnabled: false})
+                    continue;
+                handler.OnClick(target);
             }
         }
     }

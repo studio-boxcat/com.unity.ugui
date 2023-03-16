@@ -406,7 +406,7 @@ namespace UnityEngine.UI
                 return;
 
             var animator = this.animator; // Cache animator to avoid multiple lookups.
-            if (animator is null || !animator.isActiveAndEnabled || !animator.hasBoundPlayables)
+            if (animator == null || !animator.isActiveAndEnabled || !animator.hasBoundPlayables)
                 return;
 
             animator.ResetTrigger(AnimationTriggers.Normal);
