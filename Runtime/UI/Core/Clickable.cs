@@ -87,7 +87,6 @@ namespace UnityEngine.UI
 
             var wasPointerDowned = _isPointerDowned;
             _isPointerDowned = false;
-            _eligibleForClick = false;
 
             // If interactable was set to false when pointer was downed, we should not invoke released event.
             if (wasPointerDowned)
@@ -104,6 +103,8 @@ namespace UnityEngine.UI
                 return;
             }
 
+            // Note that OnPointerUp is called before OnPointerClick.
+            _eligibleForClick = false;
             InvokeClickEvent(this);
         }
 
