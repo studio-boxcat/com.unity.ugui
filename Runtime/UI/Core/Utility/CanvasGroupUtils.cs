@@ -14,7 +14,10 @@ namespace UnityEngine.UI
 
                 // If the group is not enabled, we just ignore it.
                 if (canvasGroup.enabled == false)
+                {
+                    t = t.parent;
                     continue;
+                }
 
                 // Interaction is not allowed if the group is not interactable.
                 if (canvasGroup.interactable == false)
