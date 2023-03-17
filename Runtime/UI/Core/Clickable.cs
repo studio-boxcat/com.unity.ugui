@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
@@ -37,6 +38,8 @@ namespace UnityEngine.UI
         bool _isPointerDowned;
         bool _eligibleForClick;
         InteractabilityResolver _groupsAllowInteraction;
+
+        public event Action<Clickable> OnClick;
 
         void OnEnable()
         {
@@ -106,6 +109,7 @@ namespace UnityEngine.UI
             // Note that OnPointerUp is called before OnPointerClick.
             _eligibleForClick = false;
             InvokeClickEvent(this);
+            OnClick?.Invoke(this);
         }
 
         static readonly List<IClickablePressedHandler> _pressedHandlerBuffer = new();
