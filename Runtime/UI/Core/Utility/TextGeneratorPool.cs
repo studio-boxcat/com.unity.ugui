@@ -8,6 +8,11 @@ namespace UnityEngine.UI
 
         public static TextGenerator Rent()
         {
+#if UNITY_EDITOR
+            if (_pool.Count > 100)
+                Debug.LogError("TextGeneratorPool is too big. Something is wrong.");
+#endif
+
             return _pool.TryPop(out var instance)
                 ? instance : new TextGenerator();
         }
