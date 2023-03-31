@@ -12,7 +12,7 @@ namespace UnityEngine.UI
         /// Called when the pointer is pressed down on the Clickable.
         /// Only interactable Clickable will receive this event.
         /// </summary>
-        void OnPressed(Clickable sender);
+        void OnPressed(Clickable clickable, PointerEventData eventData);
     }
 
     public interface IClickableReleasedHandler
@@ -21,12 +21,12 @@ namespace UnityEngine.UI
         /// Called when the pointer is released on the Clickable, where the pointer was eligible for click when pressed down.
         /// Even after interactable is set to false, this event will be called.
         /// </summary>
-        void OnReleased(Clickable sender);
+        void OnReleased(Clickable clickable, PointerEventData eventData);
     }
 
     public interface IClickableClickHandler
     {
-        void OnClick(Clickable sender);
+        void OnClick(Clickable clickable, PointerEventData eventData);
     }
 
     [DisallowMultipleComponent]
@@ -85,7 +85,7 @@ namespace UnityEngine.UI
 
             _isPointerDowned = true;
             _eligibleForClick = true;
-            InvokePressedEvent(this);
+            InvokePressedEvent(this, eventData);
         }
 
         void IPointerUpHandler.OnPointerUp(PointerEventData eventData)
@@ -97,7 +97,7 @@ namespace UnityEngine.UI
 
             // If interactable was set to false when pointer was downed, we should not invoke released event.
             if (wasPointerDowned)
-                InvokeReleasedEvent(this);
+                InvokeReleasedEvent(this, eventData);
         }
 
         void IPointerClickHandler.OnPointerClick(PointerEventData eventData)
@@ -112,12 +112,12 @@ namespace UnityEngine.UI
 
             // Note that OnPointerUp is called before OnPointerClick.
             _eligibleForClick = false;
-            InvokeClickEvent(this);
+            InvokeClickEvent(this, eventData);
             OnClick?.Invoke(this);
         }
 
         static readonly List<IClickablePressedHandler> _pressedHandlerBuffer = new();
-        static void InvokePressedEvent(Clickable target)
+        static void InvokePressedEvent(Clickable target, PointerEventData eventData)
         {
             target.GetComponents(_pressedHandlerBuffer);
             foreach (var handler in _pressedHandlerBuffer)
@@ -125,12 +125,12 @@ namespace UnityEngine.UI
                 // If handler is disabled, just skip it.
                 if (handler is Behaviour {isActiveAndEnabled: false})
                     continue;
-                handler.OnPressed(target);
+                handler.OnPressed(target, eventData);
             }
         }
 
         static readonly List<IClickableReleasedHandler> _releasedHandlerBuffer = new();
-        static void InvokeReleasedEvent(Clickable target)
+        static void InvokeReleasedEvent(Clickable target, PointerEventData eventData)
         {
             target.GetComponents(_releasedHandlerBuffer);
             foreach (var handler in _releasedHandlerBuffer)
@@ -138,12 +138,12 @@ namespace UnityEngine.UI
                 // If handler is disabled, just skip it.
                 if (handler is Behaviour {isActiveAndEnabled: false})
                     continue;
-                handler.OnReleased(target);
+                handler.OnReleased(target, eventData);
             }
         }
 
         static readonly List<IClickableClickHandler> _clickHandlerBuffer = new();
-        static void InvokeClickEvent(Clickable target)
+        static void InvokeClickEvent(Clickable target, PointerEventData eventData)
         {
             target.GetComponents(_clickHandlerBuffer);
             foreach (var handler in _clickHandlerBuffer)
@@ -151,7 +151,7 @@ namespace UnityEngine.UI
                 // If handler is disabled, just skip it.
                 if (handler is Behaviour {isActiveAndEnabled: false})
                     continue;
-                handler.OnClick(target);
+                handler.OnClick(target, eventData);
             }
         }
     }
