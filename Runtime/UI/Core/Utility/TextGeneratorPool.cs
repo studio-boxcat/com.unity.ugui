@@ -26,5 +26,13 @@ namespace UnityEngine.UI
 
             _pool.Push(instance);
         }
+
+#if UNITY_EDITOR
+        static TextGeneratorPool()
+        {
+            // Clear the pool when the play mode changes.
+            UnityEditor.EditorApplication.playModeStateChanged += _ => _pool.Clear();
+        }
+#endif
     }
 }
