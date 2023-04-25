@@ -107,6 +107,9 @@ namespace UnityEngine.UI
             return depth;
         }
 
+        static readonly List<RectMask2D> _rectMaskBuf = new();
+        static readonly List<Canvas> _canvasBuf = new();
+
         /// <summary>
         /// Find the correct RectMask2D for a given IClippable.
         /// </summary>
@@ -114,43 +117,37 @@ namespace UnityEngine.UI
         /// <returns>The Correct RectMask2D</returns>
         public static RectMask2D GetRectMaskForClippable(IClippable clippable)
         {
-            List<RectMask2D> rectMaskComponents = ListPool<RectMask2D>.Get();
-            List<Canvas> canvasComponents = ListPool<Canvas>.Get();
+            var clippableGO = clippable.gameObject;
+            clippableGO.GetComponentsInParent(false, _rectMaskBuf);
+            if (_rectMaskBuf.Count == 0)
+                return null;
+
             RectMask2D componentToReturn = null;
-
-            clippable.gameObject.GetComponentsInParent(false, rectMaskComponents);
-
-            if (rectMaskComponents.Count > 0)
+            foreach (var rectMask in _rectMaskBuf)
             {
-                for (int rmi = 0; rmi < rectMaskComponents.Count; rmi++)
+                componentToReturn = rectMask;
+                if (ReferenceEquals(componentToReturn.gameObject, clippableGO))
                 {
-                    componentToReturn = rectMaskComponents[rmi];
-                    if (componentToReturn.gameObject == clippable.gameObject)
-                    {
-                        componentToReturn = null;
-                        continue;
-                    }
-                    if (!componentToReturn.isActiveAndEnabled)
-                    {
-                        componentToReturn = null;
-                        continue;
-                    }
-                    clippable.gameObject.GetComponentsInParent(false, canvasComponents);
-                    for (int i = canvasComponents.Count - 1; i >= 0; i--)
-                    {
-                        var isDescendantOrSelf = componentToReturn.transform.IsChildOf(canvasComponents[i].transform);
-                        if (!isDescendantOrSelf && canvasComponents[i].overrideSorting)
-                        {
-                            componentToReturn = null;
-                            break;
-                        }
-                    }
-                    break;
+                    componentToReturn = null;
+                    continue;
                 }
+                if (!componentToReturn.isActiveAndEnabled)
+                {
+                    componentToReturn = null;
+                    continue;
+                }
+                clippableGO.GetComponentsInParent(false, _canvasBuf);
+                for (int i = _canvasBuf.Count - 1; i >= 0; i--)
+                {
+                    var isDescendantOrSelf = componentToReturn.transform.IsChildOf(_canvasBuf[i].transform);
+                    if (!isDescendantOrSelf && _canvasBuf[i].overrideSorting)
+                    {
+                        componentToReturn = null;
+                        break;
+                    }
+                }
+                break;
             }
-
-            ListPool<RectMask2D>.Release(rectMaskComponents);
-            ListPool<Canvas>.Release(canvasComponents);
 
             return componentToReturn;
         }
