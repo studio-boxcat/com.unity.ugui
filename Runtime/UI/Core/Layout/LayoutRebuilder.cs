@@ -164,9 +164,6 @@ namespace UnityEngine.UI
             ListPool<Component>.Release(components);
         }
 
-        // Dedicated component buffer for MarkLayoutForRebuild().
-        static readonly List<ILayoutGroup> _markLayoutForRebuildCompBuf = new();
-
         /// <summary>
         /// Mark the given RectTransform as needing it's layout to be recalculated during the next layout pass.
         /// </summary>
@@ -176,24 +173,14 @@ namespace UnityEngine.UI
             if (rect == null)
                 return;
 
-            bool validLayoutGroup = true;
             RectTransform layoutRoot = rect;
             var parent = layoutRoot.parent as RectTransform;
-            while (validLayoutGroup && !ReferenceEquals(parent, null))
+            while (parent is not null)
             {
-                validLayoutGroup = false;
-                parent.GetComponents(_markLayoutForRebuildCompBuf);
+                if (ComponentSearch.AnyActiveAndEnabledComponent<ILayoutGroup>(parent) == false)
+                    break;
 
-                foreach (var cur in _markLayoutForRebuildCompBuf)
-                {
-                    if (((Behaviour)cur).isActiveAndEnabled)
-                    {
-                        validLayoutGroup = true;
-                        layoutRoot = parent;
-                        break;
-                    }
-                }
-
+                layoutRoot = parent;
                 parent = parent.parent as RectTransform;
             }
 
@@ -205,38 +192,9 @@ namespace UnityEngine.UI
             MarkLayoutRootForRebuild(layoutRoot);
         }
 
-        // Dedicated component buffer for ValidController().
-        static readonly List<ILayoutController> _validControllerCompBuf = new();
-
         private static bool ValidController([NotNull] RectTransform layoutRoot)
         {
-            // Before get entire component list, check if the layout root has any controller.
-            // If there is no controller, we can skip the whole layoutRoot.
-            if (layoutRoot.TryGetComponent<ILayoutController>(out var layoutController) == false)
-                return false;
-
-            // If the layout root has a controller and it is enabled, the given layoutRoot is valid.
-            if (((Behaviour) layoutController).isActiveAndEnabled)
-                return true;
-
-            // Get all controllers in the layout root, and check if there is any enabled controller.
-            layoutRoot.GetComponents(_validControllerCompBuf);
-
-            // If there is only one controller, it must be the layoutController.
-            if (_validControllerCompBuf.Count == 1)
-                return false;
-
-            foreach (var cur in _validControllerCompBuf)
-            {
-                // Since we already checked the layoutController, we can skip it.
-                if (ReferenceEquals(cur, layoutController))
-                    continue;
-                if (((Behaviour)cur).isActiveAndEnabled)
-                    return true;
-            }
-
-            // If there is no enabled controller, the given layoutRoot is invalid.
-            return false;
+            return ComponentSearch.AnyActiveAndEnabledComponent<ILayoutController>(layoutRoot);
         }
 
         private static void MarkLayoutRootForRebuild(RectTransform controller)

@@ -404,21 +404,7 @@ namespace UnityEngine.UI
 
         private void CacheCanvas()
         {
-            Component comp = this;
-            while (true)
-            {
-                comp = m_Canvas = comp.GetComponentInParent<Canvas>(false);
-                if (m_Canvas is null) return; // Reached top of hierarchy, break.
-                if (m_Canvas.isActiveAndEnabled) return; // Found valid canvas, break.
-
-                // Go up hierarchy.
-                comp = comp.transform.parent;
-                if (comp is null) // Reached top of hierarchy, break.
-                {
-                    m_Canvas = null;
-                    return;
-                }
-            }
+            m_Canvas = ComponentSearch.SearchActiveAndEnabledParentOrSelfComponent<Canvas>(this);
         }
 
         /// <summary>
