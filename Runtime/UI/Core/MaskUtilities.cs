@@ -108,31 +108,6 @@ namespace UnityEngine.UI
         }
 
         /// <summary>
-        /// Helper function to determine if the child is a descendant of father or is father.
-        /// </summary>
-        /// <param name="father">The transform to compare against.</param>
-        /// <param name="child">The starting transform to search up the hierarchy.</param>
-        /// <returns>Is child equal to father or is a descendant.</returns>
-        public static bool IsDescendantOrSelf(Transform father, Transform child)
-        {
-            if (father == null || child == null)
-                return false;
-
-            if (father == child)
-                return true;
-
-            while (child.parent != null)
-            {
-                if (child.parent == father)
-                    return true;
-
-                child = child.parent;
-            }
-
-            return false;
-        }
-
-        /// <summary>
         /// Find the correct RectMask2D for a given IClippable.
         /// </summary>
         /// <param name="clippable">Clippable to search from.</param>
@@ -163,7 +138,8 @@ namespace UnityEngine.UI
                     clippable.gameObject.GetComponentsInParent(false, canvasComponents);
                     for (int i = canvasComponents.Count - 1; i >= 0; i--)
                     {
-                        if (!IsDescendantOrSelf(canvasComponents[i].transform, componentToReturn.transform) && canvasComponents[i].overrideSorting)
+                        var isDescendantOrSelf = componentToReturn.transform.IsChildOf(canvasComponents[i].transform);
+                        if (!isDescendantOrSelf && canvasComponents[i].overrideSorting)
                         {
                             componentToReturn = null;
                             break;
@@ -202,7 +178,8 @@ namespace UnityEngine.UI
                     bool shouldAdd = true;
                     for (int j = canvasComponents.Count - 1; j >= 0; j--)
                     {
-                        if (!IsDescendantOrSelf(canvasComponents[j].transform, rectMaskComponents[i].transform) && canvasComponents[j].overrideSorting)
+                        var isDescendantOrSelf = rectMaskComponents[i].transform.IsChildOf(canvasComponents[i].transform);
+                        if (!isDescendantOrSelf && canvasComponents[j].overrideSorting)
                         {
                             shouldAdd = false;
                             break;
