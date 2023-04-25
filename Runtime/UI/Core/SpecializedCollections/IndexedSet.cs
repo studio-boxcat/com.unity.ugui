@@ -33,19 +33,20 @@ namespace UnityEngine.UI.Collections
         public void Add(T item, bool isActive)
         {
             m_List.Add(item);
-            m_Dictionary.Add(item, m_List.Count - 1);
+            var index = m_List.Count - 1;
+            m_Dictionary.Add(item, index);
             if (isActive)
-                EnableItem(item);
+                EnableItemByIndex(index);
         }
 
         public bool AddUnique(T item, bool isActive = true)
         {
-            if (m_Dictionary.ContainsKey(item))
+            if (m_Dictionary.TryGetValue(item, out var index))
             {
                 if (isActive)
-                    EnableItem(item);
+                    EnableItemByIndex(index);
                 else
-                    DisableItem(item);
+                    DisableItemByIndex(index);
                 return false;
             }
 
@@ -56,9 +57,13 @@ namespace UnityEngine.UI.Collections
 
         public bool EnableItem(T item)
         {
-            if (!m_Dictionary.TryGetValue(item, out int index))
+            if (!m_Dictionary.TryGetValue(item, out var index))
                 return false;
+            return EnableItemByIndex(index);
+        }
 
+        public bool EnableItemByIndex(int index)
+        {
             if (index < m_EnabledObjectCount)
                 return true;
 
@@ -73,7 +78,11 @@ namespace UnityEngine.UI.Collections
         {
             if (!m_Dictionary.TryGetValue(item, out int index))
                 return false;
+            return DisableItemByIndex(index);
+        }
 
+        public bool DisableItemByIndex(int index)
+        {
             if (index >= m_EnabledObjectCount)
                 return true;
 
