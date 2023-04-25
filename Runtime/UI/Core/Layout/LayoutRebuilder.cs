@@ -210,13 +210,32 @@ namespace UnityEngine.UI
 
         private static bool ValidController([NotNull] RectTransform layoutRoot)
         {
+            // Before get entire component list, check if the layout root has any controller.
+            // If there is no controller, we can skip the whole layoutRoot.
+            if (layoutRoot.TryGetComponent<ILayoutController>(out var layoutController) == false)
+                return false;
+
+            // If the layout root has a controller and it is enabled, the given layoutRoot is valid.
+            if (((Behaviour) layoutController).isActiveAndEnabled)
+                return true;
+
+            // Get all controllers in the layout root, and check if there is any enabled controller.
             layoutRoot.GetComponents(_validControllerCompBuf);
+
+            // If there is only one controller, it must be the layoutController.
+            if (_validControllerCompBuf.Count == 1)
+                return false;
+
             foreach (var cur in _validControllerCompBuf)
             {
+                // Since we already checked the layoutController, we can skip it.
+                if (ReferenceEquals(cur, layoutController))
+                    continue;
                 if (((Behaviour)cur).isActiveAndEnabled)
                     return true;
             }
 
+            // If there is no enabled controller, the given layoutRoot is invalid.
             return false;
         }
 
