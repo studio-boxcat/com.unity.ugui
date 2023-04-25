@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
@@ -57,6 +58,22 @@ namespace UnityEngine.UI
             }
 
             return false;
+        }
+
+        public static void GetEnabledComponents<T>(Component target, List<Component> components)
+        {
+            Assert.AreEqual(0, components.Count);
+
+            // Get all components.
+            target.GetComponents(typeof(T), components);
+
+            // Remove disabled components.
+            for (var i = components.Count - 1; i >= 0; i--)
+            {
+                var comp = components[i];
+                if (!((Behaviour) comp).isActiveAndEnabled)
+                    components.RemoveAt(i);
+            }
         }
     }
 }

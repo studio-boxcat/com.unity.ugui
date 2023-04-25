@@ -53,11 +53,6 @@ namespace UnityEngine.UI
             return m_ToRebuild == null;
         }
 
-        static void StripDisabledBehavioursFromList(List<Component> components)
-        {
-            components.RemoveAll(e => e is Behaviour && !((Behaviour)e).isActiveAndEnabled);
-        }
-
         /// <summary>
         /// Forces an immediate rebuild of the layout element and child layout elements affected by the calculations.
         /// </summary>
@@ -97,8 +92,7 @@ namespace UnityEngine.UI
                 return;
 
             var components = ListPool<Component>.Get();
-            rect.GetComponents(typeof(ILayoutController), components);
-            StripDisabledBehavioursFromList(components);
+            ComponentSearch.GetEnabledComponents<ILayoutController>(rect, components);
 
             // If there are no controllers on this rect we can skip this entire sub-tree
             // We don't need to consider controllers on children deeper in the sub-tree either,
@@ -143,8 +137,7 @@ namespace UnityEngine.UI
                 return;
 
             var components = ListPool<Component>.Get();
-            rect.GetComponents(typeof(ILayoutElement), components);
-            StripDisabledBehavioursFromList(components);
+            ComponentSearch.GetEnabledComponents<ILayoutElement>(rect, components);
 
             // If there are no controllers on this rect we can skip this entire sub-tree
             // We don't need to consider controllers on children deeper in the sub-tree either,
