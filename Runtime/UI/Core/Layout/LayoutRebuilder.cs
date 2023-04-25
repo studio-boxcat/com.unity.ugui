@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using UnityEngine.Events;
 using UnityEngine.Pool;
 
@@ -163,6 +164,9 @@ namespace UnityEngine.UI
             ListPool<Component>.Release(components);
         }
 
+        // Dedicated component buffer for MarkLayoutForRebuild().
+        static readonly List<ILayoutGroup> _markLayoutForRebuildCompBuf = new();
+
         /// <summary>
         /// Mark the given RectTransform as needing it's layout to be recalculated during the next layout pass.
         /// </summary>
@@ -172,18 +176,16 @@ namespace UnityEngine.UI
             if (rect == null)
                 return;
 
-            var comps = ListPool<Component>.Get();
             bool validLayoutGroup = true;
             RectTransform layoutRoot = rect;
             var parent = layoutRoot.parent as RectTransform;
             while (validLayoutGroup && !ReferenceEquals(parent, null))
             {
                 validLayoutGroup = false;
-                parent.GetComponents(typeof(ILayoutGroup), comps);
+                parent.GetComponents(_markLayoutForRebuildCompBuf);
 
-                for (int i = 0; i < comps.Count; ++i)
+                foreach (var cur in _markLayoutForRebuildCompBuf)
                 {
-                    var cur = comps[i];
                     if (((Behaviour)cur).isActiveAndEnabled)
                     {
                         validLayoutGroup = true;
@@ -197,26 +199,22 @@ namespace UnityEngine.UI
 
             // We know the layout root is valid if it's not the same as the rect,
             // since we checked that above. But if they're the same we still need to check.
-            if (ReferenceEquals(layoutRoot, rect) && !ValidController(layoutRoot, comps))
-            {
-                ListPool<Component>.Release(comps);
+            if (ReferenceEquals(layoutRoot, rect) && !ValidController(layoutRoot))
                 return;
-            }
 
             MarkLayoutRootForRebuild(layoutRoot);
-            ListPool<Component>.Release(comps);
         }
 
-        private static bool ValidController(RectTransform layoutRoot, List<Component> comps)
+        // Dedicated component buffer for ValidController().
+        static readonly List<ILayoutController> _validControllerCompBuf = new();
+
+        private static bool ValidController([NotNull] RectTransform layoutRoot)
         {
-            layoutRoot.GetComponents(typeof(ILayoutController), comps);
-            for (int i = 0; i < comps.Count; ++i)
+            layoutRoot.GetComponents(_validControllerCompBuf);
+            foreach (var cur in _validControllerCompBuf)
             {
-                var cur = comps[i];
                 if (((Behaviour)cur).isActiveAndEnabled)
-                {
                     return true;
-                }
             }
 
             return false;
