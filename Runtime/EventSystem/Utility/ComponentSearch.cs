@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine.Assertions;
 
-namespace UnityEngine.UI
+namespace UnityEngine.EventSystems
 {
     public static class ComponentSearch
     {
@@ -29,7 +29,7 @@ namespace UnityEngine.UI
         // Dedicated component buffer for ValidController().
         static readonly List<Component> _compBuf = new();
 
-        public static bool AnyActiveAndEnabledComponent<T>(Transform target)
+        public static bool AnyActiveAndEnabledComponent<T>(GameObject target)
         {
             // Before get entire component list, check if the target has any component.
 
@@ -53,11 +53,26 @@ namespace UnityEngine.UI
                 // Skip the one we already checked.
                 if (ReferenceEquals(cur, found))
                     continue;
-                if (((Behaviour) cur).isActiveAndEnabled)
+
+                // When component is a Behaviour, we need to check if it is enabled.
+                if (cur is Behaviour behaviour)
+                {
+                    if (behaviour.isActiveAndEnabled)
+                        return true;
+                }
+                // If not, we can just return true as it's not possible to be disabled.
+                else
+                {
                     return true;
+                }
             }
 
             return false;
+        }
+
+        public static bool AnyActiveAndEnabledComponent<T>(Transform target)
+        {
+            return AnyActiveAndEnabledComponent<T>(target.gameObject);
         }
 
         public static void GetEnabledComponents<T>(Component target, List<Component> components)

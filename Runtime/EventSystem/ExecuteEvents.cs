@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using UnityEngine.Pool;
 
 namespace UnityEngine.EventSystems
 {
@@ -224,8 +222,7 @@ namespace UnityEngine.EventSystems
             if (target == null || !target.activeInHierarchy)
                 return false;
 
-            var internalHandlers = ListPool<T>.Get();
-            target.GetComponents(internalHandlers);
+            using var _ = CompBuf.GetComponents(target, typeof(T), out var internalHandlers);
 
             var executed = false;
             foreach (var arg in internalHandlers)
@@ -238,7 +235,7 @@ namespace UnityEngine.EventSystems
 
                 try
                 {
-                    functor(arg, eventData);
+                    functor(arg as T, eventData);
                 }
                 catch (Exception e)
                 {
@@ -246,7 +243,6 @@ namespace UnityEngine.EventSystems
                 }
             }
 
-            ListPool<T>.Release(internalHandlers);
             return executed;
         }
 
@@ -277,47 +273,19 @@ namespace UnityEngine.EventSystems
                 return null;
 
             var t = root.transform;
-            var buffer = ListPool<T>.Get();
-
-            while (t is not null)
+            do
             {
                 var go = t.gameObject;
-                if (CanHandleEvent(go, buffer))
-                {
-                    ListPool<T>.Release(buffer);
+                if (CanHandleEvent(go))
                     return go;
-                }
-
                 t = t.parent;
-            }
+            } while (t is not null);
 
-            ListPool<T>.Release(buffer);
             return null;
 
-            static bool CanHandleEvent(GameObject go, List<T> buffer)
+            static bool CanHandleEvent(GameObject go)
             {
-                if (!go.activeInHierarchy)
-                    return false;
-
-                go.GetComponents(buffer);
-
-                foreach (var component in buffer)
-                {
-                    // When component is a Behaviour, we need to check if it is enabled.
-                    if (component is Behaviour behaviour)
-                    {
-                        if (behaviour.isActiveAndEnabled)
-                            return true;
-                    }
-                    // If not, we can just return true as it's not possible to be disabled.
-                    else
-                    {
-                        return true;
-                    }
-                }
-
-                // If we get here, it means that the game object has no components that can handle the event.
-                return false;
+                return go.activeInHierarchy && ComponentSearch.AnyActiveAndEnabledComponent<T>(go);
             }
         }
     }
