@@ -73,7 +73,7 @@ namespace UnityEngine.UI
 
         void IPointerDownHandler.OnPointerDown(PointerEventData eventData)
         {
-            Assert.IsFalse(_isPointerDowned);
+            Assert.IsFalse(_isPointerDowned, "OnPointerDown is called while pointer is already downed.");
 
             // XXX: _eligibleForClick could be true even OnPointerDown is called.
             // e.g. GameObject has recycled while pointer is downed, and OnDisable is not called.
