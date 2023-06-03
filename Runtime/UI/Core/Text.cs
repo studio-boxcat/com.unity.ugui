@@ -598,7 +598,7 @@ namespace UnityEngine.UI
 
         internal void AssignDefaultFont()
         {
-            font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         }
 
         /// <summary>
