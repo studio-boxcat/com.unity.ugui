@@ -100,7 +100,7 @@ namespace UnityEngine.EventSystems
             out RaycastResult raycastResult)
         {
             Assert.AreNotEqual(RenderMode.ScreenSpaceOverlay, canvas.renderMode);
-            var graphics = GraphicRegistry.GetGraphicsForCanvas(canvas);
+            var graphics = GraphicRegistry.GetRaycastableGraphicsForCanvas(canvas);
             if (graphics == null || graphics.Count == 0)
             {
                 raycastResult = default;
