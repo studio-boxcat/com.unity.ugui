@@ -697,6 +697,7 @@ namespace UnityEngine.UI
                 {
                     s_Mesh = new Mesh();
                     s_Mesh.name = "Shared UI Mesh";
+                    s_Mesh.hideFlags = HideFlags.HideAndDontSave;
                 }
                 return s_Mesh;
             }
