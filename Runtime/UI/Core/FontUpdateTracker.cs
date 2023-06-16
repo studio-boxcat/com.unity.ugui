@@ -12,7 +12,7 @@ namespace UnityEngine.UI
     /// </remarks>
     public static class FontUpdateTracker
     {
-        static Dictionary<Font, HashSet<Text>> m_Tracked = new Dictionary<Font, HashSet<Text>>();
+        static Dictionary<Font, HashSet<Text>> m_Tracked = new(ReferenceEqualityComparer.Object);
 
         /// <summary>
         /// Register a Text element for receiving texture atlas rebuild calls.

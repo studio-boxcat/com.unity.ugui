@@ -8,7 +8,7 @@ namespace UnityEngine.EventSystems
     public static class QuickRaycast
     {
         static readonly List<RaycasterComparisonData> _raycasterBuffer = new();
-        static readonly Dictionary<Camera, bool> _eligibleCameraCache = new();
+        static readonly Dictionary<Camera, bool> _eligibleCameraCache = new(ReferenceEqualityComparer.Object);
 
         public static bool Raycast(Vector2 screenPosition, Camera targetCamera, out RaycastResult raycastResult)
         {
