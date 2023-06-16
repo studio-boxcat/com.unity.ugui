@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine.Assertions;
 
 namespace UnityEngine.EventSystems
@@ -70,6 +71,7 @@ namespace UnityEngine.EventSystems
             return false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool AnyActiveAndEnabledComponent<T>(Transform target)
         {
             return AnyActiveAndEnabledComponent<T>(target.gameObject);
