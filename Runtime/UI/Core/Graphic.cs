@@ -456,6 +456,8 @@ namespace UnityEngine.UI
             }
         }
 
+        static readonly List<IMaterialModifier> _materialModifierBuf = new();
+
         /// <summary>
         /// The material that will be sent for Rendering (Read only).
         /// </summary>
@@ -466,13 +468,11 @@ namespace UnityEngine.UI
         {
             get
             {
-                var components = ListPool<IMaterialModifier>.Get();
-                GetComponents<IMaterialModifier>(components);
-
                 var currentMat = material;
-                for (var i = 0; i < components.Count; i++)
-                    currentMat = (components[i] as IMaterialModifier).GetModifiedMaterial(currentMat);
-                ListPool<IMaterialModifier>.Release(components);
+                GetComponents(_materialModifierBuf);
+                var count = _materialModifierBuf.Count;
+                for (var i = 0; i < count; i++)
+                    currentMat = _materialModifierBuf[i].GetModifiedMaterial(currentMat);
                 return currentMat;
             }
         }
