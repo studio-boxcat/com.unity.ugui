@@ -13,19 +13,6 @@ namespace UnityEngine.UI
         private readonly Dictionary<Canvas, IndexedSet<Graphic>> m_Graphics = new Dictionary<Canvas, IndexedSet<Graphic>>();
         private readonly Dictionary<Canvas, IndexedSet<Graphic>> m_RaycastableGraphics = new Dictionary<Canvas, IndexedSet<Graphic>>();
 
-        protected GraphicRegistry()
-        {
-            // Avoid runtime generation of these types. Some platforms are AOT only and do not support
-            // JIT. What's more we actually create a instance of the required types instead of
-            // just declaring an unused variable which may be optimized away by some compilers (Mono vs MS).
-
-            // See: 877060
-
-            System.GC.KeepAlive(new Dictionary<Graphic, int>());
-            System.GC.KeepAlive(new Dictionary<ICanvasElement, int>());
-            System.GC.KeepAlive(new Dictionary<IClipper, int>());
-        }
-
         /// <summary>
         /// The singleton instance of the GraphicRegistry. Creates a new instance if it does not exist.
         /// </summary>
