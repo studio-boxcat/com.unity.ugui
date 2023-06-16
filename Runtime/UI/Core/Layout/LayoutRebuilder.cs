@@ -33,6 +33,7 @@ namespace UnityEngine.UI
             m_CachedHashFromTransform = 0;
         }
 
+        /*
         static LayoutRebuilder()
         {
             RectTransform.reapplyDrivenProperties += ReapplyDrivenProperties;
@@ -42,6 +43,7 @@ namespace UnityEngine.UI
         {
             MarkLayoutForRebuild(driven);
         }
+        */
 
         public Transform transform { get { return m_ToRebuild; }}
 
