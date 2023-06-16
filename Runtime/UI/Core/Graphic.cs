@@ -157,7 +157,7 @@ namespace UnityEngine.UI
 
         [SerializeField] private bool m_RaycastTarget = true;
 
-        private bool m_RaycastTargetCache = true;
+        protected RaycastRegisterLink m_RaycastRegisterLink;
 
         /// <summary>
         /// Should this graphic be considered a target for raycasting?
@@ -170,17 +170,16 @@ namespace UnityEngine.UI
             }
             set
             {
-                if (value != m_RaycastTarget)
+                m_RaycastTarget = value;
+
+                if (value)
                 {
-                    if (m_RaycastTarget)
-                        GraphicRegistry.UnregisterRaycastGraphicForCanvas(canvas, this);
-
-                    m_RaycastTarget = value;
-
-                    if (m_RaycastTarget && isActiveAndEnabled)
-                        GraphicRegistry.RegisterRaycastGraphicForCanvas(canvas, this);
+                    m_RaycastRegisterLink.Reset(canvas, this);
                 }
-                m_RaycastTargetCache = value;
+                else
+                {
+                    m_RaycastRegisterLink.TryUnlink(this);
+                }
             }
         }
 
@@ -309,15 +308,7 @@ namespace UnityEngine.UI
 
         public void SetRaycastDirty()
         {
-            if (m_RaycastTargetCache != m_RaycastTarget)
-            {
-                if (m_RaycastTarget && isActiveAndEnabled)
-                    GraphicRegistry.RegisterRaycastGraphicForCanvas(canvas, this);
-
-                else if (!m_RaycastTarget)
-                    GraphicRegistry.UnregisterRaycastGraphicForCanvas(canvas, this);
-            }
-            m_RaycastTargetCache = m_RaycastTarget;
+            m_RaycastRegisterLink.Reset(canvas, this);
         }
 
         protected virtual void OnRectTransformDimensionsChange()
@@ -337,7 +328,10 @@ namespace UnityEngine.UI
 
         protected virtual void OnBeforeTransformParentChanged()
         {
-            GraphicRegistry.UnregisterGraphicForCanvas(canvas, this);
+            if (!IsActive())
+                return;
+
+            m_RaycastRegisterLink.TryUnlink(this);
             LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
         }
 
@@ -349,7 +343,7 @@ namespace UnityEngine.UI
                 return;
 
             CacheCanvas();
-            GraphicRegistry.RegisterGraphicForCanvas(canvas, this);
+            m_RaycastRegisterLink.Reset(m_Canvas, this);
             SetAllDirty();
         }
 
@@ -503,7 +497,7 @@ namespace UnityEngine.UI
         protected virtual void OnEnable()
         {
             CacheCanvas();
-            GraphicRegistry.RegisterGraphicForCanvas(canvas, this);
+            m_RaycastRegisterLink.Reset(m_Canvas, this);
 
 #if UNITY_EDITOR
             GraphicRebuildTracker.TrackGraphic(this);
@@ -522,8 +516,8 @@ namespace UnityEngine.UI
 #if UNITY_EDITOR
             GraphicRebuildTracker.UnTrackGraphic(this);
 #endif
-            GraphicRegistry.DisableGraphicForCanvas(canvas, this);
-            CanvasUpdateRegistry.DisableCanvasElementForRebuild(this);
+            m_RaycastRegisterLink.TryUnlink(this);
+            CanvasUpdateRegistry.UnRegisterCanvasElementForRebuild(this);
 
             if (canvasRenderer != null)
                 canvasRenderer.Clear();
@@ -531,40 +525,20 @@ namespace UnityEngine.UI
             LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
         }
 
-        protected virtual void OnDestroy()
-        {
-#if UNITY_EDITOR
-            GraphicRebuildTracker.UnTrackGraphic(this);
-#endif
-            GraphicRegistry.UnregisterGraphicForCanvas(canvas, this);
-            CanvasUpdateRegistry.UnRegisterCanvasElementForRebuild(this);
-        }
-
         protected virtual void OnCanvasHierarchyChanged()
         {
-            // Use m_Cavas so we dont auto call CacheCanvas
-            Canvas currentCanvas = m_Canvas;
-
             // Clear the cached canvas. Will be fetched below if active.
             m_Canvas = null;
 
             if (!IsActive())
             {
-                GraphicRegistry.UnregisterGraphicForCanvas(currentCanvas, this);
+                // XXX: As we already called unregister in OnDisable(), we should not call it again here.
+                // GraphicRegistry.UnregisterGraphicForCanvas(currentCanvas, this);
                 return;
             }
 
             CacheCanvas();
-
-            if (currentCanvas != m_Canvas)
-            {
-                GraphicRegistry.UnregisterGraphicForCanvas(currentCanvas, this);
-
-                // Only register if we are active and enabled as OnCanvasHierarchyChanged can get called
-                // during object destruction and we dont want to register ourself and then become null.
-                if (IsActive())
-                    GraphicRegistry.RegisterGraphicForCanvas(canvas, this);
-            }
+            m_RaycastRegisterLink.Reset(m_Canvas, this);
         }
 
         /// <summary>

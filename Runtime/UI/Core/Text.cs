@@ -571,7 +571,7 @@ namespace UnityEngine.UI
             base.OnDisable();
         }
 
-        protected override void OnDestroy()
+        void OnDestroy()
         {
             if (m_TextCache != null)
             {
@@ -584,8 +584,6 @@ namespace UnityEngine.UI
                 TextGeneratorPool.Return(m_TextCacheForLayout);
                 m_TextCacheForLayout = null;
             }
-
-            base.OnDestroy();
         }
 
         protected override void UpdateGeometry()

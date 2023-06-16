@@ -1,3 +1,5 @@
+using UnityEngine.EventSystems;
+
 namespace UnityEngine.UI
 {
     public static class CanvasGroupUtils
@@ -6,18 +8,9 @@ namespace UnityEngine.UI
         {
             while (t is not null)
             {
-                if (t.TryGetComponent(out CanvasGroup canvasGroup) == false)
-                {
-                    t = t.parent;
-                    continue;
-                }
-
-                // If the group is not enabled, we just ignore it.
-                if (canvasGroup.enabled == false)
-                {
-                    t = t.parent;
-                    continue;
-                }
+                var canvasGroup = ComponentSearch.SearchActiveAndEnabledParentOrSelfComponent<CanvasGroup>(t);
+                if (canvasGroup is null)
+                    return true;
 
                 // Interaction is not allowed if the group is not interactable.
                 if (canvasGroup.interactable == false)

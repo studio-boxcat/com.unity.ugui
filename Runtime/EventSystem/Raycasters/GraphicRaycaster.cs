@@ -4,6 +4,7 @@ using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
 using UnityEngine.UI;
+using UnityEngine.UI.Collections;
 
 namespace UnityEngine.EventSystems
 {
@@ -40,8 +41,7 @@ namespace UnityEngine.EventSystems
 
         private RaycastResult Raycast(Vector2 screenPosition)
         {
-            var canvasGraphics = GraphicRegistry.GetRaycastableGraphicsForCanvas(canvas);
-            if (canvasGraphics == null || canvasGraphics.Count == 0)
+            if (GraphicRegistry.TryGetRaycastableGraphicsForCanvas(canvas, out var canvasGraphics) == false)
                 return default;
 
             var currentEventCamera = eventCamera; // Property can call Camera.main, so cache the reference
@@ -62,23 +62,29 @@ namespace UnityEngine.EventSystems
         /// <summary>
         /// Perform a raycast into the screen and collect all graphics underneath it.
         /// </summary>
-        [NonSerialized] static readonly List<Graphic> s_SortedGraphics = new List<Graphic>();
-        public static bool Raycast([NotNull] Camera eventCamera, Vector2 pointerPosition, IList<Graphic> foundGraphics, out Graphic result)
+        public static bool Raycast([NotNull] Camera eventCamera, Vector2 pointerPosition, IndexedSet<Graphic> foundGraphics, out Graphic result)
         {
-            Assert.AreEqual(0, s_SortedGraphics.Count);
-
             // Necessary for the event system
             Graphic maxDepthGraphic = null;
             int maxDepth = -1; // -1 means it hasn't been processed by the canvas, which means it isn't actually drawn
-            int totalCount = foundGraphics.Count;
-            for (int i = 0; i < totalCount; ++i)
+            foreach (var graphic in foundGraphics)
             {
-                Graphic graphic = foundGraphics[i];
+                Assert.IsTrue(graphic.raycastTarget);
+                Assert.IsTrue(graphic.isActiveAndEnabled);
+
+                // XXX: foundGraphics should not contain null elements, but it seems to happen in some cases.
+                // https://console.firebase.google.com/project/nyan-tower-306804/crashlytics/app/android:com.grapetree.meowtower/issues/3ad89d02972c2c5e2ac0a43fbd494aca?time=last-seven-days&versions=2.3.0%20(265);2.3.0%20(264)&sessionEventKey=648893B4006900014ABB0CF4090C225C_1822653280777558743
+                if (graphic == null)
+                {
+                    Debug.LogError("GraphicRaycaster found a null Graphic in its list during a raycast.");
+                    continue;
+                }
+
                 var graphicDepth = graphic.depth;
                 if (graphicDepth < maxDepth)
                     continue;
 
-                if (!graphic.raycastTarget || graphic.canvasRenderer.cull)
+                if (graphic.canvasRenderer.cull)
                     continue;
 
                 if (!RectTransformUtility.RectangleContainsScreenPoint(graphic.rectTransform, pointerPosition, eventCamera, graphic.raycastPadding))

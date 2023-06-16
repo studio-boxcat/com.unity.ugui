@@ -163,10 +163,11 @@ namespace UnityEngine.UI
         /// Mark the given RectTransform as needing it's layout to be recalculated during the next layout pass.
         /// </summary>
         /// <param name="rect">Rect to rebuild.</param>
-        public static void MarkLayoutForRebuild(RectTransform rect)
+        public static void MarkLayoutForRebuild([NotNull] RectTransform rect)
         {
-            if (rect == null)
-                return;
+            // We consider gameObject is the layout root on following conditions:
+            // 1. If it's topmost gameObject with ILayoutGroup, or,
+            // 2. There's no ILayoutGroup in it's parents, but it has ILayoutController.
 
             RectTransform layoutRoot = rect;
             var parent = layoutRoot.parent as RectTransform;
@@ -192,11 +193,8 @@ namespace UnityEngine.UI
             return ComponentSearch.AnyActiveAndEnabledComponent<ILayoutController>(layoutRoot);
         }
 
-        private static void MarkLayoutRootForRebuild(RectTransform controller)
+        private static void MarkLayoutRootForRebuild([NotNull] RectTransform controller)
         {
-            if (controller == null)
-                return;
-
             var rebuilder = s_Rebuilders.Get();
             rebuilder.Initialize(controller);
             if (!CanvasUpdateRegistry.TryRegisterCanvasElementForLayoutRebuild(rebuilder))

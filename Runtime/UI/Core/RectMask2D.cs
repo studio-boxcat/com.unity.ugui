@@ -144,13 +144,8 @@ namespace UnityEngine.UI
             m_ClipTargets.Clear();
             m_MaskableTargets.Clear();
             m_Clippers.Clear();
-            ClipperRegistry.Disable(this);
-            MaskUtilities.Notify2DMaskStateChanged(this);
-        }
-
-        protected virtual void OnDestroy()
-        {
             ClipperRegistry.Unregister(this);
+            MaskUtilities.Notify2DMaskStateChanged(this);
         }
 
 #if UNITY_EDITOR

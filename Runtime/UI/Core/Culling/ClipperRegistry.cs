@@ -13,7 +13,7 @@ namespace UnityEngine.UI
     {
         static ClipperRegistry s_Instance;
 
-        readonly IndexedSet<IClipper> m_Clippers = new IndexedSet<IClipper>();
+        readonly IndexedSet<IClipper> m_Clippers = new();
 
         /// <summary>
         /// The singleton instance of the clipper registry.
@@ -33,11 +33,8 @@ namespace UnityEngine.UI
         /// </summary>
         public void Cull()
         {
-            var clippersCount = m_Clippers.Count;
-            for (var i = 0; i < clippersCount; ++i)
-            {
-                m_Clippers[i].PerformClipping();
-            }
+            foreach (var clipper in m_Clippers)
+                clipper.PerformClipping();
         }
 
         /// <summary>
@@ -48,7 +45,7 @@ namespace UnityEngine.UI
         {
             if (c == null)
                 return;
-            instance.m_Clippers.AddUnique(c);
+            instance.m_Clippers.Add(c);
         }
 
         /// <summary>
@@ -58,15 +55,6 @@ namespace UnityEngine.UI
         public static void Unregister(IClipper c)
         {
             instance.m_Clippers.Remove(c);
-        }
-
-        /// <summary>
-        /// Disable a IClipper element
-        /// </summary>
-        /// <param name="c">The Element to try and disable.</param>
-        public static void Disable(IClipper c)
-        {
-            instance.m_Clippers.DisableItem(c);
         }
     }
 }

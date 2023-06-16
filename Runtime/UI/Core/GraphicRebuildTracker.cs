@@ -10,7 +10,7 @@ namespace UnityEngine.UI
     /// </summary>
     public static class GraphicRebuildTracker
     {
-        static IndexedSet<Graphic> m_Tracked = new IndexedSet<Graphic>();
+        static IndexedSet<Graphic> m_Tracked = new();
         static bool s_Initialized;
 
         /// <summary>
@@ -25,7 +25,7 @@ namespace UnityEngine.UI
                 s_Initialized = true;
             }
 
-            m_Tracked.AddUnique(g);
+            m_Tracked.Add(g);
         }
 
         /// <summary>
@@ -37,22 +37,11 @@ namespace UnityEngine.UI
             m_Tracked.Remove(g);
         }
 
-        /// <summary>
-        /// Remove a Graphic to the list of tracked Graphics
-        /// </summary>
-        /// <param name="g">The graphic to remove from tracking.</param>
-        public static void DisableTrackGraphic(Graphic g)
-        {
-            m_Tracked.DisableItem(g);
-        }
-
         static void OnRebuildRequested()
         {
             StencilMaterial.ClearAll();
-            for (int i = 0; i < m_Tracked.Count; i++)
-            {
-                m_Tracked[i].OnRebuildRequested();
-            }
+            foreach (var graphic in m_Tracked)
+                graphic.OnRebuildRequested();
         }
     }
 }
