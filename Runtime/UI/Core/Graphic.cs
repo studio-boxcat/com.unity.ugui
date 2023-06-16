@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using UnityEngine.Assertions;
 #if UNITY_EDITOR
 using System.Reflection;
 #endif
@@ -783,65 +785,57 @@ namespace UnityEngine.UI
         /// </summary>
         public virtual void SetNativeSize() {}
 
+        static readonly List<ICanvasRaycastFilter> _raycastFilterBuf = new();
+
         /// <summary>
         /// When a GraphicRaycaster is raycasting into the scene it does two things. First it filters the elements using their RectTransform rect. Then it uses this Raycast function to determine the elements hit by the raycast.
         /// </summary>
         /// <param name="sp">Screen point being tested</param>
         /// <param name="eventCamera">Camera that is being used for the testing.</param>
         /// <returns>True if the provided point is a valid location for GraphicRaycaster raycasts.</returns>
-        public virtual bool Raycast(Vector2 sp, Camera eventCamera)
+        public bool Raycast(Vector2 sp, Camera eventCamera)
         {
-            if (!isActiveAndEnabled)
-                return false;
+            Assert.IsTrue(isActiveAndEnabled);
 
             var t = transform;
-            var components = ListPool<Component>.Get();
-
-            bool ignoreParentGroups = false;
-            bool continueTraversal = true;
-
-            while (t != null)
+            var ignoreParentGroups = false;
+            while (t is not null)
             {
-                t.GetComponents(components);
-                for (var i = 0; i < components.Count; i++)
+                // For most cases, there's no ICanvasRaycastFilter so we can avoid the GetComponents call.
+                if (t.TryGetComponent(out ICanvasRaycastFilter _))
                 {
-                    if (components[i] is Canvas {overrideSorting: true})
-                        continueTraversal = false;
-
-                    var filter = components[i] as ICanvasRaycastFilter;
-
-                    if (filter == null)
-                        continue;
-
-                    var raycastValid = true;
-
-                    if (components[i] is CanvasGroup group)
+                    t.GetComponents(_raycastFilterBuf);
+                    foreach (var filter in _raycastFilterBuf)
                     {
-                        if (!group.enabled)
+                        // If the filter is disabled, skip it.
+                        if (filter is Behaviour {enabled: false})
                             continue;
 
-                        if (ignoreParentGroups == false && group.ignoreParentGroups)
+                        // Skip if we've set ignoreParentGroups to true.
+                        if (filter is CanvasGroup group)
                         {
-                            ignoreParentGroups = true;
-                            raycastValid = filter.IsRaycastLocationValid(sp, eventCamera);
+                            if (ignoreParentGroups)
+                                continue;
+                            if (group.ignoreParentGroups)
+                                ignoreParentGroups = true;
                         }
-                        else if (!ignoreParentGroups)
-                            raycastValid = filter.IsRaycastLocationValid(sp, eventCamera);
-                    }
-                    else
-                    {
-                        raycastValid = filter.IsRaycastLocationValid(sp, eventCamera);
-                    }
 
-                    if (!raycastValid)
-                    {
-                        ListPool<Component>.Release(components);
-                        return false;
+                        // If any filter says it's not valid, return false.
+                        if (filter.IsRaycastLocationValid(sp, eventCamera) == false)
+                            return false;
                     }
                 }
-                t = continueTraversal ? t.parent : null;
+
+
+                // If canvas.overrideSorting is set, raycast traversal should stop at the canvas.
+                if (t.TryGetComponent(out Canvas canvas) && canvas.overrideSorting)
+                    break;
+
+
+                // Go up the hierarchy.
+                t = t.parent;
             }
-            ListPool<Component>.Release(components);
+
             return true;
         }
 
