@@ -240,7 +240,7 @@ namespace UnityEngine.UI
             }
 
             // don't re-add it if the newparent is inactive
-            if (newParent != null && newParent.IsActive())
+            if (newParent is not null && newParent.IsActive())
                 newParent.AddClippable(this);
 
             m_ParentMask = newParent;
