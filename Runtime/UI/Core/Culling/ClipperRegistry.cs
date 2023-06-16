@@ -15,14 +15,6 @@ namespace UnityEngine.UI
 
         readonly IndexedSet<IClipper> m_Clippers = new IndexedSet<IClipper>();
 
-        protected ClipperRegistry()
-        {
-            // This is needed for AOT platforms. Without it the compile doesn't get the definition of the Dictionarys
-#pragma warning disable 168
-            Dictionary<IClipper, int> emptyIClipperDic;
-#pragma warning restore 168
-        }
-
         /// <summary>
         /// The singleton instance of the clipper registry.
         /// </summary>
