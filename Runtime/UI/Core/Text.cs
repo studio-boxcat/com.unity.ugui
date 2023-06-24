@@ -596,11 +596,6 @@ namespace UnityEngine.UI
             }
         }
 
-        internal void AssignDefaultFont()
-        {
-            font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        }
-
         /// <summary>
         /// Convenience function to populate the generation setting for the text.
         /// </summary>
