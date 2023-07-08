@@ -210,7 +210,9 @@ namespace UnityEngine.EventSystems
 
         private void Execute(EventTriggerType id, BaseEventData eventData)
         {
-            for (int i = 0; i < triggers.Count; ++i)
+            var triggerCount = triggers.Count;
+
+            for (int i = 0, imax = triggers.Count; i < imax; ++i)
             {
                 var ent = triggers[i];
                 if (ent.eventID == id && ent.callback != null)
