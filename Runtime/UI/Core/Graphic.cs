@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
 #if UNITY_EDITOR
 using System.Reflection;
@@ -101,8 +102,10 @@ namespace UnityEngine.UI
 
         // Cached and saved values
         [FormerlySerializedAs("m_Mat")]
+        [ShowIf("m_Material_ShowIf")]
         [SerializeField] protected Material m_Material;
 
+        [ShowIf("m_Color_ShowIf")]
         [SerializeField] private Color m_Color = Color.white;
 
         [NonSerialized] protected bool m_SkipLayoutUpdate;
@@ -155,7 +158,7 @@ namespace UnityEngine.UI
         /// </example>
         public virtual Color color { get { return m_Color; } set { if (SetPropertyUtility.SetColor(ref m_Color, value)) SetVerticesDirty(); } }
 
-        [SerializeField] private bool m_RaycastTarget = true;
+        [SerializeField, ShowIf("m_RaycastTarget_ShowIf")] private bool m_RaycastTarget = true;
 
         protected RaycastRegisterLink m_RaycastRegisterLink;
 
@@ -183,7 +186,7 @@ namespace UnityEngine.UI
             }
         }
 
-        [SerializeField]
+        [SerializeField, ShowIf("m_RaycastPadding_ShowIf")]
         private Vector4 m_RaycastPadding = new Vector4();
 
         /// <summary>
@@ -889,5 +892,12 @@ namespace UnityEngine.UI
         {
             m_OnDirtyMaterialCallback -= action;
         }
+
+#if UNITY_EDITOR
+        protected virtual bool m_Material_ShowIf() => true;
+        protected virtual bool m_Color_ShowIf() => true;
+        protected virtual bool m_RaycastTarget_ShowIf() => true;
+        protected virtual bool m_RaycastPadding_ShowIf() => true;
+#endif
     }
 }

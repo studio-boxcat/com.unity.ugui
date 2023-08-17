@@ -1,4 +1,5 @@
 using System;
+using Sirenix.OdinInspector;
 using UnityEngine.Events;
 using UnityEngine.Rendering;
 
@@ -25,7 +26,8 @@ namespace UnityEngine.UI
         // m_IncludeForMasking should only be true if m_Maskable is true AND a parent of the graphic has an IMask component.
         // Things would still work correctly if m_IncludeForMasking was always true when m_Maskable is, but performance would suffer.
         [SerializeField]
-        private bool m_Maskable = true;
+        [ShowIf("m_Maskable_ShowIf")]
+        private bool m_Maskable;
 
         private bool m_IsMaskingGraphic = false;
 
@@ -266,5 +268,9 @@ namespace UnityEngine.UI
             m_ShouldRecalculateStencil = true;
             SetMaterialDirty();
         }
+
+#if UNITY_EDITOR
+        protected virtual bool m_Maskable_ShowIf() => true;
+#endif
     }
 }
