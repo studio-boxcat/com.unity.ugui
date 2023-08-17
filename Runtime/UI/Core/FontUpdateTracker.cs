@@ -1,9 +1,54 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
+using JetBrains.Annotations;
+using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
+    public interface IFontUpdateListener
+    {
+        void FontTextureChanged();
+    }
+
+    public struct FontUpdateLink
+    {
+        readonly IFontUpdateListener _listener;
+        [CanBeNull] Font _font;
+
+
+        public FontUpdateLink(IFontUpdateListener listener)
+        {
+            _listener = listener;
+            _font = null;
+        }
+
+        public bool IsInvalid() => _listener is null;
+
+        public void Update(Font font)
+        {
+            Assert.IsNotNull(_listener);
+
+            if (ReferenceEquals(_font, font))
+                return;
+
+            if (_font is not null)
+                FontUpdateTracker.UntrackText(_font, _listener);
+            _font = font;
+            if (font is not null)
+                FontUpdateTracker.TrackText(font, _listener);
+        }
+
+        public void Untrack()
+        {
+            Assert.IsNotNull(_listener);
+
+            if (_font is null)
+                return;
+            FontUpdateTracker.UntrackText(_font, _listener);
+            _font = null;
+        }
+    }
+
     /// <summary>
     /// Utility class that is used to help with Text update.
     /// </summary>
@@ -12,67 +57,57 @@ namespace UnityEngine.UI
     /// </remarks>
     public static class FontUpdateTracker
     {
-        static Dictionary<Font, HashSet<Text>> m_Tracked = new(ReferenceEqualityComparer.Object);
+        static readonly Dictionary<Font, HashSet<IFontUpdateListener>> _tracked = new(ReferenceEqualityComparer.Object);
 
         /// <summary>
         /// Register a Text element for receiving texture atlas rebuild calls.
         /// </summary>
-        /// <param name="t">The Text object to track</param>
-        public static void TrackText(Text t)
+        public static void TrackText(Font font, IFontUpdateListener listener)
         {
-            if (t.font == null)
-                return;
+            Assert.IsNotNull(font);
 
-            HashSet<Text> exists;
-            m_Tracked.TryGetValue(t.font, out exists);
-            if (exists == null)
+            if (_tracked.TryGetValue(font, out var texts) == false)
             {
                 // The textureRebuilt event is global for all fonts, so we add our delegate the first time we register *any* Text
-                if (m_Tracked.Count == 0)
-                    Font.textureRebuilt += RebuildForFont;
+                if (_tracked.Count == 0)
+                {
+                    _rebuildForFont ??= RebuildForFont;
+                    Font.textureRebuilt += _rebuildForFont;
+                }
 
-                exists = new HashSet<Text>();
-                m_Tracked.Add(t.font, exists);
+                texts = new HashSet<IFontUpdateListener>();
+                _tracked.Add(font, texts);
             }
-            exists.Add(t);
-        }
 
-        private static void RebuildForFont(Font f)
-        {
-            HashSet<Text> texts;
-            m_Tracked.TryGetValue(f, out texts);
-
-            if (texts == null)
-                return;
-
-            foreach (var text in texts)
-                text.FontTextureChanged();
+            texts.Add(listener);
         }
 
         /// <summary>
         /// Deregister a Text element from receiving texture atlas rebuild calls.
         /// </summary>
-        /// <param name="t">The Text object to no longer track</param>
-        public static void UntrackText(Text t)
+        public static void UntrackText(Font font, IFontUpdateListener listener)
         {
-            if (t.font == null)
-                return;
+            Assert.IsNotNull(font);
 
-            HashSet<Text> texts;
-            m_Tracked.TryGetValue(t.font, out texts);
+            var texts = _tracked[font];
+            texts.Remove(listener);
+            if (texts.Count != 0) return;
 
-            if (texts == null)
-                return;
+            _tracked.Remove(font);
 
-            texts.Remove(t);
+            // There is a global textureRebuilt event for all fonts, so once the last Text reference goes away, remove our delegate
+            if (_tracked.Count == 0)
+                Font.textureRebuilt -= _rebuildForFont;
+        }
 
-            if (texts.Count == 0)
+        static Action<Font> _rebuildForFont;
+
+        static void RebuildForFont(Font font)
+        {
+            if (_tracked.TryGetValue(font, out var texts))
             {
-                m_Tracked.Remove(t.font);
-
-                // There is a global textureRebuilt event for all fonts, so once the last Text reference goes away, remove our delegate
-                if (m_Tracked.Count == 0)
-                    Font.textureRebuilt -= RebuildForFont;
+                foreach (var text in texts)
+                    text.FontTextureChanged();
             }
         }
     }

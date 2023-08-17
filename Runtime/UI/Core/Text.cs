@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
@@ -8,14 +9,9 @@ namespace UnityEngine.UI
     /// <summary>
     /// The default Graphic to draw font data to screen.
     /// </summary>
-    public class Text : MaskableGraphic, ILayoutElement
+    public class Text : MaskableGraphic, ILayoutElement, IFontUpdateListener
     {
         [SerializeField] private FontData m_FontData;
-
-#if UNITY_EDITOR
-        // needed to track font changes from the inspector
-        private Font m_LastTrackedFont;
-#endif
 
         [TextArea(3, 10)][SerializeField] protected string m_Text = String.Empty;
 
@@ -25,9 +21,12 @@ namespace UnityEngine.UI
         // We use this flag instead of Unregistering/Registering the callback to avoid allocation.
         [NonSerialized] protected bool m_DisableFontTextureRebuiltCallback = false;
 
+        FontUpdateLink _fontUpdateLink;
+
         protected Text()
         {
             useLegacyMeshGeneration = false;
+            _fontUpdateLink = new FontUpdateLink(this);
         }
 
         /// <summary>
@@ -67,7 +66,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// Called by the FontUpdateTracker when the texture associated with a font is modified.
         /// </summary>
-        public void FontTextureChanged()
+        void IFontUpdateListener.FontTextureChanged()
         {
             // Only invoke if we are not destroyed.
             if (!this)
@@ -135,27 +134,16 @@ namespace UnityEngine.UI
         /// </example>
         public Font font
         {
-            get
-            {
-                return m_FontData.font;
-            }
+            get => m_FontData.font;
             set
             {
-                if (m_FontData.font == value)
+                if (ReferenceEquals(m_FontData.font, value))
                     return;
-
-                if (isActiveAndEnabled)
-                    FontUpdateTracker.UntrackText(this);
 
                 m_FontData.font = value;
 
                 if (isActiveAndEnabled)
-                    FontUpdateTracker.TrackText(this);
-
-#if UNITY_EDITOR
-                // needed to track font changes from the inspector
-                m_LastTrackedFont = value;
-#endif
+                    _fontUpdateLink.Update(value);
 
                 SetAllDirty();
             }
@@ -562,12 +550,12 @@ namespace UnityEngine.UI
         {
             base.OnEnable();
             cachedTextGenerator.Invalidate();
-            FontUpdateTracker.TrackText(this);
+            _fontUpdateLink.Update(font);
         }
 
         protected override void OnDisable()
         {
-            FontUpdateTracker.UntrackText(this);
+            _fontUpdateLink.Untrack();
             base.OnDisable();
         }
 
@@ -752,10 +740,7 @@ namespace UnityEngine.UI
             // that means the delegates are not persisted.
             // so we need to properly enforce a consistent state here.
             if (isActiveAndEnabled)
-            {
-                FontUpdateTracker.UntrackText(this);
-                FontUpdateTracker.TrackText(this);
-            }
+                _fontUpdateLink.Update(font);
 
             // Also the textgenerator is no longer valid.
             cachedTextGenerator.Invalidate();
@@ -773,21 +758,11 @@ namespace UnityEngine.UI
                 return;
             }
 
-            if (m_FontData.font != m_LastTrackedFont)
-            {
-                Font newFont = m_FontData.font;
-                m_FontData.font = m_LastTrackedFont;
+            // XXX: As IsActive() is true, we know that this component is enabled and active.
+            Assert.IsTrue(isActiveAndEnabled);
 
-                if (isActiveAndEnabled)
-                    FontUpdateTracker.UntrackText(this);
+            _fontUpdateLink.Update(m_FontData.font);
 
-                m_FontData.font = newFont;
-
-                if (isActiveAndEnabled)
-                    FontUpdateTracker.TrackText(this);
-
-                m_LastTrackedFont = newFont;
-            }
             base.OnValidate();
         }
 
