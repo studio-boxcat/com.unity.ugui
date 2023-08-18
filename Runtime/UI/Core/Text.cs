@@ -617,83 +617,25 @@ namespace UnityEngine.UI
             return settings;
         }
 
-        /// <summary>
-        /// Convenience function to determine the vector offset of the anchor.
-        /// </summary>
-        static public Vector2 GetTextAnchorPivot(TextAnchor anchor)
-        {
-            switch (anchor)
-            {
-                case TextAnchor.LowerLeft:    return new Vector2(0, 0);
-                case TextAnchor.LowerCenter:  return new Vector2(0.5f, 0);
-                case TextAnchor.LowerRight:   return new Vector2(1, 0);
-                case TextAnchor.MiddleLeft:   return new Vector2(0, 0.5f);
-                case TextAnchor.MiddleCenter: return new Vector2(0.5f, 0.5f);
-                case TextAnchor.MiddleRight:  return new Vector2(1, 0.5f);
-                case TextAnchor.UpperLeft:    return new Vector2(0, 1);
-                case TextAnchor.UpperCenter:  return new Vector2(0.5f, 1);
-                case TextAnchor.UpperRight:   return new Vector2(1, 1);
-                default: return Vector2.zero;
-            }
-        }
-
-        static readonly UIVertex[] m_TempVerts = new UIVertex[4];
         protected override void OnPopulateMesh(VertexHelper toFill)
         {
             if (font == null)
                 return;
+
+            toFill.Clear();
 
             // We don't care if we the font Texture changes while we are doing our Update.
             // The end result of cachedTextGenerator will be valid for this instance.
             // Otherwise we can get issues like Case 619238.
             m_DisableFontTextureRebuiltCallback = true;
 
-            Vector2 extents = rectTransform.rect.size;
-
+            var extents = rectTransform.rect.size;
             var settings = GetGenerationSettings(extents);
             cachedTextGenerator.PopulateWithErrors(text, settings, gameObject);
 
-            // Apply the offset to the vertices
-            IList<UIVertex> verts = cachedTextGenerator.verts;
-            float unitsPerPixel = 1 / pixelsPerUnit;
-            int vertCount = verts.Count;
-
-            // We have no verts to process just return (case 1037923)
-            if (vertCount <= 0)
-            {
-                toFill.Clear();
-                return;
-            }
-
-            Vector2 roundingOffset = new Vector2(verts[0].position.x, verts[0].position.y) * unitsPerPixel;
-            roundingOffset = PixelAdjustPoint(roundingOffset) - roundingOffset;
-            toFill.Clear();
-            if (roundingOffset != Vector2.zero)
-            {
-                for (int i = 0; i < vertCount; ++i)
-                {
-                    int tempVertsIndex = i & 3;
-                    m_TempVerts[tempVertsIndex] = verts[i];
-                    m_TempVerts[tempVertsIndex].position *= unitsPerPixel;
-                    m_TempVerts[tempVertsIndex].position.x += roundingOffset.x;
-                    m_TempVerts[tempVertsIndex].position.y += roundingOffset.y;
-                    if (tempVertsIndex == 3)
-                        toFill.AddUIVertexQuad(m_TempVerts);
-                }
-            }
-            else
-            {
-                for (int i = 0; i < vertCount; ++i)
-                {
-                    int tempVertsIndex = i & 3;
-                    m_TempVerts[tempVertsIndex] = verts[i];
-                    m_TempVerts[tempVertsIndex].position *= unitsPerPixel;
-                    if (tempVertsIndex == 3)
-                        toFill.AddUIVertexQuad(m_TempVerts);
-                }
-            }
-
             m_DisableFontTextureRebuiltCallback = false;
+
+            TextMeshUtils.CopyTo(cachedTextGenerator.verts, pixelsPerUnit, toFill);
         }
 
         public virtual void CalculateLayoutInputHorizontal() {}
