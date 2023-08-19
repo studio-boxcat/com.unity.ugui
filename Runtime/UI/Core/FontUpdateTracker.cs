@@ -22,8 +22,6 @@ namespace UnityEngine.UI
             _font = null;
         }
 
-        public bool IsInvalid() => _listener is null;
-
         public void Update(Font font)
         {
             Assert.IsNotNull(_listener);

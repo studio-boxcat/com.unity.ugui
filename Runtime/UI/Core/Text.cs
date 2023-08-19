@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
@@ -641,10 +640,7 @@ namespace UnityEngine.UI
         public virtual void CalculateLayoutInputHorizontal() {}
         public virtual void CalculateLayoutInputVertical() {}
 
-        public virtual float minWidth
-        {
-            get { return 0; }
-        }
+        public virtual float minWidth => 0;
 
         public virtual float preferredWidth
         {
@@ -655,12 +651,9 @@ namespace UnityEngine.UI
             }
         }
 
-        public virtual float flexibleWidth { get { return -1; } }
+        public virtual float flexibleWidth => -1;
 
-        public virtual float minHeight
-        {
-            get { return 0; }
-        }
+        public virtual float minHeight => 0;
 
         public virtual float preferredHeight
         {
@@ -671,9 +664,9 @@ namespace UnityEngine.UI
             }
         }
 
-        public virtual float flexibleHeight { get { return -1; } }
+        public virtual float flexibleHeight => -1;
 
-        public virtual int layoutPriority { get { return 0; } }
+        public virtual int layoutPriority => 0;
 
 #if UNITY_EDITOR
         public override void OnRebuildRequested()
