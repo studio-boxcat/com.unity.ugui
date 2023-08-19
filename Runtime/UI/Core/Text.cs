@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
@@ -449,22 +450,27 @@ namespace UnityEngine.UI
 
         protected override void OnPopulateMesh(VertexHelper toFill)
         {
-            toFill.Clear();
-
             if (font == null)
+            {
+                toFill.Clear();
                 return;
+            }
 
             // We don't care if we the font Texture changes while we are doing our Update.
             // The end result of cachedTextGenerator will be valid for this instance.
             // Otherwise we can get issues like Case 619238.
             m_DisableFontTextureRebuiltCallback = true;
-
             var extents = rectTransform.rect.size;
             var settings = GetGenerationSettings(extents);
             cachedTextGenerator.PopulateWithErrors(text, settings, gameObject);
-            TextMeshUtils.Translate(cachedTextGenerator.verts, pixelsPerUnit, toFill);
-
             m_DisableFontTextureRebuiltCallback = false;
+
+            // XXX: toFill should be cleared here, since it's shared between multiple Graphic components.
+            // When the Font.textureRebuilt invoked from TextGenerator.PopulateWithErrors(),
+            // it will subsequently call the other Graphic components' OnPopulateMesh(),
+            // which will incorrectly append their own generated verts.
+            toFill.Clear();
+            TextMeshUtils.Translate((List<UIVertex>) cachedTextGenerator.verts, pixelsPerUnit, toFill);
         }
 
         public virtual void CalculateLayoutInputHorizontal() {}

@@ -5,8 +5,11 @@ namespace UnityEngine.UI
 {
     public static class TextMeshUtils
     {
-        public static void Translate(IList<UIVertex> verts, float pixelsPerUnit, VertexHelper toFill)
+        public static void Translate(List<UIVertex> verts, float pixelsPerUnit, VertexHelper toFill)
         {
+            Assert.AreEqual(0, toFill.currentVertCount);
+            Assert.AreEqual(0, toFill.currentIndexCount);
+
             // If there's no vertices, skip.
             var vertCount = verts.Count;
             if (vertCount == 0)
