@@ -450,7 +450,7 @@ namespace UnityEngine.UI
 
         protected override void OnPopulateMesh(VertexHelper toFill)
         {
-            if (font == null)
+            if (font == null || string.IsNullOrEmpty(text))
             {
                 toFill.Clear();
                 return;
