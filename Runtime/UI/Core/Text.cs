@@ -67,17 +67,12 @@ namespace UnityEngine.UI
         /// </summary>
         void IFontUpdateListener.FontTextureChanged()
         {
-            // Only invoke if we are not destroyed.
-            if (!this)
-                return;
+            Assert.IsTrue(isActiveAndEnabled);
 
             if (m_DisableFontTextureRebuiltCallback)
                 return;
 
             cachedTextGenerator.Invalidate();
-
-            if (!IsActive())
-                return;
 
             // this is a bit hacky, but it is currently the
             // cleanest solution....
@@ -86,9 +81,7 @@ namespace UnityEngine.UI
             if (CanvasUpdateRegistry.IsRebuildingGraphics() || CanvasUpdateRegistry.IsRebuildingLayout())
                 UpdateGeometry();
             else
-            {
-                SetAllDirty();
-            }
+                SetVerticesDirty();
         }
 
         /// <summary>
