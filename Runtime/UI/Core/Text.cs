@@ -16,6 +16,8 @@ namespace UnityEngine.UI
 
         private TextGenerator m_TextCache;
         private TextGenerator m_TextCacheForLayout;
+        public TextGenerator cachedTextGenerator => m_TextCache ??= TextGeneratorPool.Rent();
+        public TextGenerator cachedTextGeneratorForLayout => m_TextCacheForLayout ??= TextGeneratorPool.Rent();
 
         // We use this flag instead of Unregistering/Registering the callback to avoid allocation.
         [NonSerialized] protected bool m_DisableFontTextureRebuiltCallback = false;
@@ -26,23 +28,6 @@ namespace UnityEngine.UI
         {
             useLegacyMeshGeneration = false;
             _fontUpdateLink = new FontUpdateLink(this);
-        }
-
-        /// <summary>
-        /// The cached TextGenerator used when generating visible Text.
-        /// </summary>
-
-        public TextGenerator cachedTextGenerator
-        {
-            get { return m_TextCache ??= TextGeneratorPool.Rent(); }
-        }
-
-        /// <summary>
-        /// The cached TextGenerator used when determine Layout
-        /// </summary>
-        public TextGenerator cachedTextGeneratorForLayout
-        {
-            get { return m_TextCacheForLayout ??= TextGeneratorPool.Rent(); }
         }
 
         /// <summary>
@@ -90,40 +75,6 @@ namespace UnityEngine.UI
         /// <remarks>
         /// This is the font used by the Text component. Use it to alter or return the font from the Text. There are many free fonts available online.
         /// </remarks>
-        /// <example>
-        /// <code>
-        /// <![CDATA[
-        /// //Create a new Text GameObject by going to Create>UI>Text in the Editor. Attach this script to the Text GameObject. Then, choose or click and drag your own font into the Font section in the Inspector window.
-        ///
-        /// using UnityEngine;
-        /// using UnityEngine.UI;
-        ///
-        /// public class TextFontExample : MonoBehaviour
-        /// {
-        ///     Text m_Text;
-        ///     //Attach your own Font in the Inspector
-        ///     public Font m_Font;
-        ///
-        ///     void Start()
-        ///     {
-        ///         //Fetch the Text component from the GameObject
-        ///         m_Text = GetComponent<Text>();
-        ///     }
-        ///
-        ///     void Update()
-        ///     {
-        ///         if (Input.GetKey(KeyCode.Space))
-        ///         {
-        ///             //Change the Text Font to the Font attached in the Inspector
-        ///             m_Text.font = m_Font;
-        ///             //Change the Text to the message below
-        ///             m_Text.text = "My Font Changed!";
-        ///         }
-        ///     }
-        /// }
-        /// ]]>
-        ///</code>
-        /// </example>
         public Font font
         {
             get => m_FontData.font;
@@ -134,7 +85,7 @@ namespace UnityEngine.UI
 
                 m_FontData.font = value;
 
-                if (isActiveAndEnabled)
+                if (_fontUpdateLink.IsTracking())
                     _fontUpdateLink.Update(value);
 
                 SetAllDirty();
@@ -147,34 +98,6 @@ namespace UnityEngine.UI
         /// <remarks>
         /// This is the string value of a Text component. Use this to read or edit the message displayed in Text.
         /// </remarks>
-        /// <example>
-        /// <code>
-        /// <![CDATA[
-        /// using UnityEngine;
-        /// using UnityEngine.UI;
-        ///
-        /// public class Example : MonoBehaviour
-        /// {
-        ///     public Text m_MyText;
-        ///
-        ///     void Start()
-        ///     {
-        ///         //Text sets your text to say this message
-        ///         m_MyText.text = "This is my text";
-        ///     }
-        ///
-        ///     void Update()
-        ///     {
-        ///         //Press the space key to change the Text message
-        ///         if (Input.GetKey(KeyCode.Space))
-        ///         {
-        ///             m_MyText.text = "My text has now changed.";
-        ///         }
-        ///     }
-        /// }
-        /// ]]>
-        ///</code>
-        /// </example>
         public virtual string text
         {
             get
@@ -202,7 +125,6 @@ namespace UnityEngine.UI
         /// <summary>
         /// Whether this Text will support rich text.
         /// </summary>
-
         public bool supportRichText
         {
             get
@@ -222,7 +144,6 @@ namespace UnityEngine.UI
         /// <summary>
         /// Should the text be allowed to auto resized.
         /// </summary>
-
         public bool resizeTextForBestFit
         {
             get
@@ -285,45 +206,6 @@ namespace UnityEngine.UI
         /// <remarks>
         /// This is the positioning of the Text relative to its RectTransform. You can alter this via script or in the Inspector of a Text component using the buttons in the Alignment section.
         /// </remarks>
-        /// <example>
-        /// <code>
-        /// <![CDATA[
-        /// //Create a Text GameObject by going to __Create__>__UI__>__Text__. Attach this script to the GameObject to see it working.
-        ///
-        /// using UnityEngine;
-        /// using UnityEngine.UI;
-        ///
-        /// public class UITextAlignment : MonoBehaviour
-        /// {
-        ///     Text m_Text;
-        ///
-        ///     void Start()
-        ///     {
-        ///         //Fetch the Text Component
-        ///         m_Text = GetComponent<Text>();
-        ///         //Switch the Text alignment to the middle
-        ///         m_Text.alignment = TextAnchor.MiddleCenter;
-        ///     }
-        ///
-        /// //This is a legacy function used for an instant demonstration. See the <a href="https://unity3d.com/learn/tutorials/s/user-interface-ui">UI Tutorials pages </a> and [[wiki:UISystem|UI Section]] of the manual for more information on creating your own buttons etc.
-        ///     void OnGUI()
-        ///     {
-        ///         //Press this Button to change the Text alignment to the lower right
-        ///         if (GUI.Button(new Rect(0, 0, 100, 40), "Lower Right"))
-        ///         {
-        ///             m_Text.alignment = TextAnchor.LowerRight;
-        ///         }
-        ///
-        ///         //Press this Button to change the Text alignment to the upper left
-        ///         if (GUI.Button(new Rect(150, 0, 100, 40), "Upper Left"))
-        ///         {
-        ///             m_Text.alignment = TextAnchor.UpperLeft;
-        ///         }
-        ///     }
-        /// }
-        /// ]]>
-        ///</code>
-        /// </example>
         public TextAnchor alignment
         {
             get
@@ -370,50 +252,6 @@ namespace UnityEngine.UI
         /// This is the size of the Font of the Text. Use this to fetch or change the size of the Font. When changing the Font size, remember to take into account the RectTransform of the Text. Larger Font sizes or messages may not fit in certain rectangle sizes and do not show in the Scene.
         /// Note: Point size is not consistent from one font to another.
         /// </remarks>
-        /// <example>
-        /// <code>
-        /// <![CDATA[
-        /// //For this script to work, create a new Text GameObject by going to Create>U>Text. Attach the script to the Text GameObject. Make sure the GameObject has a RectTransform component.
-        ///
-        /// using UnityEngine;
-        /// using UnityEngine.UI;
-        ///
-        /// public class Example : MonoBehaviour
-        /// {
-        ///     Text m_Text;
-        ///     RectTransform m_RectTransform;
-        ///
-        ///     void Start()
-        ///     {
-        ///         //Fetch the Text and RectTransform components from the GameObject
-        ///         m_Text = GetComponent<Text>();
-        ///         m_RectTransform = GetComponent<RectTransform>();
-        ///     }
-        ///
-        ///     void Update()
-        ///     {
-        ///         //Press the space key to change the Font size
-        ///         if (Input.GetKey(KeyCode.Space))
-        ///         {
-        ///             changeFontSize();
-        ///         }
-        ///     }
-        ///
-        ///     void changeFontSize()
-        ///     {
-        ///         //Change the Font Size to 16
-        ///         m_Text.fontSize = 30;
-        ///
-        ///         //Change the RectTransform size to allow larger fonts and sentences
-        ///         m_RectTransform.sizeDelta = new Vector2(m_Text.fontSize * 10, 100);
-        ///
-        ///         //Change the m_Text text to the message below
-        ///         m_Text.text = "I changed my Font size!";
-        ///     }
-        /// }
-        /// ]]>
-        ///</code>
-        /// </example>
         public int fontSize
         {
             get
@@ -611,10 +449,10 @@ namespace UnityEngine.UI
 
         protected override void OnPopulateMesh(VertexHelper toFill)
         {
+            toFill.Clear();
+
             if (font == null)
                 return;
-
-            toFill.Clear();
 
             // We don't care if we the font Texture changes while we are doing our Update.
             // The end result of cachedTextGenerator will be valid for this instance.
@@ -624,16 +462,19 @@ namespace UnityEngine.UI
             var extents = rectTransform.rect.size;
             var settings = GetGenerationSettings(extents);
             cachedTextGenerator.PopulateWithErrors(text, settings, gameObject);
+            TextMeshUtils.CopyTo(cachedTextGenerator.verts, pixelsPerUnit, toFill);
 
             m_DisableFontTextureRebuiltCallback = false;
-
-            TextMeshUtils.CopyTo(cachedTextGenerator.verts, pixelsPerUnit, toFill);
         }
 
         public virtual void CalculateLayoutInputHorizontal() {}
         public virtual void CalculateLayoutInputVertical() {}
 
         public virtual float minWidth => 0;
+        public virtual float minHeight => 0;
+        public virtual float flexibleWidth => -1;
+        public virtual float flexibleHeight => -1;
+        public virtual int layoutPriority => 0;
 
         public virtual float preferredWidth
         {
@@ -644,10 +485,6 @@ namespace UnityEngine.UI
             }
         }
 
-        public virtual float flexibleWidth => -1;
-
-        public virtual float minHeight => 0;
-
         public virtual float preferredHeight
         {
             get
@@ -657,17 +494,13 @@ namespace UnityEngine.UI
             }
         }
 
-        public virtual float flexibleHeight => -1;
-
-        public virtual int layoutPriority => 0;
-
 #if UNITY_EDITOR
         public override void OnRebuildRequested()
         {
             // After a Font asset gets re-imported the managed side gets deleted and recreated,
             // that means the delegates are not persisted.
             // so we need to properly enforce a consistent state here.
-            if (isActiveAndEnabled)
+            if (_fontUpdateLink.IsTracking())
                 _fontUpdateLink.Update(font);
 
             // Also the textgenerator is no longer valid.
@@ -680,20 +513,11 @@ namespace UnityEngine.UI
         // We can intercept changes in OnValidate, and keep track of the previous font reference
         protected override void OnValidate()
         {
-            if (!IsActive())
-            {
-                base.OnValidate();
-                return;
-            }
-
-            // XXX: As IsActive() is true, we know that this component is enabled and active.
-            Assert.IsTrue(isActiveAndEnabled);
-
-            _fontUpdateLink.Update(m_FontData.font);
+            if (_fontUpdateLink.IsTracking())
+                _fontUpdateLink.Update(m_FontData.font);
 
             base.OnValidate();
         }
-
 #endif // if UNITY_EDITOR
     }
 }

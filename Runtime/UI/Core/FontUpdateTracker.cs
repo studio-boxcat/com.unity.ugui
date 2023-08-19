@@ -22,6 +22,8 @@ namespace UnityEngine.UI
             _font = null;
         }
 
+        public bool IsTracking() => _font is not null;
+
         public void Update(Font font)
         {
             Assert.IsNotNull(_listener);
@@ -102,10 +104,14 @@ namespace UnityEngine.UI
 
         static void RebuildForFont(Font font)
         {
-            if (_tracked.TryGetValue(font, out var texts))
+            if (_tracked.TryGetValue(font, out var listeners) == false)
+                return;
+
+            foreach (var listener in listeners)
             {
-                foreach (var text in texts)
-                    text.FontTextureChanged();
+                Assert.IsNotNull((Object) listener);
+                Assert.IsTrue(listener is not Text text || text.font == font);
+                listener.FontTextureChanged();
             }
         }
     }
