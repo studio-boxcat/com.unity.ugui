@@ -5,7 +5,7 @@ namespace UnityEngine.UI
 {
     public static class TextMeshUtils
     {
-        public static void CopyTo(IList<UIVertex> verts, float pixelsPerUnit, VertexHelper toFill)
+        public static void Translate(IList<UIVertex> verts, float pixelsPerUnit, VertexHelper toFill)
         {
             // If there's no vertices, skip.
             var vertCount = verts.Count;

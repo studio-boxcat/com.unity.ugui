@@ -462,7 +462,7 @@ namespace UnityEngine.UI
             var extents = rectTransform.rect.size;
             var settings = GetGenerationSettings(extents);
             cachedTextGenerator.PopulateWithErrors(text, settings, gameObject);
-            TextMeshUtils.CopyTo(cachedTextGenerator.verts, pixelsPerUnit, toFill);
+            TextMeshUtils.Translate(cachedTextGenerator.verts, pixelsPerUnit, toFill);
 
             m_DisableFontTextureRebuiltCallback = false;
         }
