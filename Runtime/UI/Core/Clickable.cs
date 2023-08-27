@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
-using UnityEngine.Assertions;
 using UnityEngine.EventSystems;
 
 namespace UnityEngine.UI
