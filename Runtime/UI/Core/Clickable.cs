@@ -120,39 +120,35 @@ namespace UnityEngine.UI
         static readonly List<IClickablePressedHandler> _pressedHandlerBuffer = new();
         static void InvokePressedEvent(Clickable target, PointerEventData eventData)
         {
-            target.GetComponents(_pressedHandlerBuffer);
+            GetActiveComponents(target, _pressedHandlerBuffer);
             foreach (var handler in _pressedHandlerBuffer)
-            {
-                // If handler is disabled, just skip it.
-                if (handler is Behaviour {isActiveAndEnabled: false})
-                    continue;
                 handler.OnPressed(target, eventData);
-            }
         }
 
         static readonly List<IClickableReleasedHandler> _releasedHandlerBuffer = new();
         static void InvokeReleasedEvent(Clickable target, PointerEventData eventData)
         {
-            target.GetComponents(_releasedHandlerBuffer);
+            GetActiveComponents(target, _releasedHandlerBuffer);
             foreach (var handler in _releasedHandlerBuffer)
-            {
-                // If handler is disabled, just skip it.
-                if (handler is Behaviour {isActiveAndEnabled: false})
-                    continue;
                 handler.OnReleased(target, eventData);
-            }
         }
 
         static readonly List<IClickableClickHandler> _clickHandlerBuffer = new();
         static void InvokeClickEvent(Clickable target, PointerEventData eventData)
         {
-            target.GetComponents(_clickHandlerBuffer);
+            GetActiveComponents(target, _clickHandlerBuffer);
             foreach (var handler in _clickHandlerBuffer)
-            {
-                // If handler is disabled, just skip it.
-                if (handler is Behaviour {isActiveAndEnabled: false})
-                    continue;
                 handler.OnClick(target, eventData);
+        }
+
+        static void GetActiveComponents<T>(Component target, List<T> components) where T : class
+        {
+            target.GetComponents(components);
+
+            for (var i = components.Count - 1; i >= 0; i--)
+            {
+                if (components[i] is Behaviour {isActiveAndEnabled: false})
+                    components.RemoveAt(i);
             }
         }
     }
