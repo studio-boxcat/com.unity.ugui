@@ -1,6 +1,3 @@
-using UnityEngine;
-using System.Collections;
-
 namespace UnityEngine.UI
 {
     /// <summary>
@@ -21,13 +18,13 @@ namespace UnityEngine.UI
         /// After this method is invoked, layout horizontal input properties should return up-to-date values.
         ///  Children will already have up-to-date layout horizontal inputs when this methods is called.
         /// </summary>
-        void CalculateLayoutInputHorizontal();
+        void CalculateLayoutInputHorizontal() { }
 
         /// <summary>
         ///After this method is invoked, layout vertical input properties should return up-to-date values.
         ///Children will already have up-to-date layout vertical inputs when this methods is called.
         /// </summary>
-        void CalculateLayoutInputVertical();
+        void CalculateLayoutInputVertical() { }
 
         /// <summary>
         /// The minimum width this layout element may be allocated.

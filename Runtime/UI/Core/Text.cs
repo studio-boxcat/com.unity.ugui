@@ -473,9 +473,6 @@ namespace UnityEngine.UI
             TextMeshUtils.Translate((List<UIVertex>) cachedTextGenerator.verts, pixelsPerUnit, toFill);
         }
 
-        public virtual void CalculateLayoutInputHorizontal() {}
-        public virtual void CalculateLayoutInputVertical() {}
-
         public virtual float minWidth => 0;
         public virtual float minHeight => 0;
         public virtual float flexibleWidth => -1;

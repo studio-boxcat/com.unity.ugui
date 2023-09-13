@@ -1107,16 +1107,6 @@ namespace UnityEngine.UI
         /// <summary>
         /// Called by the layout system.
         /// </summary>
-        public virtual void CalculateLayoutInputHorizontal() {}
-
-        /// <summary>
-        /// Called by the layout system.
-        /// </summary>
-        public virtual void CalculateLayoutInputVertical() {}
-
-        /// <summary>
-        /// Called by the layout system.
-        /// </summary>
         public virtual float minWidth { get { return -1; } }
         /// <summary>
         /// Called by the layout system.

@@ -27,9 +27,6 @@ namespace UnityEngine.UI
         /// </remarks>
         public virtual bool ignoreLayout { get { return m_IgnoreLayout; } set { if (SetPropertyUtility.SetStruct(ref m_IgnoreLayout, value)) SetDirty(); } }
 
-        public virtual void CalculateLayoutInputHorizontal() {}
-        public virtual void CalculateLayoutInputVertical() {}
-
         /// <summary>
         /// The minimum width this layout element may be allocated.
         /// </summary>
