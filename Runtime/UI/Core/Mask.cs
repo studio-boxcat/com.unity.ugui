@@ -1,8 +1,6 @@
 using System;
-using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
-using UnityEngine.Serialization;
 
 namespace UnityEngine.UI
 {
@@ -20,10 +18,7 @@ namespace UnityEngine.UI
     {
         [NonSerialized]
         private RectTransform m_RectTransform;
-        public RectTransform rectTransform
-        {
-            get { return m_RectTransform ?? (m_RectTransform = GetComponent<RectTransform>()); }
-        }
+        public RectTransform rectTransform => m_RectTransform ??= (RectTransform) transform;
 
         [SerializeField]
         private bool m_ShowMaskGraphic = true;
@@ -51,10 +46,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// The graphic associated with the Mask.
         /// </summary>
-        public Graphic graphic
-        {
-            get { return m_Graphic ?? (m_Graphic = GetComponent<Graphic>()); }
-        }
+        public Graphic graphic => m_Graphic ??= GetComponent<Graphic>();
 
         [NonSerialized]
         private Material m_MaskMaterial;
@@ -66,9 +58,6 @@ namespace UnityEngine.UI
         {}
 
         public virtual bool MaskEnabled() { return IsActive() && graphic != null; }
-
-        [Obsolete("Not used anymore.")]
-        public virtual void OnSiblingGraphicEnabledDisabled() {}
 
         protected virtual void OnEnable()
         {
@@ -152,6 +141,7 @@ namespace UnityEngine.UI
             }
 
             int desiredStencilBit = 1 << stencilDepth;
+            var renderer = graphic.canvasRenderer;
 
             // if we are at the first level...
             // we want to destroy what is there
@@ -164,8 +154,8 @@ namespace UnityEngine.UI
                 var unmaskMaterial = StencilMaterial.Add(baseMaterial, 1, StencilOp.Zero, CompareFunction.Always, 0);
                 StencilMaterial.Remove(m_UnmaskMaterial);
                 m_UnmaskMaterial = unmaskMaterial;
-                graphic.canvasRenderer.popMaterialCount = 1;
-                graphic.canvasRenderer.SetPopMaterial(m_UnmaskMaterial, 0);
+                renderer.popMaterialCount = 1;
+                renderer.SetPopMaterial(m_UnmaskMaterial, 0);
 
                 return m_MaskMaterial;
             }
@@ -175,12 +165,12 @@ namespace UnityEngine.UI
             StencilMaterial.Remove(m_MaskMaterial);
             m_MaskMaterial = maskMaterial2;
 
-            graphic.canvasRenderer.hasPopInstruction = true;
+            renderer.hasPopInstruction = true;
             var unmaskMaterial2 = StencilMaterial.Add(baseMaterial, desiredStencilBit - 1, StencilOp.Replace, CompareFunction.Equal, 0, desiredStencilBit - 1, desiredStencilBit | (desiredStencilBit - 1));
             StencilMaterial.Remove(m_UnmaskMaterial);
             m_UnmaskMaterial = unmaskMaterial2;
-            graphic.canvasRenderer.popMaterialCount = 1;
-            graphic.canvasRenderer.SetPopMaterial(m_UnmaskMaterial, 0);
+            renderer.popMaterialCount = 1;
+            renderer.SetPopMaterial(m_UnmaskMaterial, 0);
 
             return m_MaskMaterial;
         }

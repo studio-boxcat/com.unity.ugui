@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using UnityEngine.Pool;
 
 namespace UnityEngine.UI
@@ -14,18 +15,15 @@ namespace UnityEngine.UI
         /// <param name="mask">The object thats changed for whose children should be notified.</param>
         public static void Notify2DMaskStateChanged(Component mask)
         {
-            var components = ListPool<Component>.Get();
+            var components = ListPool<IClippable>.Get();
             mask.GetComponentsInChildren(components);
-            for (var i = 0; i < components.Count; i++)
+            var maskGO = mask.gameObject;
+            foreach (var comp in components)
             {
-                if (components[i] == null || components[i].gameObject == mask.gameObject)
-                    continue;
-
-                var toNotify = components[i] as IClippable;
-                if (toNotify != null)
-                    toNotify.RecalculateClipping();
+                if (ReferenceEquals(comp.gameObject, maskGO)) continue;
+                comp.RecalculateClipping();
             }
-            ListPool<Component>.Release(components);
+            ListPool<IClippable>.Release(components);
         }
 
         /// <summary>
@@ -34,18 +32,15 @@ namespace UnityEngine.UI
         /// <param name="mask">The object thats changed for whose children should be notified.</param>
         public static void NotifyStencilStateChanged(Component mask)
         {
-            var components = ListPool<Component>.Get();
+            var components = ListPool<IMaskable>.Get();
             mask.GetComponentsInChildren(components);
-            for (var i = 0; i < components.Count; i++)
+            var maskGO = mask.gameObject;
+            foreach (var comp in components)
             {
-                if (components[i] == null || components[i].gameObject == mask.gameObject)
-                    continue;
-
-                var toNotify = components[i] as IMaskable;
-                if (toNotify != null)
-                    toNotify.RecalculateMasking();
+                if (ReferenceEquals(comp.gameObject, maskGO)) continue;
+                comp.RecalculateMasking();
             }
-            ListPool<Component>.Release(components);
+            ListPool<IMaskable>.Release(components);
         }
 
         /// <summary>
@@ -53,23 +48,26 @@ namespace UnityEngine.UI
         /// </summary>
         /// <param name="start">Transform to start the search at going up the hierarchy.</param>
         /// <returns>Finds either the most root canvas, or the first canvas that overrides sorting.</returns>
+        [CanBeNull]
         public static Transform FindRootSortOverrideCanvas(Transform start)
         {
-            var canvasList = ListPool<Canvas>.Get();
-            start.GetComponentsInParent(false, canvasList);
-            Canvas canvas = null;
+            var canvas = start.GetComponentInParent<Canvas>(false);
+            if (canvas is null) return null;
+            var canvasTrans = canvas.transform;
 
-            for (int i = 0; i < canvasList.Count; ++i)
+            do
             {
-                canvas = canvasList[i];
-
-                // We found the canvas we want to use break
                 if (canvas.overrideSorting)
-                    break;
-            }
-            ListPool<Canvas>.Release(canvasList);
-
-            return canvas != null ? canvas.transform : null;
+                    return canvasTrans;
+                var parentTrans = canvasTrans.parent;
+                if (parentTrans is null)
+                    return canvasTrans;
+                var parentCanvas = canvasTrans.parent.GetComponentInParent<Canvas>(false);
+                if (parentCanvas is null)
+                    return canvasTrans;
+                canvas = parentCanvas;
+                canvasTrans = canvas.transform;
+            } while (true);
         }
 
         /// <summary>

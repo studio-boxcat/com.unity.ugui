@@ -1,5 +1,3 @@
-using System;
-
 namespace UnityEngine.UI
 {
     /// <summary>
@@ -7,6 +5,8 @@ namespace UnityEngine.UI
     /// </summary>
     public interface IMaskable
     {
+        public GameObject gameObject { get; }
+
         /// <summary>
         /// Recalculate masking for this element and all children elements.
         /// </summary>
