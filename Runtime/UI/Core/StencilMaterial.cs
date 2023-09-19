@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine.Rendering;
 
@@ -14,7 +13,7 @@ namespace UnityEngine.UI
         {
             public Material baseMat;
             public Material customMat;
-            public int count;
+            public int count; // ref count
 
             public int stencilId;
             public StencilOp operation = StencilOp.Keep;
@@ -26,10 +25,6 @@ namespace UnityEngine.UI
         }
 
         private static List<MatEntry> m_List = new List<MatEntry>();
-
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        [Obsolete("Use Material.Add instead.", true)]
-        public static Material Add(Material baseMat, int stencilID) { return null; }
 
         /// <summary>
         /// Add a new material using the specified base and stencil ID.
@@ -116,7 +111,11 @@ namespace UnityEngine.UI
             newEnt.colorMask = colorWriteMask;
             newEnt.useAlphaClip = operation != StencilOp.Keep && writeMask > 0;
 
-            newEnt.customMat.name = string.Format("Stencil Id:{0}, Op:{1}, Comp:{2}, WriteMask:{3}, ReadMask:{4}, ColorMask:{5} AlphaClip:{6} ({7})", stencilID, operation, compareFunction, writeMask, readMask, colorWriteMask, newEnt.useAlphaClip, baseMat.name);
+#if UNITY_EDITOR
+            newEnt.customMat.name = string.Format(
+                "Stencil Id:{0}, Op:{1}, Comp:{2}, WriteMask:{3}, ReadMask:{4}, ColorMask:{5} AlphaClip:{6} ({7})",
+                stencilID, operation, compareFunction, writeMask, readMask, colorWriteMask, newEnt.useAlphaClip, baseMat.name);
+#endif
 
             newEnt.customMat.SetFloat("_Stencil", (float)stencilID);
             newEnt.customMat.SetFloat("_StencilOp", (float)operation);
