@@ -78,30 +78,24 @@ namespace UnityEngine.UI
         /// <returns>What the proper stencil buffer index should be.</returns>
         public static int GetStencilDepth(Transform transform, Transform stopAfter)
         {
-            var depth = 0;
-            if (transform == stopAfter)
-                return depth;
+            if (ReferenceEquals(transform, stopAfter))
+                return 0;
 
             var t = transform.parent;
-            var components = ListPool<Mask>.Get();
-            while (t != null)
-            {
-                t.GetComponents<Mask>(components);
-                for (var i = 0; i < components.Count; ++i)
-                {
-                    if (components[i] != null && components[i].MaskEnabled() && components[i].graphic.IsActive())
-                    {
-                        ++depth;
-                        break;
-                    }
-                }
+            var depth = 0;
 
-                if (t == stopAfter)
+            while (t is not null)
+            {
+                var mask = t.GetComponent<Mask>();
+                if (mask is not null && mask.isActiveAndEnabled && mask.graphic.IsActive())
+                    ++depth;
+
+                if (ReferenceEquals(t, stopAfter))
                     break;
 
                 t = t.parent;
             }
-            ListPool<Mask>.Release(components);
+
             return depth;
         }
 
