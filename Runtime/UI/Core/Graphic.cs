@@ -89,16 +89,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// Default material used to draw UI elements if no explicit material was specified.
         /// </summary>
-
-        static public Material defaultGraphicMaterial
-        {
-            get
-            {
-                if (s_DefaultUI is null)
-                    s_DefaultUI = Canvas.GetDefaultCanvasMaterial();
-                return s_DefaultUI;
-            }
-        }
+        static public Material defaultGraphicMaterial => s_DefaultUI ??= Canvas.GetDefaultCanvasMaterial();
 
         // Cached and saved values
         [FormerlySerializedAs("m_Mat")]
@@ -198,11 +189,8 @@ namespace UnityEngine.UI
         /// </summary>
         public Vector4 raycastPadding
         {
-            get { return m_RaycastPadding; }
-            set
-            {
-                m_RaycastPadding = value;
-            }
+            get => m_RaycastPadding;
+            set => m_RaycastPadding = value;
         }
 
         [NonSerialized] private RectTransform m_RectTransform;
