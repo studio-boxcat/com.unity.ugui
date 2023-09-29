@@ -1,5 +1,4 @@
-using System;
-using System.Collections.Generic;
+using UnityEngine.Assertions;
 using UnityEngine.Serialization;
 
 namespace UnityEngine.UI
@@ -12,7 +11,6 @@ namespace UnityEngine.UI
     /// Keep in mind though that this will create an extra draw call with each RawImage present, so it's
     /// best to use it only for backgrounds or temporary visible graphics.
     /// </remarks>
-
     [RequireComponent(typeof(CanvasRenderer))]
     [AddComponentMenu("UI/Raw Image", 12)]
     public class RawImage : MaskableGraphic
@@ -20,11 +18,6 @@ namespace UnityEngine.UI
         [FormerlySerializedAs("m_Tex")]
         [SerializeField] Texture m_Texture;
         [SerializeField] Rect m_UVRect = new Rect(0f, 0f, 1f, 1f);
-
-        protected RawImage()
-        {
-            useLegacyMeshGeneration = false;
-        }
 
         /// <summary>
         /// Returns the texture used to draw this Graphic.
@@ -81,10 +74,7 @@ namespace UnityEngine.UI
         /// </example>
         public Texture texture
         {
-            get
-            {
-                return m_Texture;
-            }
+            get => m_Texture;
             set
             {
                 if (m_Texture == value)
@@ -101,10 +91,7 @@ namespace UnityEngine.UI
         /// </summary>
         public Rect uvRect
         {
-            get
-            {
-                return m_UVRect;
-            }
+            get => m_UVRect;
             set
             {
                 if (m_UVRect == value)
@@ -122,37 +109,28 @@ namespace UnityEngine.UI
         /// </remarks>
         public override void SetNativeSize()
         {
-            Texture tex = mainTexture;
-            if (tex != null)
-            {
-                int w = Mathf.RoundToInt(tex.width * uvRect.width);
-                int h = Mathf.RoundToInt(tex.height * uvRect.height);
-                rectTransform.anchorMax = rectTransform.anchorMin;
-                rectTransform.sizeDelta = new Vector2(w, h);
-            }
+            var tex = mainTexture;
+            if (tex == null) return;
+
+            var w = Mathf.RoundToInt(tex.width * uvRect.width);
+            var h = Mathf.RoundToInt(tex.height * uvRect.height);
+            rectTransform.anchorMax = rectTransform.anchorMin;
+            rectTransform.sizeDelta = new Vector2(w, h);
         }
 
-        protected override void OnPopulateMesh(VertexHelper vh)
+        protected override void OnPopulateMesh(MeshBuilder mb)
         {
-            Texture tex = mainTexture;
-            vh.Clear();
-            if (tex != null)
-            {
-                var r = GetPixelAdjustedRect();
-                var v = new Vector4(r.x, r.y, r.x + r.width, r.y + r.height);
-                var scaleX = tex.width * tex.texelSize.x;
-                var scaleY = tex.height * tex.texelSize.y;
-                {
-                    var color32 = color;
-                    vh.AddVert(new Vector3(v.x, v.y), color32, new Vector2(m_UVRect.xMin * scaleX, m_UVRect.yMin * scaleY));
-                    vh.AddVert(new Vector3(v.x, v.w), color32, new Vector2(m_UVRect.xMin * scaleX, m_UVRect.yMax * scaleY));
-                    vh.AddVert(new Vector3(v.z, v.w), color32, new Vector2(m_UVRect.xMax * scaleX, m_UVRect.yMax * scaleY));
-                    vh.AddVert(new Vector3(v.z, v.y), color32, new Vector2(m_UVRect.xMax * scaleX, m_UVRect.yMin * scaleY));
+            var tex = mainTexture;
+            if (tex == null)
+                return;
 
-                    vh.AddTriangle(0, 1, 2);
-                    vh.AddTriangle(2, 3, 0);
-                }
-            }
+            var r = GetPixelAdjustedRect();
+            var pos1 = r.min;
+            var pos2 = r.max;
+            var uvScale = new Vector2(tex.width * tex.texelSize.x, tex.height * tex.texelSize.y);
+            var uv1 = m_UVRect.min * uvScale;
+            var uv2 = m_UVRect.max * uvScale;
+            mb.SetUp_Quad(pos1, pos2, uv1, uv2, color);
         }
 
         protected override void OnDidApplyAnimationProperties()

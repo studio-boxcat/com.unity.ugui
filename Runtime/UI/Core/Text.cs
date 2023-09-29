@@ -27,7 +27,6 @@ namespace UnityEngine.UI
 
         protected Text()
         {
-            useLegacyMeshGeneration = false;
             _fontUpdateLink = new FontUpdateLink(this);
         }
 
@@ -448,13 +447,10 @@ namespace UnityEngine.UI
             return settings;
         }
 
-        protected override void OnPopulateMesh(VertexHelper toFill)
+        protected override void OnPopulateMesh(MeshBuilder toFill)
         {
             if (font == null || string.IsNullOrEmpty(text))
-            {
-                toFill.Clear();
                 return;
-            }
 
             // We don't care if we the font Texture changes while we are doing our Update.
             // The end result of cachedTextGenerator will be valid for this instance.
@@ -465,11 +461,6 @@ namespace UnityEngine.UI
             cachedTextGenerator.PopulateWithErrors(text, settings, gameObject);
             m_DisableFontTextureRebuiltCallback = false;
 
-            // XXX: toFill should be cleared here, since it's shared between multiple Graphic components.
-            // When the Font.textureRebuilt invoked from TextGenerator.PopulateWithErrors(),
-            // it will subsequently call the other Graphic components' OnPopulateMesh(),
-            // which will incorrectly append their own generated verts.
-            toFill.Clear();
             TextMeshUtils.Translate((List<UIVertex>) cachedTextGenerator.verts, pixelsPerUnit, toFill);
         }
 

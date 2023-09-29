@@ -51,5 +51,13 @@ namespace UnityEngine.EventSystems
             target.GetComponents(type, components);
             return scope;
         }
+
+        [MustUseReturnValue]
+        public static CompBufScope GetComponents(Component target, Type type, out List<Component> components)
+        {
+            var scope = Rent(out components);
+            target.GetComponents(type, components);
+            return scope;
+        }
     }
 }

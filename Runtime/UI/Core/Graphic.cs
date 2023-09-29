@@ -8,7 +8,6 @@ using System.Reflection;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
-using UnityEngine.Pool;
 
 namespace UnityEngine.UI
 {
@@ -81,7 +80,7 @@ namespace UnityEngine.UI
     /// </example>
     public abstract class Graphic
         : UIBehaviour,
-          ICanvasElement
+            ICanvasElement
     {
         static protected Material s_DefaultUI = null;
         static protected Texture2D s_WhiteTexture = null;
@@ -204,16 +203,6 @@ namespace UnityEngine.UI
         [NonSerialized] protected UnityAction m_OnDirtyMaterialCallback;
 
         [NonSerialized] protected static Mesh s_Mesh;
-        [NonSerialized] private static readonly VertexHelper s_VertexHelper = new VertexHelper();
-
-        protected bool useLegacyMeshGeneration { get; set; }
-
-        // Called by Unity prior to deserialization,
-        // should not be called by users
-        protected Graphic()
-        {
-            useLegacyMeshGeneration = true;
-        }
 
         /// <summary>
         /// Set all properties of the Graphic dirty and needing rebuilt.
@@ -365,11 +354,7 @@ namespace UnityEngine.UI
             {
                 // The RectTransform is a required component that must not be destroyed. Based on this assumption, a
                 // null-reference check is sufficient.
-                if (ReferenceEquals(m_RectTransform, null))
-                {
-                    m_RectTransform = (RectTransform) transform;
-                }
-                return m_RectTransform;
+                return m_RectTransform ??= (RectTransform) transform;
             }
         }
 
@@ -474,13 +459,7 @@ namespace UnityEngine.UI
         ///
         /// Bear in mind that Unity tries to batch UI elements together to improve performance, so its ideal to work with atlas to reduce the number of draw calls.
         /// </remarks>
-        public virtual Texture mainTexture
-        {
-            get
-            {
-                return s_WhiteTexture;
-            }
-        }
+        public virtual Texture mainTexture => s_WhiteTexture;
 
         /// <summary>
         /// Mark the Graphic and the canvas as having been changed.
@@ -600,112 +579,50 @@ namespace UnityEngine.UI
         /// </summary>
         protected virtual void UpdateGeometry()
         {
-            if (useLegacyMeshGeneration)
+            using var _ = MeshBuilderPool.Rent(out var mb);
+
+#if DEBUG
+            try
+#endif
             {
-                DoLegacyMeshGeneration();
+                OnPopulateMesh(mb);
+                Assert.IsTrue(mb.CheckPrepared());
+                MeshModifierUtils.GetComponentsAndModifyMesh(this, mb);
             }
-            else
+#if DEBUG
+            catch (Exception e)
             {
-                DoMeshGeneration();
+                Debug.LogException(e, this);
+                mb.Clear();
             }
-        }
+#endif
 
-        private void DoMeshGeneration()
-        {
-            if (rectTransform != null && rectTransform.rect.width >= 0 && rectTransform.rect.height >= 0)
-                OnPopulateMesh(s_VertexHelper);
-            else
-                s_VertexHelper.Clear(); // clear the vertex helper so invalid graphics dont draw.
-
-            var components = ListPool<Component>.Get();
-            GetComponents(typeof(IMeshModifier), components);
-
-            for (var i = 0; i < components.Count; i++)
-                ((IMeshModifier)components[i]).ModifyMesh(s_VertexHelper);
-
-            ListPool<Component>.Release(components);
-
-            s_VertexHelper.FillMesh(workerMesh);
-            canvasRenderer.SetMesh(workerMesh);
-        }
-
-        private void DoLegacyMeshGeneration()
-        {
-            if (rectTransform != null && rectTransform.rect.width >= 0 && rectTransform.rect.height >= 0)
-            {
-#pragma warning disable 618
-                OnPopulateMesh(workerMesh);
-#pragma warning restore 618
-            }
-            else
-            {
-                workerMesh.Clear();
-            }
-
-            var components = ListPool<Component>.Get();
-            GetComponents(typeof(IMeshModifier), components);
-
-            for (var i = 0; i < components.Count; i++)
-            {
-#pragma warning disable 618
-                ((IMeshModifier)components[i]).ModifyMesh(workerMesh);
-#pragma warning restore 618
-            }
-
-            ListPool<Component>.Release(components);
-            canvasRenderer.SetMesh(workerMesh);
+            var mesh = workerMesh;
+            mesh.Clear();
+            mb.FillMesh(mesh);
+            mb.Invalidate();
+            canvasRenderer.SetMesh(mesh);
         }
 
         protected static Mesh workerMesh
         {
             get
             {
-                if (s_Mesh is null)
+                return s_Mesh ??= new Mesh
                 {
-                    s_Mesh = new Mesh();
-                    s_Mesh.name = "Shared UI Mesh";
-                    s_Mesh.hideFlags = HideFlags.HideAndDontSave;
-                }
-                return s_Mesh;
+                    name = "Shared UI Mesh",
+                    hideFlags = HideFlags.HideAndDontSave
+                };
             }
         }
 
-        [Obsolete("Use OnPopulateMesh(VertexHelper vh) instead.", false)]
         /// <summary>
         /// Callback function when a UI element needs to generate vertices. Fills the vertex buffer data.
         /// </summary>
-        /// <param name="m">Mesh to populate with UI data.</param>
         /// <remarks>
         /// Used by Text, UI.Image, and RawImage for example to generate vertices specific to their use case.
         /// </remarks>
-        protected virtual void OnPopulateMesh(Mesh m)
-        {
-            OnPopulateMesh(s_VertexHelper);
-            s_VertexHelper.FillMesh(m);
-        }
-
-        /// <summary>
-        /// Callback function when a UI element needs to generate vertices. Fills the vertex buffer data.
-        /// </summary>
-        /// <param name="vh">VertexHelper utility.</param>
-        /// <remarks>
-        /// Used by Text, UI.Image, and RawImage for example to generate vertices specific to their use case.
-        /// </remarks>
-        protected virtual void OnPopulateMesh(VertexHelper vh)
-        {
-            var r = GetPixelAdjustedRect();
-            var v = new Vector4(r.x, r.y, r.x + r.width, r.y + r.height);
-
-            Color32 color32 = color;
-            vh.Clear();
-            vh.AddVert(new Vector3(v.x, v.y), color32, new Vector2(0f, 0f));
-            vh.AddVert(new Vector3(v.x, v.w), color32, new Vector2(0f, 1f));
-            vh.AddVert(new Vector3(v.z, v.w), color32, new Vector2(1f, 1f));
-            vh.AddVert(new Vector3(v.z, v.y), color32, new Vector2(1f, 0f));
-
-            vh.AddTriangle(0, 1, 2);
-            vh.AddTriangle(2, 3, 0);
-        }
+        protected virtual void OnPopulateMesh(MeshBuilder mb) { }
 
 #if UNITY_EDITOR
         /// <summary>
@@ -748,7 +665,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// Make the Graphic have the native size of its content.
         /// </summary>
-        public virtual void SetNativeSize() {}
+        public virtual void SetNativeSize() { }
 
         static readonly List<ICanvasRaycastFilter> _raycastFilterBuf = new();
 

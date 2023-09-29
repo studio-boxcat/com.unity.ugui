@@ -1,11 +1,9 @@
 using System;
 using System.Collections;
+using UnityEngine.Assertions;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace UnityEngine.UI
 {
@@ -298,7 +296,6 @@ namespace UnityEngine.UI
         protected int m_CaretPosition = 0;
         protected int m_CaretSelectPosition = 0;
         private RectTransform caretRectTrans = null;
-        protected UIVertex[] m_CursorVerts = null;
         private TextGenerator m_InputTextCache;
         private CanvasRenderer m_CachedInputRenderer;
         private bool m_PreventFontCallback = false;
@@ -1432,9 +1429,7 @@ namespace UnityEngine.UI
             {
                 if (m_CachedInputRenderer != null)
                 {
-                    using (var helper = new VertexHelper())
-                        helper.FillMesh(mesh);
-
+                    mesh.Clear();
                     m_CachedInputRenderer.SetMesh(mesh);
                 }
 
@@ -2776,33 +2771,34 @@ namespace UnityEngine.UI
 
         private void OnFillVBO(Mesh vbo)
         {
-            using (var helper = new VertexHelper())
+            if (!isFocused)
             {
-                if (!isFocused)
+                vbo.Clear();
+                return;
+            }
+
+            using (MeshBuilderPool.Rent(out var helper))
+            {
+                var roundingOffset = m_TextComponent.PixelAdjustPoint(Vector2.zero);
+
+                if (!hasSelection)
                 {
-                    helper.FillMesh(vbo);
-                    return;
+                    GenerateCaret(helper, roundingOffset);
+                }
+                else
+                {
+                    GenerateHighlight(helper, roundingOffset);
                 }
 
-                Vector2 roundingOffset = m_TextComponent.PixelAdjustPoint(Vector2.zero);
-                if (!hasSelection)
-                    GenerateCaret(helper, roundingOffset);
-                else
-                    GenerateHighlight(helper, roundingOffset);
-
                 helper.FillMesh(vbo);
+                helper.Invalidate();
             }
         }
 
-        private void GenerateCaret(VertexHelper vbo, Vector2 roundingOffset)
+        private void GenerateCaret(MeshBuilder vbo, Vector2 roundingOffset)
         {
             if (!m_CaretVisible)
                 return;
-
-            if (m_CursorVerts == null)
-            {
-                CreateCursorVerts();
-            }
 
             float width = m_CaretWidth;
             int adjustedPos = Mathf.Max(0, caretPositionInternal - m_DrawStart);
@@ -2832,25 +2828,9 @@ namespace UnityEngine.UI
             startPosition.y = gen.lines[characterLine].topY / m_TextComponent.pixelsPerUnit;
             float height = gen.lines[characterLine].height / m_TextComponent.pixelsPerUnit;
 
-            for (int i = 0; i < m_CursorVerts.Length; i++)
-                m_CursorVerts[i].color = caretColor;
-
-            m_CursorVerts[0].position = new Vector3(startPosition.x, startPosition.y - height, 0.0f);
-            m_CursorVerts[1].position = new Vector3(startPosition.x + width, startPosition.y - height, 0.0f);
-            m_CursorVerts[2].position = new Vector3(startPosition.x + width, startPosition.y, 0.0f);
-            m_CursorVerts[3].position = new Vector3(startPosition.x, startPosition.y, 0.0f);
-
-            if (roundingOffset != Vector2.zero)
-            {
-                for (int i = 0; i < m_CursorVerts.Length; i++)
-                {
-                    UIVertex uiv = m_CursorVerts[i];
-                    uiv.position.x += roundingOffset.x;
-                    uiv.position.y += roundingOffset.y;
-                }
-            }
-
-            vbo.AddUIVertexQuad(m_CursorVerts);
+            var curVertMin = startPosition + roundingOffset - new Vector2(0, height);
+            var curVertMax = startPosition + roundingOffset + new Vector2(width, 0);
+            vbo.SetUp_Quad(curVertMin, curVertMax, Vector2.zero, Vector2.zero, caretColor);
 
             int screenHeight = Screen.height;
             // Multiple display support only when not the main display. For display 0 the reported
@@ -2867,7 +2847,7 @@ namespace UnityEngine.UI
             else
                 cameraRef = m_TextComponent.canvas.worldCamera;
 
-            Vector3 cursorPosition = m_CachedInputRenderer.gameObject.transform.TransformPoint(m_CursorVerts[0].position);
+            Vector3 cursorPosition = m_CachedInputRenderer.gameObject.transform.TransformPoint(curVertMin);
             Vector2 screenPosition = RectTransformUtility.WorldToScreenPoint(cameraRef, cursorPosition);
             screenPosition.y = screenHeight - screenPosition.y;
 
@@ -2875,29 +2855,14 @@ namespace UnityEngine.UI
                 input.compositionCursorPos = screenPosition;
         }
 
-        private void CreateCursorVerts()
-        {
-            m_CursorVerts = new UIVertex[4];
-
-            for (int i = 0; i < m_CursorVerts.Length; i++)
-            {
-                m_CursorVerts[i] = UIVertex.simpleVert;
-                m_CursorVerts[i].uv0 = Vector2.zero;
-            }
-        }
-
-        private void GenerateHighlight(VertexHelper vbo, Vector2 roundingOffset)
+        private void GenerateHighlight(MeshBuilder vbo, Vector2 roundingOffset)
         {
             int startChar = Mathf.Max(0, caretPositionInternal - m_DrawStart);
             int endChar = Mathf.Max(0, caretSelectPositionInternal - m_DrawStart);
 
             // Ensure pos is always less then selPos to make the code simpler
             if (startChar > endChar)
-            {
-                int temp = startChar;
-                startChar = endChar;
-                endChar = temp;
-            }
+                (startChar, endChar) = (endChar, startChar);
 
             endChar -= 1;
             TextGenerator gen = m_TextComponent.cachedTextGenerator;
@@ -2905,13 +2870,10 @@ namespace UnityEngine.UI
             if (gen.lineCount <= 0)
                 return;
 
+            var qb = vbo.SetUp_Quad(gen.characterCount);
+
             int currentLineIndex = DetermineCharacterLine(startChar, gen);
-
             int lastCharInLineIndex = GetLineEndPosition(gen, currentLineIndex);
-
-            UIVertex vert = UIVertex.simpleVert;
-            vert.uv0 = Vector2.zero;
-            vert.color = selectionColor;
 
             int currentChar = startChar;
             while (currentChar <= endChar && currentChar < gen.characterCount)
@@ -2927,21 +2889,10 @@ namespace UnityEngine.UI
                     if (endPosition.x > m_TextComponent.rectTransform.rect.xMax || endPosition.x < m_TextComponent.rectTransform.rect.xMin)
                         endPosition.x = m_TextComponent.rectTransform.rect.xMax;
 
-                    var startIndex = vbo.currentVertCount;
-                    vert.position = new Vector3(startPosition.x, endPosition.y, 0.0f) + (Vector3)roundingOffset;
-                    vbo.AddVert(vert);
-
-                    vert.position = new Vector3(endPosition.x, endPosition.y, 0.0f) + (Vector3)roundingOffset;
-                    vbo.AddVert(vert);
-
-                    vert.position = new Vector3(endPosition.x, startPosition.y, 0.0f) + (Vector3)roundingOffset;
-                    vbo.AddVert(vert);
-
-                    vert.position = new Vector3(startPosition.x, startPosition.y, 0.0f) + (Vector3)roundingOffset;
-                    vbo.AddVert(vert);
-
-                    vbo.AddTriangle(startIndex, startIndex + 1, startIndex + 2);
-                    vbo.AddTriangle(startIndex + 2, startIndex + 3, startIndex + 0);
+                    qb.Add(
+                        startPosition + roundingOffset,
+                        endPosition + roundingOffset,
+                        Vector2.zero, Vector2.zero);
 
                     startChar = currentChar + 1;
                     currentLineIndex++;
@@ -2950,6 +2901,8 @@ namespace UnityEngine.UI
                 }
                 currentChar++;
             }
+
+            qb.Commit(selectionColor);
         }
 
         /// <summary>

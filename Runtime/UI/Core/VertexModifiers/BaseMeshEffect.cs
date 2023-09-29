@@ -1,20 +1,8 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine.EventSystems;
 
 namespace UnityEngine.UI
 {
-    [Obsolete("Use BaseMeshEffect instead", true)]
-    /// <summary>
-    /// Obsolete class use BaseMeshEffect instead.
-    /// </summary>
-    public abstract class BaseVertexEffect
-    {
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        [Obsolete("Use BaseMeshEffect.ModifyMeshes instead", true)] //We can't upgrade automatically since the signature changed.
-        public abstract void ModifyVertices(List<UIVertex> vertices);
-    }
-
     /// <summary>
     /// Base class for effects that modify the generated Mesh.
     /// </summary>
@@ -50,37 +38,25 @@ namespace UnityEngine.UI
     /// ]]>
     ///</code>
     ///</example>
-
     [ExecuteAlways]
     public abstract class BaseMeshEffect : UIBehaviour, IMeshModifier
     {
         [NonSerialized]
-        private Graphic m_Graphic;
+        Graphic m_Graphic;
 
         /// <summary>
         /// The graphic component that the Mesh Effect will aplly to.
         /// </summary>
-        protected Graphic graphic
-        {
-            get
-            {
-                if (m_Graphic == null)
-                    m_Graphic = GetComponent<Graphic>();
-
-                return m_Graphic;
-            }
-        }
+        protected Graphic graphic => m_Graphic ??= GetComponent<Graphic>();
 
         protected virtual void OnEnable()
         {
-            if (graphic != null)
-                graphic.SetVerticesDirty();
+            graphic.SetVerticesDirty();
         }
 
         protected virtual void OnDisable()
         {
-            if (graphic != null)
-                graphic.SetVerticesDirty();
+            graphic.SetVerticesDirty();
         }
 
         /// <summary>
@@ -88,32 +64,19 @@ namespace UnityEngine.UI
         /// </summary>
         protected virtual void OnDidApplyAnimationProperties()
         {
-            if (graphic != null)
-                graphic.SetVerticesDirty();
+            graphic.SetVerticesDirty();
         }
 
 #if UNITY_EDITOR
         protected virtual void OnValidate()
         {
-            if (graphic != null)
-                graphic.SetVerticesDirty();
+            graphic?.SetVerticesDirty();
         }
-
 #endif
 
         /// <summary>
         /// Function that is called when the Graphic is populating the mesh.
         /// </summary>
-        /// <param name="mesh">The generated mesh of the Graphic element that needs modification.</param>
-        public virtual void ModifyMesh(Mesh mesh)
-        {
-            using (var vh = new VertexHelper(mesh))
-            {
-                ModifyMesh(vh);
-                vh.FillMesh(mesh);
-            }
-        }
-
-        public abstract void ModifyMesh(VertexHelper vh);
+        public abstract void ModifyMesh(MeshBuilder mb);
     }
 }

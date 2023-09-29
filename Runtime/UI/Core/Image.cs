@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine.Assertions;
 using UnityEngine.Serialization;
 using UnityEngine.U2D;
 
@@ -273,7 +274,7 @@ namespace UnityEngine.UI
 
         public Sprite sprite
         {
-            get { return m_Sprite; }
+            get => m_Sprite;
             set
             {
                 if (m_Sprite != null)
@@ -307,7 +308,6 @@ namespace UnityEngine.UI
         /// <remarks>
         /// When a new Sprite is assigned update optimizations are automatically applied.
         /// </remarks>
-
         public void DisableSpriteOptimizations()
         {
             m_SkipLayoutUpdate = false;
@@ -373,7 +373,7 @@ namespace UnityEngine.UI
         /// </example>
         public Sprite overrideSprite
         {
-            get { return activeSprite; }
+            get => activeSprite;
             set
             {
                 if (SetPropertyUtility.SetClass(ref m_OverrideSprite, value))
@@ -384,7 +384,7 @@ namespace UnityEngine.UI
             }
         }
 
-        private Sprite activeSprite { get { return m_OverrideSprite != null ? m_OverrideSprite : sprite; } }
+        private Sprite activeSprite => m_OverrideSprite != null ? m_OverrideSprite : sprite;
 
         /// How the Image is drawn.
         [SerializeField] private Type m_Type = Type.Simple;
@@ -589,11 +589,6 @@ namespace UnityEngine.UI
         public bool useSpriteMesh { get { return m_UseSpriteMesh; } set { if (SetPropertyUtility.SetStruct(ref m_UseSpriteMesh, value)) SetVerticesDirty(); } }
 
 
-        protected Image()
-        {
-            useLegacyMeshGeneration = false;
-        }
-
         /// <summary>
         /// Image's texture comes from the UnityEngine.Image.
         /// </summary>
@@ -711,8 +706,9 @@ namespace UnityEngine.UI
         /// Image's dimensions used for drawing. X = left, Y = bottom, Z = right, W = top.
         private Vector4 GetDrawingDimensions(bool shouldPreserveAspect)
         {
-            var padding = activeSprite == null ? Vector4.zero : Sprites.DataUtility.GetPadding(activeSprite);
-            var size = activeSprite == null ? Vector2.zero : new Vector2(activeSprite.rect.width, activeSprite.rect.height);
+            var sprite = activeSprite;
+            var padding = Sprites.DataUtility.GetPadding(sprite);
+            var size = sprite.rect.size;
 
             Rect r = GetPixelAdjustedRect();
             // Debug.Log(string.Format("r:{2}, size:{0}, padding:{1}", size, padding, r));
@@ -762,31 +758,36 @@ namespace UnityEngine.UI
         /// <summary>
         /// Update the UI renderer mesh.
         /// </summary>
-        protected override void OnPopulateMesh(VertexHelper toFill)
+        protected override void OnPopulateMesh(MeshBuilder toFill)
         {
             if (activeSprite == null)
-            {
-                base.OnPopulateMesh(toFill);
                 return;
-            }
 
             switch (type)
             {
                 case Type.Simple:
-                    if (!useSpriteMesh)
-                        GenerateSimpleSprite(toFill, m_PreserveAspect);
-                    else
-                        GenerateSprite(toFill, m_PreserveAspect);
+                {
+                    if (useSpriteMesh) GenerateSprite(toFill, m_PreserveAspect);
+                    else GenerateSimpleSprite(toFill, m_PreserveAspect);
                     break;
+                }
                 case Type.Sliced:
+                {
                     GenerateSlicedSprite(toFill);
                     break;
+                }
                 case Type.Tiled:
+                {
                     GenerateTiledSprite(toFill);
                     break;
+                }
                 case Type.Filled:
+                {
                     GenerateFilledSprite(toFill, m_PreserveAspect);
                     break;
+                }
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 
@@ -858,57 +859,46 @@ namespace UnityEngine.UI
         /// <summary>
         /// Generate vertices for a simple Image.
         /// </summary>
-        void GenerateSimpleSprite(VertexHelper vh, bool lPreserveAspect)
+        void GenerateSimpleSprite(MeshBuilder toFill, bool lPreserveAspect)
         {
-            Vector4 v = GetDrawingDimensions(lPreserveAspect);
-            var uv = (activeSprite != null) ? Sprites.DataUtility.GetOuterUV(activeSprite) : Vector4.zero;
+            var v = GetDrawingDimensions(lPreserveAspect);
+            var uv = Sprites.DataUtility.GetOuterUV(activeSprite);
 
-            Color32 color32 = color;
-            vh.Clear();
-            vh.AddVert(new Vector3(v.x, v.y), color32, new Vector2(uv.x, uv.y));
-            vh.AddVert(new Vector3(v.x, v.w), color32, new Vector2(uv.x, uv.w));
-            vh.AddVert(new Vector3(v.z, v.w), color32, new Vector2(uv.z, uv.w));
-            vh.AddVert(new Vector3(v.z, v.y), color32, new Vector2(uv.z, uv.y));
-
-            vh.AddTriangle(0, 1, 2);
-            vh.AddTriangle(2, 3, 0);
+            toFill.SetUp_Quad(
+                new Vector2(v.x, v.y), new Vector2(v.z, v.w),
+                new Vector2(uv.x, uv.y), new Vector2(uv.z, uv.w),
+                color);
         }
 
-        private void GenerateSprite(VertexHelper vh, bool lPreserveAspect)
+        private void GenerateSprite(MeshBuilder toFill, bool lPreserveAspect)
         {
-            var spriteSize = new Vector2(activeSprite.rect.width, activeSprite.rect.height);
+            var sprite = activeSprite;
+            var spriteSize = sprite.rect.size;
 
             // Covert sprite pivot into normalized space.
-            var spritePivot = activeSprite.pivot / spriteSize;
+            var spritePivot = sprite.pivot / spriteSize;
             var rectPivot = rectTransform.pivot;
-            Rect r = GetPixelAdjustedRect();
+            var r = GetPixelAdjustedRect();
 
             if (lPreserveAspect & spriteSize.sqrMagnitude > 0.0f)
-            {
                 PreserveSpriteAspectRatio(ref r, spriteSize);
-            }
 
             var drawingSize = new Vector2(r.width, r.height);
-            var spriteBoundSize = activeSprite.bounds.size;
+            var spriteBoundSize = (Vector2) sprite.bounds.size;
 
             // Calculate the drawing offset based on the difference between the two pivots.
             var drawOffset = (rectPivot - spritePivot) * drawingSize;
 
-            Color32 color32 = color;
-            vh.Clear();
+            var srcPoses = sprite.vertices;
+            var vertCount = srcPoses.Length;
+            var poses = toFill.Poses.SetUp(vertCount);
+            var vertexMult =  drawingSize / spriteBoundSize;
+            for (var i = 0; i < vertCount; ++i)
+                poses[i] = srcPoses[i] * vertexMult - drawOffset;
 
-            Vector2[] vertices = activeSprite.vertices;
-            Vector2[] uvs = activeSprite.uv;
-            for (int i = 0; i < vertices.Length; ++i)
-            {
-                vh.AddVert(new Vector3((vertices[i].x / spriteBoundSize.x) * drawingSize.x - drawOffset.x, (vertices[i].y / spriteBoundSize.y) * drawingSize.y - drawOffset.y), color32, new Vector2(uvs[i].x, uvs[i].y));
-            }
-
-            UInt16[] triangles = activeSprite.triangles;
-            for (int i = 0; i < triangles.Length; i += 3)
-            {
-                vh.AddTriangle(triangles[i + 0], triangles[i + 1], triangles[i + 2]);
-            }
+            toFill.UVs.SetUp(sprite.uv);
+            toFill.Colors.SetUp(color, vertCount);
+            toFill.Indices.SetUp(sprite.triangles);
         }
 
         static readonly Vector2[] s_VertScratch = new Vector2[4];
@@ -917,35 +907,20 @@ namespace UnityEngine.UI
         /// <summary>
         /// Generate vertices for a 9-sliced Image.
         /// </summary>
-        private void GenerateSlicedSprite(VertexHelper toFill)
+        private void GenerateSlicedSprite(MeshBuilder toFill)
         {
-            if (!hasBorder)
-            {
-                GenerateSimpleSprite(toFill, false);
-                return;
-            }
+            Assert.IsTrue(hasBorder);
 
-            Vector4 outer, inner, padding, border;
+            var sprite = activeSprite;
+            var outer = Sprites.DataUtility.GetOuterUV(sprite);
+            var inner = Sprites.DataUtility.GetInnerUV(sprite);
+            var padding = Sprites.DataUtility.GetPadding(sprite);
+            var border = sprite.border;
 
-            if (activeSprite != null)
-            {
-                outer = Sprites.DataUtility.GetOuterUV(activeSprite);
-                inner = Sprites.DataUtility.GetInnerUV(activeSprite);
-                padding = Sprites.DataUtility.GetPadding(activeSprite);
-                border = activeSprite.border;
-            }
-            else
-            {
-                outer = Vector4.zero;
-                inner = Vector4.zero;
-                padding = Vector4.zero;
-                border = Vector4.zero;
-            }
+            var rect = GetPixelAdjustedRect();
 
-            Rect rect = GetPixelAdjustedRect();
-
-            Vector4 adjustedBorders = GetAdjustedBorders(border / multipliedPixelsPerUnit, rect);
-            padding = padding / multipliedPixelsPerUnit;
+            var adjustedBorders = GetAdjustedBorders(border / multipliedPixelsPerUnit, rect);
+            padding /= multipliedPixelsPerUnit;
 
             s_VertScratch[0] = new Vector2(padding.x, padding.y);
             s_VertScratch[3] = new Vector2(rect.width - padding.z, rect.height - padding.w);
@@ -956,7 +931,7 @@ namespace UnityEngine.UI
             s_VertScratch[2].x = rect.width - adjustedBorders.z;
             s_VertScratch[2].y = rect.height - adjustedBorders.w;
 
-            for (int i = 0; i < 4; ++i)
+            for (var i = 0; i < 4; ++i)
             {
                 s_VertScratch[i].x += rect.x;
                 s_VertScratch[i].y += rect.y;
@@ -967,303 +942,56 @@ namespace UnityEngine.UI
             s_UVScratch[2] = new Vector2(inner.z, inner.w);
             s_UVScratch[3] = new Vector2(outer.z, outer.w);
 
-            toFill.Clear();
+            var qb = toFill.SetUp_Quad(9);
 
-            for (int x = 0; x < 3; ++x)
+            for (var x = 0; x < 3; ++x)
+            for (var y = 0; y < 3; ++y)
             {
-                int x2 = x + 1;
+                if (!m_FillCenter && x == 1 && y == 1)
+                    continue;
 
-                for (int y = 0; y < 3; ++y)
-                {
-                    if (!m_FillCenter && x == 1 && y == 1)
-                        continue;
-
-                    int y2 = y + 1;
-
-
-                    AddQuad(toFill,
-                        new Vector2(s_VertScratch[x].x, s_VertScratch[y].y),
-                        new Vector2(s_VertScratch[x2].x, s_VertScratch[y2].y),
-                        color,
-                        new Vector2(s_UVScratch[x].x, s_UVScratch[y].y),
-                        new Vector2(s_UVScratch[x2].x, s_UVScratch[y2].y));
-                }
+                qb.Add(
+                    new Vector2(s_VertScratch[x].x, s_VertScratch[y].y),
+                    new Vector2(s_VertScratch[x + 1].x, s_VertScratch[y + 1].y),
+                    new Vector2(s_UVScratch[x].x, s_UVScratch[y].y),
+                    new Vector2(s_UVScratch[x + 1].x, s_UVScratch[y + 1].y));
             }
+
+            qb.Commit(color);
         }
 
         /// <summary>
         /// Generate vertices for a tiled Image.
         /// </summary>
-
-        void GenerateTiledSprite(VertexHelper toFill)
+        void GenerateTiledSprite(MeshBuilder toFill)
         {
-            Vector4 outer, inner, border;
-            Vector2 spriteSize;
+            var sprite = activeSprite;
 
-            if (activeSprite != null)
-            {
-                outer = Sprites.DataUtility.GetOuterUV(activeSprite);
-                inner = Sprites.DataUtility.GetInnerUV(activeSprite);
-                border = activeSprite.border;
-                spriteSize = activeSprite.rect.size;
-            }
-            else
-            {
-                outer = Vector4.zero;
-                inner = Vector4.zero;
-                border = Vector4.zero;
-                spriteSize = Vector2.one * 100;
-            }
+            Assert.IsFalse(hasBorder);
+            Assert.IsFalse(sprite.packed);
+            Assert.AreEqual(TextureWrapMode.Repeat, sprite.texture.wrapMode);
 
             Rect rect = GetPixelAdjustedRect();
-            float tileWidth = (spriteSize.x - border.x - border.z) / multipliedPixelsPerUnit;
-            float tileHeight = (spriteSize.y - border.y - border.w) / multipliedPixelsPerUnit;
 
-            border = GetAdjustedBorders(border / multipliedPixelsPerUnit, rect);
+            var spriteSize = sprite.rect.size;
+            var tileSize = spriteSize / multipliedPixelsPerUnit;
 
+            var inner = Sprites.DataUtility.GetInnerUV(sprite);
             var uvMin = new Vector2(inner.x, inner.y);
             var uvMax = new Vector2(inner.z, inner.w);
 
-            // Min to max max range for tiled region in coordinates relative to lower left corner.
-            float xMin = border.x;
-            float xMax = rect.width - border.z;
-            float yMin = border.y;
-            float yMax = rect.height - border.w;
-
-            toFill.Clear();
-            var clipped = uvMax;
-
             // if either width is zero we cant tile so just assume it was the full width.
-            if (tileWidth <= 0)
-                tileWidth = xMax - xMin;
+            if (tileSize.x <= 0) tileSize.x = rect.width;
+            if (tileSize.y <= 0) tileSize.y = rect.height;
 
-            if (tileHeight <= 0)
-                tileHeight = yMax - yMin;
-
-            if (activeSprite != null && (hasBorder || activeSprite.packed || activeSprite.texture != null && activeSprite.texture.wrapMode != TextureWrapMode.Repeat))
-            {
-                // Sprite has border, or is not in repeat mode, or cannot be repeated because of packing.
-                // We cannot use texture tiling so we will generate a mesh of quads to tile the texture.
-
-                // Evaluate how many vertices we will generate. Limit this number to something sane,
-                // especially since meshes can not have more than 65000 vertices.
-
-                long nTilesW = 0;
-                long nTilesH = 0;
-                if (m_FillCenter)
-                {
-                    nTilesW = (long)Math.Ceiling((xMax - xMin) / tileWidth);
-                    nTilesH = (long)Math.Ceiling((yMax - yMin) / tileHeight);
-
-                    double nVertices = 0;
-                    if (hasBorder)
-                    {
-                        nVertices = (nTilesW + 2.0) * (nTilesH + 2.0) * 4.0; // 4 vertices per tile
-                    }
-                    else
-                    {
-                        nVertices = nTilesW * nTilesH * 4.0; // 4 vertices per tile
-                    }
-
-                    if (nVertices > 65000.0)
-                    {
-                        Debug.LogError("Too many sprite tiles on Image \"" + name + "\". The tile size will be increased. To remove the limit on the number of tiles, set the Wrap mode to Repeat in the Image Import Settings", this);
-
-                        double maxTiles = 65000.0 / 4.0; // Max number of vertices is 65000; 4 vertices per tile.
-                        double imageRatio;
-                        if (hasBorder)
-                        {
-                            imageRatio = (nTilesW + 2.0) / (nTilesH + 2.0);
-                        }
-                        else
-                        {
-                            imageRatio = (double)nTilesW / nTilesH;
-                        }
-
-                        double targetTilesW = Math.Sqrt(maxTiles / imageRatio);
-                        double targetTilesH = targetTilesW * imageRatio;
-                        if (hasBorder)
-                        {
-                            targetTilesW -= 2;
-                            targetTilesH -= 2;
-                        }
-
-                        nTilesW = (long)Math.Floor(targetTilesW);
-                        nTilesH = (long)Math.Floor(targetTilesH);
-                        tileWidth = (xMax - xMin) / nTilesW;
-                        tileHeight = (yMax - yMin) / nTilesH;
-                    }
-                }
-                else
-                {
-                    if (hasBorder)
-                    {
-                        // Texture on the border is repeated only in one direction.
-                        nTilesW = (long)Math.Ceiling((xMax - xMin) / tileWidth);
-                        nTilesH = (long)Math.Ceiling((yMax - yMin) / tileHeight);
-                        double nVertices = (nTilesH + nTilesW + 2.0 /*corners*/) * 2.0 /*sides*/ * 4.0 /*vertices per tile*/;
-                        if (nVertices > 65000.0)
-                        {
-                            Debug.LogError("Too many sprite tiles on Image \"" + name + "\". The tile size will be increased. To remove the limit on the number of tiles, set the Wrap mode to Repeat in the Image Import Settings", this);
-
-                            double maxTiles = 65000.0 / 4.0; // Max number of vertices is 65000; 4 vertices per tile.
-                            double imageRatio = (double)nTilesW / nTilesH;
-                            double targetTilesW = (maxTiles - 4 /*corners*/) / (2 * (1.0 + imageRatio));
-                            double targetTilesH = targetTilesW * imageRatio;
-
-                            nTilesW = (long)Math.Floor(targetTilesW);
-                            nTilesH = (long)Math.Floor(targetTilesH);
-                            tileWidth = (xMax - xMin) / nTilesW;
-                            tileHeight = (yMax - yMin) / nTilesH;
-                        }
-                    }
-                    else
-                    {
-                        nTilesH = nTilesW = 0;
-                    }
-                }
-
-                if (m_FillCenter)
-                {
-                    // TODO: we could share vertices between quads. If vertex sharing is implemented. update the computation for the number of vertices accordingly.
-                    for (long j = 0; j < nTilesH; j++)
-                    {
-                        float y1 = yMin + j * tileHeight;
-                        float y2 = yMin + (j + 1) * tileHeight;
-                        if (y2 > yMax)
-                        {
-                            clipped.y = uvMin.y + (uvMax.y - uvMin.y) * (yMax - y1) / (y2 - y1);
-                            y2 = yMax;
-                        }
-                        clipped.x = uvMax.x;
-                        for (long i = 0; i < nTilesW; i++)
-                        {
-                            float x1 = xMin + i * tileWidth;
-                            float x2 = xMin + (i + 1) * tileWidth;
-                            if (x2 > xMax)
-                            {
-                                clipped.x = uvMin.x + (uvMax.x - uvMin.x) * (xMax - x1) / (x2 - x1);
-                                x2 = xMax;
-                            }
-                            AddQuad(toFill, new Vector2(x1, y1) + rect.position, new Vector2(x2, y2) + rect.position, color, uvMin, clipped);
-                        }
-                    }
-                }
-                if (hasBorder)
-                {
-                    clipped = uvMax;
-                    for (long j = 0; j < nTilesH; j++)
-                    {
-                        float y1 = yMin + j * tileHeight;
-                        float y2 = yMin + (j + 1) * tileHeight;
-                        if (y2 > yMax)
-                        {
-                            clipped.y = uvMin.y + (uvMax.y - uvMin.y) * (yMax - y1) / (y2 - y1);
-                            y2 = yMax;
-                        }
-                        AddQuad(toFill,
-                            new Vector2(0, y1) + rect.position,
-                            new Vector2(xMin, y2) + rect.position,
-                            color,
-                            new Vector2(outer.x, uvMin.y),
-                            new Vector2(uvMin.x, clipped.y));
-                        AddQuad(toFill,
-                            new Vector2(xMax, y1) + rect.position,
-                            new Vector2(rect.width, y2) + rect.position,
-                            color,
-                            new Vector2(uvMax.x, uvMin.y),
-                            new Vector2(outer.z, clipped.y));
-                    }
-
-                    // Bottom and top tiled border
-                    clipped = uvMax;
-                    for (long i = 0; i < nTilesW; i++)
-                    {
-                        float x1 = xMin + i * tileWidth;
-                        float x2 = xMin + (i + 1) * tileWidth;
-                        if (x2 > xMax)
-                        {
-                            clipped.x = uvMin.x + (uvMax.x - uvMin.x) * (xMax - x1) / (x2 - x1);
-                            x2 = xMax;
-                        }
-                        AddQuad(toFill,
-                            new Vector2(x1, 0) + rect.position,
-                            new Vector2(x2, yMin) + rect.position,
-                            color,
-                            new Vector2(uvMin.x, outer.y),
-                            new Vector2(clipped.x, uvMin.y));
-                        AddQuad(toFill,
-                            new Vector2(x1, yMax) + rect.position,
-                            new Vector2(x2, rect.height) + rect.position,
-                            color,
-                            new Vector2(uvMin.x, uvMax.y),
-                            new Vector2(clipped.x, outer.w));
-                    }
-
-                    // Corners
-                    AddQuad(toFill,
-                        new Vector2(0, 0) + rect.position,
-                        new Vector2(xMin, yMin) + rect.position,
-                        color,
-                        new Vector2(outer.x, outer.y),
-                        new Vector2(uvMin.x, uvMin.y));
-                    AddQuad(toFill,
-                        new Vector2(xMax, 0) + rect.position,
-                        new Vector2(rect.width, yMin) + rect.position,
-                        color,
-                        new Vector2(uvMax.x, outer.y),
-                        new Vector2(outer.z, uvMin.y));
-                    AddQuad(toFill,
-                        new Vector2(0, yMax) + rect.position,
-                        new Vector2(xMin, rect.height) + rect.position,
-                        color,
-                        new Vector2(outer.x, uvMax.y),
-                        new Vector2(uvMin.x, outer.w));
-                    AddQuad(toFill,
-                        new Vector2(xMax, yMax) + rect.position,
-                        new Vector2(rect.width, rect.height) + rect.position,
-                        color,
-                        new Vector2(uvMax.x, uvMax.y),
-                        new Vector2(outer.z, outer.w));
-                }
-            }
-            else
-            {
-                // Texture has no border, is in repeat mode and not packed. Use texture tiling.
-                Vector2 uvScale = new Vector2((xMax - xMin) / tileWidth, (yMax - yMin) / tileHeight);
-
-                if (m_FillCenter)
-                {
-                    AddQuad(toFill, new Vector2(xMin, yMin) + rect.position, new Vector2(xMax, yMax) + rect.position, color, Vector2.Scale(uvMin, uvScale), Vector2.Scale(uvMax, uvScale));
-                }
-            }
+            var uvScale = rect.size / tileSize;
+            toFill.SetUp_Quad(
+                rect.min, rect.max,
+                uvMin * uvScale, uvMax * uvScale,
+                color);
         }
 
-        static void AddQuad(VertexHelper vertexHelper, Vector3[] quadPositions, Color32 color, Vector3[] quadUVs)
-        {
-            int startIndex = vertexHelper.currentVertCount;
-
-            for (int i = 0; i < 4; ++i)
-                vertexHelper.AddVert(quadPositions[i], color, quadUVs[i]);
-
-            vertexHelper.AddTriangle(startIndex, startIndex + 1, startIndex + 2);
-            vertexHelper.AddTriangle(startIndex + 2, startIndex + 3, startIndex);
-        }
-
-        static void AddQuad(VertexHelper vertexHelper, Vector2 posMin, Vector2 posMax, Color32 color, Vector2 uvMin, Vector2 uvMax)
-        {
-            int startIndex = vertexHelper.currentVertCount;
-
-            vertexHelper.AddVert(new Vector3(posMin.x, posMin.y, 0), color, new Vector2(uvMin.x, uvMin.y));
-            vertexHelper.AddVert(new Vector3(posMin.x, posMax.y, 0), color, new Vector2(uvMin.x, uvMax.y));
-            vertexHelper.AddVert(new Vector3(posMax.x, posMax.y, 0), color, new Vector2(uvMax.x, uvMax.y));
-            vertexHelper.AddVert(new Vector3(posMax.x, posMin.y, 0), color, new Vector2(uvMax.x, uvMin.y));
-
-            vertexHelper.AddTriangle(startIndex, startIndex + 1, startIndex + 2);
-            vertexHelper.AddTriangle(startIndex + 2, startIndex + 3, startIndex);
-        }
-
-        private Vector4 GetAdjustedBorders(Vector4 border, Rect adjustedRect)
+        Vector4 GetAdjustedBorders(Vector4 border, Rect adjustedRect)
         {
             Rect originalRect = rectTransform.rect;
 
@@ -1295,61 +1023,54 @@ namespace UnityEngine.UI
             return border;
         }
 
-        static readonly Vector3[] s_Xy = new Vector3[4];
-        static readonly Vector3[] s_Uv = new Vector3[4];
+        static readonly Vector2[] s_Xy = new Vector2[4];
+        static readonly Vector2[] s_Uv = new Vector2[4];
 
         /// <summary>
         /// Generate vertices for a filled Image.
         /// </summary>
-        void GenerateFilledSprite(VertexHelper toFill, bool preserveAspect)
+        void GenerateFilledSprite(MeshBuilder toFill, bool preserveAspect)
         {
-            toFill.Clear();
-
             if (m_FillAmount < 0.001f)
                 return;
 
-            Vector4 v = GetDrawingDimensions(preserveAspect);
-            Vector4 outer = activeSprite != null ? Sprites.DataUtility.GetOuterUV(activeSprite) : Vector4.zero;
-            UIVertex uiv = UIVertex.simpleVert;
-            uiv.color = color;
+            var v = GetDrawingDimensions(preserveAspect);
+            var outer = Sprites.DataUtility.GetOuterUV(activeSprite);
 
-            float tx0 = outer.x;
-            float ty0 = outer.y;
-            float tx1 = outer.z;
-            float ty1 = outer.w;
+            var tx0 = outer.x;
+            var ty0 = outer.y;
+            var tx1 = outer.z;
+            var ty1 = outer.w;
 
             // Horizontal and vertical filled sprites are simple -- just end the Image prematurely
-            if (m_FillMethod == FillMethod.Horizontal || m_FillMethod == FillMethod.Vertical)
+            if (m_FillMethod == FillMethod.Horizontal)
             {
-                if (fillMethod == FillMethod.Horizontal)
-                {
-                    float fill = (tx1 - tx0) * m_FillAmount;
+                var fill = (tx1 - tx0) * m_FillAmount;
 
-                    if (m_FillOrigin == 1)
-                    {
-                        v.x = v.z - (v.z - v.x) * m_FillAmount;
-                        tx0 = tx1 - fill;
-                    }
-                    else
-                    {
-                        v.z = v.x + (v.z - v.x) * m_FillAmount;
-                        tx1 = tx0 + fill;
-                    }
+                if (m_FillOrigin == 1)
+                {
+                    v.x = v.z - (v.z - v.x) * m_FillAmount;
+                    tx0 = tx1 - fill;
                 }
-                else if (fillMethod == FillMethod.Vertical)
+                else
                 {
-                    float fill = (ty1 - ty0) * m_FillAmount;
+                    v.z = v.x + (v.z - v.x) * m_FillAmount;
+                    tx1 = tx0 + fill;
+                }
+            }
+            else if (m_FillMethod == FillMethod.Vertical)
+            {
+                var fill = (ty1 - ty0) * m_FillAmount;
 
-                    if (m_FillOrigin == 1)
-                    {
-                        v.y = v.w - (v.w - v.y) * m_FillAmount;
-                        ty0 = ty1 - fill;
-                    }
-                    else
-                    {
-                        v.w = v.y + (v.w - v.y) * m_FillAmount;
-                        ty1 = ty0 + fill;
-                    }
+                if (m_FillOrigin == 1)
+                {
+                    v.y = v.w - (v.w - v.y) * m_FillAmount;
+                    ty0 = ty1 - fill;
+                }
+                else
+                {
+                    v.w = v.y + (v.w - v.y) * m_FillAmount;
+                    ty1 = ty0 + fill;
                 }
             }
 
@@ -1363,149 +1084,151 @@ namespace UnityEngine.UI
             s_Uv[2] = new Vector2(tx1, ty1);
             s_Uv[3] = new Vector2(tx1, ty0);
 
+            if (m_FillAmount >= 1f || (m_FillMethod is FillMethod.Horizontal or FillMethod.Vertical))
             {
-                if (m_FillAmount < 1f && m_FillMethod != FillMethod.Horizontal && m_FillMethod != FillMethod.Vertical)
+                toFill.SetUp_Quad(
+                    s_Xy[0], s_Xy[2],
+                    s_Uv[0], s_Uv[2],
+                    color);
+                return;
+            }
+
+            var qb = toFill.SetUp_Quad(4);
+
+            if (m_FillMethod == FillMethod.Radial90)
+            {
+                if (RadialCut(s_Xy, s_Uv, m_FillAmount, m_FillClockwise, m_FillOrigin))
+                    qb.Add(s_Xy, s_Uv);
+            }
+            else if (m_FillMethod == FillMethod.Radial180)
+            {
+                for (var side = 0; side < 2; ++side)
                 {
-                    if (fillMethod == FillMethod.Radial90)
+                    float fx0, fx1, fy0, fy1;
+                    var even = m_FillOrigin > 1 ? 1 : 0;
+
+                    if (m_FillOrigin is 0 or 2)
                     {
-                        if (RadialCut(s_Xy, s_Uv, m_FillAmount, m_FillClockwise, m_FillOrigin))
-                            AddQuad(toFill, s_Xy, color, s_Uv);
-                    }
-                    else if (fillMethod == FillMethod.Radial180)
-                    {
-                        for (int side = 0; side < 2; ++side)
+                        fy0 = 0f;
+                        fy1 = 1f;
+                        if (side == even)
                         {
-                            float fx0, fx1, fy0, fy1;
-                            int even = m_FillOrigin > 1 ? 1 : 0;
-
-                            if (m_FillOrigin == 0 || m_FillOrigin == 2)
-                            {
-                                fy0 = 0f;
-                                fy1 = 1f;
-                                if (side == even)
-                                {
-                                    fx0 = 0f;
-                                    fx1 = 0.5f;
-                                }
-                                else
-                                {
-                                    fx0 = 0.5f;
-                                    fx1 = 1f;
-                                }
-                            }
-                            else
-                            {
-                                fx0 = 0f;
-                                fx1 = 1f;
-                                if (side == even)
-                                {
-                                    fy0 = 0.5f;
-                                    fy1 = 1f;
-                                }
-                                else
-                                {
-                                    fy0 = 0f;
-                                    fy1 = 0.5f;
-                                }
-                            }
-
-                            s_Xy[0].x = Mathf.Lerp(v.x, v.z, fx0);
-                            s_Xy[1].x = s_Xy[0].x;
-                            s_Xy[2].x = Mathf.Lerp(v.x, v.z, fx1);
-                            s_Xy[3].x = s_Xy[2].x;
-
-                            s_Xy[0].y = Mathf.Lerp(v.y, v.w, fy0);
-                            s_Xy[1].y = Mathf.Lerp(v.y, v.w, fy1);
-                            s_Xy[2].y = s_Xy[1].y;
-                            s_Xy[3].y = s_Xy[0].y;
-
-                            s_Uv[0].x = Mathf.Lerp(tx0, tx1, fx0);
-                            s_Uv[1].x = s_Uv[0].x;
-                            s_Uv[2].x = Mathf.Lerp(tx0, tx1, fx1);
-                            s_Uv[3].x = s_Uv[2].x;
-
-                            s_Uv[0].y = Mathf.Lerp(ty0, ty1, fy0);
-                            s_Uv[1].y = Mathf.Lerp(ty0, ty1, fy1);
-                            s_Uv[2].y = s_Uv[1].y;
-                            s_Uv[3].y = s_Uv[0].y;
-
-                            float val = m_FillClockwise ? fillAmount * 2f - side : m_FillAmount * 2f - (1 - side);
-
-                            if (RadialCut(s_Xy, s_Uv, Mathf.Clamp01(val), m_FillClockwise, ((side + m_FillOrigin + 3) % 4)))
-                            {
-                                AddQuad(toFill, s_Xy, color, s_Uv);
-                            }
+                            fx0 = 0f;
+                            fx1 = 0.5f;
+                        }
+                        else
+                        {
+                            fx0 = 0.5f;
+                            fx1 = 1f;
                         }
                     }
-                    else if (fillMethod == FillMethod.Radial360)
+                    else
                     {
-                        for (int corner = 0; corner < 4; ++corner)
+                        fx0 = 0f;
+                        fx1 = 1f;
+                        if (side == even)
                         {
-                            float fx0, fx1, fy0, fy1;
-
-                            if (corner < 2)
-                            {
-                                fx0 = 0f;
-                                fx1 = 0.5f;
-                            }
-                            else
-                            {
-                                fx0 = 0.5f;
-                                fx1 = 1f;
-                            }
-
-                            if (corner == 0 || corner == 3)
-                            {
-                                fy0 = 0f;
-                                fy1 = 0.5f;
-                            }
-                            else
-                            {
-                                fy0 = 0.5f;
-                                fy1 = 1f;
-                            }
-
-                            s_Xy[0].x = Mathf.Lerp(v.x, v.z, fx0);
-                            s_Xy[1].x = s_Xy[0].x;
-                            s_Xy[2].x = Mathf.Lerp(v.x, v.z, fx1);
-                            s_Xy[3].x = s_Xy[2].x;
-
-                            s_Xy[0].y = Mathf.Lerp(v.y, v.w, fy0);
-                            s_Xy[1].y = Mathf.Lerp(v.y, v.w, fy1);
-                            s_Xy[2].y = s_Xy[1].y;
-                            s_Xy[3].y = s_Xy[0].y;
-
-                            s_Uv[0].x = Mathf.Lerp(tx0, tx1, fx0);
-                            s_Uv[1].x = s_Uv[0].x;
-                            s_Uv[2].x = Mathf.Lerp(tx0, tx1, fx1);
-                            s_Uv[3].x = s_Uv[2].x;
-
-                            s_Uv[0].y = Mathf.Lerp(ty0, ty1, fy0);
-                            s_Uv[1].y = Mathf.Lerp(ty0, ty1, fy1);
-                            s_Uv[2].y = s_Uv[1].y;
-                            s_Uv[3].y = s_Uv[0].y;
-
-                            float val = m_FillClockwise ?
-                                m_FillAmount * 4f - ((corner + m_FillOrigin) % 4) :
-                                m_FillAmount * 4f - (3 - ((corner + m_FillOrigin) % 4));
-
-                            if (RadialCut(s_Xy, s_Uv, Mathf.Clamp01(val), m_FillClockwise, ((corner + 2) % 4)))
-                                AddQuad(toFill, s_Xy, color, s_Uv);
+                            fy0 = 0.5f;
+                            fy1 = 1f;
+                        }
+                        else
+                        {
+                            fy0 = 0f;
+                            fy1 = 0.5f;
                         }
                     }
-                }
-                else
-                {
-                    AddQuad(toFill, s_Xy, color, s_Uv);
+
+                    s_Xy[0].x = Mathf.Lerp(v.x, v.z, fx0);
+                    s_Xy[1].x = s_Xy[0].x;
+                    s_Xy[2].x = Mathf.Lerp(v.x, v.z, fx1);
+                    s_Xy[3].x = s_Xy[2].x;
+
+                    s_Xy[0].y = Mathf.Lerp(v.y, v.w, fy0);
+                    s_Xy[1].y = Mathf.Lerp(v.y, v.w, fy1);
+                    s_Xy[2].y = s_Xy[1].y;
+                    s_Xy[3].y = s_Xy[0].y;
+
+                    s_Uv[0].x = Mathf.Lerp(tx0, tx1, fx0);
+                    s_Uv[1].x = s_Uv[0].x;
+                    s_Uv[2].x = Mathf.Lerp(tx0, tx1, fx1);
+                    s_Uv[3].x = s_Uv[2].x;
+
+                    s_Uv[0].y = Mathf.Lerp(ty0, ty1, fy0);
+                    s_Uv[1].y = Mathf.Lerp(ty0, ty1, fy1);
+                    s_Uv[2].y = s_Uv[1].y;
+                    s_Uv[3].y = s_Uv[0].y;
+
+                    float val = m_FillClockwise ? fillAmount * 2f - side : m_FillAmount * 2f - (1 - side);
+
+                    if (RadialCut(s_Xy, s_Uv, Mathf.Clamp01(val), m_FillClockwise, ((side + m_FillOrigin + 3) % 4)))
+                        qb.Add(s_Xy, s_Uv);
                 }
             }
+            else if (m_FillMethod == FillMethod.Radial360)
+            {
+                for (var corner = 0; corner < 4; ++corner)
+                {
+                    float fx0, fx1, fy0, fy1;
+
+                    if (corner < 2)
+                    {
+                        fx0 = 0f;
+                        fx1 = 0.5f;
+                    }
+                    else
+                    {
+                        fx0 = 0.5f;
+                        fx1 = 1f;
+                    }
+
+                    if (corner is 0 or 3)
+                    {
+                        fy0 = 0f;
+                        fy1 = 0.5f;
+                    }
+                    else
+                    {
+                        fy0 = 0.5f;
+                        fy1 = 1f;
+                    }
+
+                    s_Xy[0].x = Mathf.Lerp(v.x, v.z, fx0);
+                    s_Xy[1].x = s_Xy[0].x;
+                    s_Xy[2].x = Mathf.Lerp(v.x, v.z, fx1);
+                    s_Xy[3].x = s_Xy[2].x;
+
+                    s_Xy[0].y = Mathf.Lerp(v.y, v.w, fy0);
+                    s_Xy[1].y = Mathf.Lerp(v.y, v.w, fy1);
+                    s_Xy[2].y = s_Xy[1].y;
+                    s_Xy[3].y = s_Xy[0].y;
+
+                    s_Uv[0].x = Mathf.Lerp(tx0, tx1, fx0);
+                    s_Uv[1].x = s_Uv[0].x;
+                    s_Uv[2].x = Mathf.Lerp(tx0, tx1, fx1);
+                    s_Uv[3].x = s_Uv[2].x;
+
+                    s_Uv[0].y = Mathf.Lerp(ty0, ty1, fy0);
+                    s_Uv[1].y = Mathf.Lerp(ty0, ty1, fy1);
+                    s_Uv[2].y = s_Uv[1].y;
+                    s_Uv[3].y = s_Uv[0].y;
+
+                    var val = m_FillClockwise ?
+                        m_FillAmount * 4f - ((corner + m_FillOrigin) % 4) :
+                        m_FillAmount * 4f - (3 - ((corner + m_FillOrigin) % 4));
+
+                    if (RadialCut(s_Xy, s_Uv, Mathf.Clamp01(val), m_FillClockwise, ((corner + 2) % 4)))
+                        qb.Add(s_Xy, s_Uv);
+                }
+            }
+
+            qb.Commit(color);
         }
 
         /// <summary>
         /// Adjust the specified quad, making it be radially filled instead.
         /// </summary>
 
-        static bool RadialCut(Vector3[] xy, Vector3[] uv, float fill, bool invert, int corner)
+        static bool RadialCut(Vector2[] xy, Vector2[] uv, float fill, bool invert, int corner)
         {
             // Nothing to fill
             if (fill < 0.001f) return false;
@@ -1534,7 +1257,7 @@ namespace UnityEngine.UI
         /// Adjust the specified quad, making it be radially filled instead.
         /// </summary>
 
-        static void RadialCut(Vector3[] xy, float cos, float sin, bool invert, int corner)
+        static void RadialCut(Vector2[] xy, float cos, float sin, bool invert, int corner)
         {
             int i0 = corner;
             int i1 = ((corner + 1) % 4);
