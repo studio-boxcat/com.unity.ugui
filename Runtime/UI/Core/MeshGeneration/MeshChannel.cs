@@ -139,6 +139,14 @@ namespace UnityEngine.UI
         {
         }
 
+        public void SetUp(Vector2[] src)
+        {
+            var count = src.Length;
+            var data = SetUp(count);
+            for (var i = 0; i < count; ++i)
+                data[i] = src[i];
+        }
+
         public Rect CalculateBoundingRect()
         {
             var xMin = float.MaxValue;
@@ -214,6 +222,11 @@ namespace UnityEngine.UI
                 data = SetUp(count);
                 Array.Fill(data, color, 0, count);
             }
+        }
+
+        public void SetUp_White(int count)
+        {
+            SetUp(WhiteColorCache.Opaque(count), count);
         }
 
         protected override void Internal_FillMesh(Mesh mesh)
