@@ -1074,21 +1074,11 @@ namespace UnityEngine.UI
                 }
             }
 
-            s_Xy[0] = new Vector2(v.x, v.y);
-            s_Xy[1] = new Vector2(v.x, v.w);
-            s_Xy[2] = new Vector2(v.z, v.w);
-            s_Xy[3] = new Vector2(v.z, v.y);
-
-            s_Uv[0] = new Vector2(tx0, ty0);
-            s_Uv[1] = new Vector2(tx0, ty1);
-            s_Uv[2] = new Vector2(tx1, ty1);
-            s_Uv[3] = new Vector2(tx1, ty0);
-
             if (m_FillAmount >= 1f || (m_FillMethod is FillMethod.Horizontal or FillMethod.Vertical))
             {
                 toFill.SetUp_Quad(
-                    s_Xy[0], s_Xy[2],
-                    s_Uv[0], s_Uv[2],
+                    new Vector2(v.x, v.y), new Vector2(v.z, v.w),
+                    new Vector2(tx0, ty0), new Vector2(tx1, ty1),
                     color);
                 return;
             }
@@ -1097,8 +1087,18 @@ namespace UnityEngine.UI
 
             if (m_FillMethod == FillMethod.Radial90)
             {
+                s_Xy[0] = new Vector2(v.x, v.y);
+                s_Xy[1] = new Vector2(v.x, v.w);
+                s_Xy[2] = new Vector2(v.z, v.w);
+                s_Xy[3] = new Vector2(v.z, v.y);
+
+                s_Uv[0] = new Vector2(tx0, ty0);
+                s_Uv[1] = new Vector2(tx0, ty1);
+                s_Uv[2] = new Vector2(tx1, ty1);
+                s_Uv[3] = new Vector2(tx1, ty0);
+
                 if (RadialCut(s_Xy, s_Uv, m_FillAmount, m_FillClockwise, m_FillOrigin))
-                    qb.Add(s_Xy, s_Uv);
+                    qb.Add_0312(s_Xy, s_Uv);
             }
             else if (m_FillMethod == FillMethod.Radial180)
             {
@@ -1138,30 +1138,22 @@ namespace UnityEngine.UI
                         }
                     }
 
-                    s_Xy[0].x = Mathf.Lerp(v.x, v.z, fx0);
-                    s_Xy[1].x = s_Xy[0].x;
-                    s_Xy[2].x = Mathf.Lerp(v.x, v.z, fx1);
-                    s_Xy[3].x = s_Xy[2].x;
+                    s_Xy[0].x = s_Xy[1].x = Mathf.Lerp(v.x, v.z, fx0);
+                    s_Xy[2].x = s_Xy[3].x = Mathf.Lerp(v.x, v.z, fx1);
 
-                    s_Xy[0].y = Mathf.Lerp(v.y, v.w, fy0);
-                    s_Xy[1].y = Mathf.Lerp(v.y, v.w, fy1);
-                    s_Xy[2].y = s_Xy[1].y;
-                    s_Xy[3].y = s_Xy[0].y;
+                    s_Xy[0].y = s_Xy[3].y = Mathf.Lerp(v.y, v.w, fy0);
+                    s_Xy[1].y = s_Xy[2].y = Mathf.Lerp(v.y, v.w, fy1);
 
-                    s_Uv[0].x = Mathf.Lerp(tx0, tx1, fx0);
-                    s_Uv[1].x = s_Uv[0].x;
-                    s_Uv[2].x = Mathf.Lerp(tx0, tx1, fx1);
-                    s_Uv[3].x = s_Uv[2].x;
+                    s_Uv[0].x = s_Uv[1].x = Mathf.Lerp(tx0, tx1, fx0);
+                    s_Uv[2].x = s_Uv[3].x = Mathf.Lerp(tx0, tx1, fx1);
 
-                    s_Uv[0].y = Mathf.Lerp(ty0, ty1, fy0);
-                    s_Uv[1].y = Mathf.Lerp(ty0, ty1, fy1);
-                    s_Uv[2].y = s_Uv[1].y;
-                    s_Uv[3].y = s_Uv[0].y;
+                    s_Uv[0].y = s_Uv[3].y = Mathf.Lerp(ty0, ty1, fy0);
+                    s_Uv[1].y = s_Uv[2].y = Mathf.Lerp(ty0, ty1, fy1);
 
                     float val = m_FillClockwise ? fillAmount * 2f - side : m_FillAmount * 2f - (1 - side);
 
                     if (RadialCut(s_Xy, s_Uv, Mathf.Clamp01(val), m_FillClockwise, ((side + m_FillOrigin + 3) % 4)))
-                        qb.Add(s_Xy, s_Uv);
+                        qb.Add_0312(s_Xy, s_Uv);
                 }
             }
             else if (m_FillMethod == FillMethod.Radial360)
@@ -1192,32 +1184,24 @@ namespace UnityEngine.UI
                         fy1 = 1f;
                     }
 
-                    s_Xy[0].x = Mathf.Lerp(v.x, v.z, fx0);
-                    s_Xy[1].x = s_Xy[0].x;
-                    s_Xy[2].x = Mathf.Lerp(v.x, v.z, fx1);
-                    s_Xy[3].x = s_Xy[2].x;
+                    s_Xy[0].x = s_Xy[1].x = Mathf.Lerp(v.x, v.z, fx0);
+                    s_Xy[2].x = s_Xy[3].x = Mathf.Lerp(v.x, v.z, fx1);
 
-                    s_Xy[0].y = Mathf.Lerp(v.y, v.w, fy0);
-                    s_Xy[1].y = Mathf.Lerp(v.y, v.w, fy1);
-                    s_Xy[2].y = s_Xy[1].y;
-                    s_Xy[3].y = s_Xy[0].y;
+                    s_Xy[0].y = s_Xy[3].y = Mathf.Lerp(v.y, v.w, fy0);
+                    s_Xy[1].y = s_Xy[2].y = Mathf.Lerp(v.y, v.w, fy1);
 
-                    s_Uv[0].x = Mathf.Lerp(tx0, tx1, fx0);
-                    s_Uv[1].x = s_Uv[0].x;
-                    s_Uv[2].x = Mathf.Lerp(tx0, tx1, fx1);
-                    s_Uv[3].x = s_Uv[2].x;
+                    s_Uv[0].x = s_Uv[1].x = Mathf.Lerp(tx0, tx1, fx0);
+                    s_Uv[2].x = s_Uv[3].x = Mathf.Lerp(tx0, tx1, fx1);
 
-                    s_Uv[0].y = Mathf.Lerp(ty0, ty1, fy0);
-                    s_Uv[1].y = Mathf.Lerp(ty0, ty1, fy1);
-                    s_Uv[2].y = s_Uv[1].y;
-                    s_Uv[3].y = s_Uv[0].y;
+                    s_Uv[0].y = s_Uv[3].y = Mathf.Lerp(ty0, ty1, fy0);
+                    s_Uv[1].y = s_Uv[2].y = Mathf.Lerp(ty0, ty1, fy1);
 
                     var val = m_FillClockwise ?
                         m_FillAmount * 4f - ((corner + m_FillOrigin) % 4) :
                         m_FillAmount * 4f - (3 - ((corner + m_FillOrigin) % 4));
 
                     if (RadialCut(s_Xy, s_Uv, Mathf.Clamp01(val), m_FillClockwise, ((corner + 2) % 4)))
-                        qb.Add(s_Xy, s_Uv);
+                        qb.Add_0312(s_Xy, s_Uv);
                 }
             }
 
@@ -1242,7 +1226,7 @@ namespace UnityEngine.UI
             // Convert 0-1 value into 0 to 90 degrees angle in radians
             float angle = Mathf.Clamp01(fill);
             if (invert) angle = 1f - angle;
-            angle *= 90f * Mathf.Deg2Rad;
+            angle *= Mathf.PI / 2;
 
             // Calculate the effective X and Y factors
             float cos = Mathf.Cos(angle);

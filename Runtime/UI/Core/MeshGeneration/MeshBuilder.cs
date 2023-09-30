@@ -39,17 +39,24 @@ namespace UnityEngine.UI
             _uvs[i + 3] = uv2;
         }
 
-        public void Add(Vector2[] poses, Vector2[] uvs)
+        public void Add_0312(Vector2[] poses, Vector2[] uvs)
         {
+            // Visual representation:
+            // 1 2
+            // 0 3
+
             Assert.AreEqual(4, poses.Length);
             Assert.AreEqual(4, uvs.Length);
 
             var s = _count++ * 4; // start index
-            for (var i = 0; i < 4; ++i)
-            {
-                _poses[s + i] = poses[i];
-                _uvs[s + i] = uvs[i];
-            }
+            _poses[s + 0] = poses[0];
+            _poses[s + 1] = poses[3];
+            _poses[s + 2] = poses[1];
+            _poses[s + 3] = poses[2];
+            _uvs[s + 0] = uvs[0];
+            _uvs[s + 1] = uvs[3];
+            _uvs[s + 2] = uvs[1];
+            _uvs[s + 3] = uvs[2];
         }
 
         public void Commit(Color32 color)
