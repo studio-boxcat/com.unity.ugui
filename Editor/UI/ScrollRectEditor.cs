@@ -27,7 +27,6 @@ namespace UnityEditor.UI
         SerializedProperty m_VerticalScrollbarVisibility;
         SerializedProperty m_HorizontalScrollbarSpacing;
         SerializedProperty m_VerticalScrollbarSpacing;
-        SerializedProperty m_OnValueChanged;
         AnimBool m_ShowElasticity;
         AnimBool m_ShowDecelerationRate;
         bool m_ViewportIsNotChild, m_HScrollbarIsNotChild, m_VScrollbarIsNotChild;
@@ -51,7 +50,6 @@ namespace UnityEditor.UI
             m_VerticalScrollbarVisibility   = serializedObject.FindProperty("m_VerticalScrollbarVisibility");
             m_HorizontalScrollbarSpacing    = serializedObject.FindProperty("m_HorizontalScrollbarSpacing");
             m_VerticalScrollbarSpacing      = serializedObject.FindProperty("m_VerticalScrollbarSpacing");
-            m_OnValueChanged        = serializedObject.FindProperty("m_OnValueChanged");
 
             m_ShowElasticity = new AnimBool(Repaint);
             m_ShowDecelerationRate = new AnimBool(Repaint);
@@ -165,10 +163,6 @@ namespace UnityEditor.UI
 
                 EditorGUI.indentLevel--;
             }
-
-            EditorGUILayout.Space();
-
-            EditorGUILayout.PropertyField(m_OnValueChanged);
 
             serializedObject.ApplyModifiedProperties();
         }

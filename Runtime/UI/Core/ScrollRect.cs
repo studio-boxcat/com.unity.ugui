@@ -1,5 +1,4 @@
 using System;
-using UnityEngine.Events;
 using UnityEngine.EventSystems;
 
 namespace UnityEngine.UI
@@ -93,12 +92,6 @@ namespace UnityEngine.UI
             /// </remarks>
             AutoHideAndExpandViewport,
         }
-
-        [Serializable]
-        /// <summary>
-        /// Event type used by the ScrollRect.
-        /// </summary>
-        public class ScrollRectEvent : UnityEvent<Vector2> {}
 
         [SerializeField]
         private RectTransform m_Content;
@@ -410,51 +403,6 @@ namespace UnityEngine.UI
         /// The space between the scrollbar and the viewport.
         /// </summary>
         public float verticalScrollbarSpacing { get { return m_VerticalScrollbarSpacing; } set { m_VerticalScrollbarSpacing = value; SetDirty(); } }
-
-        [SerializeField]
-        private ScrollRectEvent m_OnValueChanged = new ScrollRectEvent();
-
-        /// <summary>
-        /// Callback executed when the position of the child changes.
-        /// </summary>
-        /// <remarks>
-        /// onValueChanged is used to watch for changes in the ScrollRect object.
-        /// The onValueChanged call will use the UnityEvent.AddListener API to watch for
-        /// changes.  When changes happen script code provided by the user will be called.
-        /// The UnityEvent.AddListener API for UI.ScrollRect._onValueChanged takes a Vector2.
-        ///
-        /// Note: The editor allows the onValueChanged value to be set up manually.For example the
-        /// value can be set to run only a runtime.  The object and script function to call are also
-        /// provided here.
-        ///
-        /// The onValueChanged variable can be alternatively set-up at runtime.The script example below
-        /// shows how this can be done.The script is attached to the ScrollRect object.
-        /// </remarks>
-        /// <example>
-        /// <code>
-        /// <![CDATA[
-        /// using UnityEngine;
-        /// using UnityEngine.UI;
-        ///
-        /// public class ExampleScript : MonoBehaviour
-        /// {
-        ///     static ScrollRect scrollRect;
-        ///
-        ///     void Start()
-        ///     {
-        ///         scrollRect = GetComponent<ScrollRect>();
-        ///         scrollRect.onValueChanged.AddListener(ListenerMethod);
-        ///     }
-        ///
-        ///     public void ListenerMethod(Vector2 value)
-        ///     {
-        ///         Debug.Log("ListenerMethod: " + value);
-        ///     }
-        /// }
-        /// ]]>
-        ///</code>
-        /// </example>
-        public ScrollRectEvent onValueChanged { get { return m_OnValueChanged; } set { m_OnValueChanged = value; } }
 
         // The offset from handle position to mouse down position
         private Vector2 m_PointerStartLocalCursor = Vector2.zero;
@@ -886,7 +834,6 @@ namespace UnityEngine.UI
             {
                 UpdateScrollbars(offset);
                 UISystemProfilerApi.AddMarker("ScrollRect.value", this);
-                m_OnValueChanged.Invoke(normalizedPosition);
                 UpdatePrevData();
             }
             UpdateScrollbarVisibility();
