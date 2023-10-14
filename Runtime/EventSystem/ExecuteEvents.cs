@@ -4,9 +4,9 @@ namespace UnityEngine.EventSystems
 {
     public static class ExecuteEvents
     {
-        public delegate void BaseEventFunc<T>(T handler, BaseEventData eventData);
+        public delegate void BaseEventFunc<in T>(T handler, BaseEventData eventData);
 
-        public delegate void PointerEventFunc<T>(T handler, PointerEventData eventData);
+        public delegate void PointerEventFunc<in T>(T handler, PointerEventData eventData);
 
         public static PointerEventFunc<IPointerMoveHandler> pointerMoveHandler = (h, e) => h.OnPointerMove(e);
         public static PointerEventFunc<IPointerEnterHandler> pointerEnterHandler = (h, e) => h.OnPointerEnter(e);

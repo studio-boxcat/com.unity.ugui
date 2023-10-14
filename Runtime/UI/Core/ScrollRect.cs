@@ -5,7 +5,6 @@ namespace UnityEngine.UI
 {
     [AddComponentMenu("UI/Scroll Rect", 37)]
     [SelectionBase]
-    [ExecuteAlways]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform))]
     /// <summary>
@@ -410,19 +409,17 @@ namespace UnityEngine.UI
 
         private RectTransform m_ViewRect;
 
-        protected RectTransform viewRect
+        private RectTransform viewRect
         {
             get
             {
                 if (m_ViewRect == null)
-                    m_ViewRect = m_Viewport;
-                if (m_ViewRect == null)
-                    m_ViewRect = (RectTransform)transform;
+                    m_ViewRect = m_Viewport != null ? m_Viewport : rectTransform;
                 return m_ViewRect;
             }
         }
 
-        protected Bounds m_ContentBounds;
+        private Bounds m_ContentBounds;
         private Bounds m_ViewBounds;
 
         private Vector2 m_Velocity;
@@ -449,16 +446,8 @@ namespace UnityEngine.UI
         private float m_HSliderHeight;
         private float m_VSliderWidth;
 
-        [System.NonSerialized] private RectTransform m_Rect;
-        private RectTransform rectTransform
-        {
-            get
-            {
-                if (m_Rect == null)
-                    m_Rect = GetComponent<RectTransform>();
-                return m_Rect;
-            }
-        }
+        [NonSerialized] private RectTransform m_Rect;
+        private RectTransform rectTransform => m_Rect ??= (RectTransform)transform;
 
         private RectTransform m_HorizontalScrollbarRect;
         private RectTransform m_VerticalScrollbarRect;
@@ -468,14 +457,11 @@ namespace UnityEngine.UI
         private DrivenRectTransformTracker m_Tracker;
         #pragma warning restore 649
 
-        protected ScrollRect()
-        {}
-
         /// <summary>
         /// Rebuilds the scroll rect data after initialization.
         /// </summary>
         /// <param name="executing">The current step in the rendering CanvasUpdate cycle.</param>
-        public virtual void Rebuild(CanvasUpdate executing)
+        void ICanvasElement.Rebuild(CanvasUpdate executing)
         {
             if (executing == CanvasUpdate.Prelayout)
             {
@@ -492,15 +478,13 @@ namespace UnityEngine.UI
             }
         }
 
-        public virtual void LayoutComplete()
-        {}
+        void ICanvasElement.LayoutComplete() {}
 
-        public virtual void GraphicUpdateComplete()
-        {}
+        void ICanvasElement.GraphicUpdateComplete() {}
 
         void UpdateCachedData()
         {
-            Transform transform = this.transform;
+            Transform transform = rectTransform;
             m_HorizontalScrollbarRect = m_HorizontalScrollbar == null ? null : m_HorizontalScrollbar.transform as RectTransform;
             m_VerticalScrollbarRect = m_VerticalScrollbar == null ? null : m_VerticalScrollbar.transform as RectTransform;
 
@@ -516,7 +500,7 @@ namespace UnityEngine.UI
             m_VSliderWidth = (m_VerticalScrollbarRect == null ? 0 : m_VerticalScrollbarRect.rect.width);
         }
 
-        protected virtual void OnEnable()
+        void OnEnable()
         {
             if (m_HorizontalScrollbar)
                 m_HorizontalScrollbar.onValueChanged.AddListener(SetHorizontalNormalizedPosition);
@@ -527,7 +511,7 @@ namespace UnityEngine.UI
             SetDirty();
         }
 
-        protected virtual void OnDisable()
+        void OnDisable()
         {
             CanvasUpdateRegistry.UnRegisterCanvasElementForRebuild(this);
 
@@ -544,37 +528,6 @@ namespace UnityEngine.UI
             LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
         }
 
-        /// <summary>
-        /// See member in base class.
-        /// </summary>
-        /// <example>
-        /// <code>
-        /// <![CDATA[
-        /// using UnityEngine;
-        /// using System.Collections;
-        /// using UnityEngine.UI;  // Required when Using UI elements.
-        ///
-        /// public class ExampleClass : MonoBehaviour
-        /// {
-        ///     public ScrollRect myScrollRect;
-        ///
-        ///     public void Start()
-        ///     {
-        ///         //Checks if the ScrollRect called "myScrollRect" is active.
-        ///         if (myScrollRect.IsActive())
-        ///         {
-        ///             Debug.Log("The Scroll Rect is active!");
-        ///         }
-        ///     }
-        /// }
-        /// ]]>
-        ///</code>
-        /// </example>
-        public override bool IsActive()
-        {
-            return base.IsActive() && m_Content != null;
-        }
-
         private void EnsureLayoutHasRebuilt()
         {
             if (!m_HasRebuiltLayout && !CanvasUpdateRegistry.IsRebuildingLayout())
@@ -589,11 +542,8 @@ namespace UnityEngine.UI
             m_Velocity = Vector2.zero;
         }
 
-        public virtual void OnScroll(PointerEventData data)
+        void IScrollHandler.OnScroll(PointerEventData data)
         {
-            if (!IsActive())
-                return;
-
             EnsureLayoutHasRebuilt();
             UpdateBounds();
 
@@ -625,7 +575,7 @@ namespace UnityEngine.UI
             UpdateBounds();
         }
 
-        public virtual void OnInitializePotentialDrag(PointerEventData eventData)
+        void IInitializePotentialDragHandler.OnInitializePotentialDrag(PointerEventData eventData)
         {
             if (eventData.button != PointerEventData.InputButton.Left)
                 return;
@@ -654,12 +604,9 @@ namespace UnityEngine.UI
         /// ]]>
         ///</code>
         /// </example>
-        public virtual void OnBeginDrag(PointerEventData eventData)
+        void IBeginDragHandler.OnBeginDrag(PointerEventData eventData)
         {
             if (eventData.button != PointerEventData.InputButton.Left)
-                return;
-
-            if (!IsActive())
                 return;
 
             UpdateBounds();
@@ -691,7 +638,7 @@ namespace UnityEngine.UI
         /// ]]>
         ///</code>
         /// </example>
-        public virtual void OnEndDrag(PointerEventData eventData)
+        void IEndDragHandler.OnEndDrag(PointerEventData eventData)
         {
             if (eventData.button != PointerEventData.InputButton.Left)
                 return;
@@ -720,7 +667,7 @@ namespace UnityEngine.UI
         /// ]]>
         ///</code>
         /// </example>
-        public virtual void OnDrag(PointerEventData eventData)
+        void IDragHandler.OnDrag(PointerEventData eventData)
         {
             if (!m_Dragging)
                 return;
@@ -728,11 +675,8 @@ namespace UnityEngine.UI
             if (eventData.button != PointerEventData.InputButton.Left)
                 return;
 
-            if (!IsActive())
-                return;
-
-            Vector2 localCursor;
-            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(viewRect, eventData.position, eventData.pressEventCamera, out localCursor))
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    viewRect, eventData.position, eventData.pressEventCamera, out var localCursor))
                 return;
 
             UpdateBounds();
@@ -757,7 +701,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// Sets the anchored position of the content.
         /// </summary>
-        protected virtual void SetContentAnchoredPosition(Vector2 position)
+        void SetContentAnchoredPosition(Vector2 position)
         {
             if (!m_Horizontal)
                 position.x = m_Content.anchoredPosition.x;
@@ -771,7 +715,7 @@ namespace UnityEngine.UI
             }
         }
 
-        protected virtual void LateUpdate()
+        void LateUpdate()
         {
             if (!m_Content)
                 return;
@@ -843,7 +787,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// Helper function to update the previous data fields on a ScrollRect. Call this before you change data in the ScrollRect.
         /// </summary>
-        protected void UpdatePrevData()
+        void UpdatePrevData()
         {
             if (m_Content == null)
                 m_PrevPosition = Vector2.zero;
@@ -1001,7 +945,7 @@ namespace UnityEngine.UI
         /// </summary>
         /// <param name="value">The position to set, between 0 and 1.</param>
         /// <param name="axis">The axis to set: 0 for horizontal, 1 for vertical.</param>
-        protected virtual void SetNormalizedPosition(float value, int axis)
+        void SetNormalizedPosition(float value, int axis)
         {
             EnsureLayoutHasRebuilt();
             UpdateBounds();
@@ -1032,60 +976,21 @@ namespace UnityEngine.UI
             SetDirty();
         }
 
-        private bool hScrollingNeeded
-        {
-            get
-            {
-                if (Application.isPlaying)
-                    return m_ContentBounds.size.x > m_ViewBounds.size.x + 0.01f;
-                return true;
-            }
-        }
-        private bool vScrollingNeeded
-        {
-            get
-            {
-                if (Application.isPlaying)
-                    return m_ContentBounds.size.y > m_ViewBounds.size.y + 0.01f;
-                return true;
-            }
-        }
+        private bool hScrollingNeeded => m_ContentBounds.size.x > m_ViewBounds.size.x + 0.01f;
+        private bool vScrollingNeeded => m_ContentBounds.size.y > m_ViewBounds.size.y + 0.01f;
+
+        float ILayoutElement.minWidth => -1;
+        float ILayoutElement.preferredWidth => -1;
+        float ILayoutElement.flexibleWidth => -1;
+        float ILayoutElement.minHeight => -1;
+        float ILayoutElement.preferredHeight => -1;
+        float ILayoutElement.flexibleHeight => -1;
+        int ILayoutElement.layoutPriority => -1;
 
         /// <summary>
         /// Called by the layout system.
         /// </summary>
-        public virtual float minWidth { get { return -1; } }
-        /// <summary>
-        /// Called by the layout system.
-        /// </summary>
-        public virtual float preferredWidth { get { return -1; } }
-        /// <summary>
-        /// Called by the layout system.
-        /// </summary>
-        public virtual float flexibleWidth { get { return -1; } }
-
-        /// <summary>
-        /// Called by the layout system.
-        /// </summary>
-        public virtual float minHeight { get { return -1; } }
-        /// <summary>
-        /// Called by the layout system.
-        /// </summary>
-        public virtual float preferredHeight { get { return -1; } }
-        /// <summary>
-        /// Called by the layout system.
-        /// </summary>
-        public virtual float flexibleHeight { get { return -1; } }
-
-        /// <summary>
-        /// Called by the layout system.
-        /// </summary>
-        public virtual int layoutPriority { get { return -1; } }
-
-        /// <summary>
-        /// Called by the layout system.
-        /// </summary>
-        public virtual void SetLayoutHorizontal()
+        void ILayoutController.SetLayoutHorizontal()
         {
             m_Tracker.Clear();
             UpdateCachedData();
@@ -1141,7 +1046,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// Called by the layout system.
         /// </summary>
-        public virtual void SetLayoutVertical()
+        void ILayoutController.SetLayoutVertical()
         {
             UpdateScrollbarLayout();
             m_ViewBounds = new Bounds(viewRect.rect.center, viewRect.rect.size);
@@ -1292,7 +1197,7 @@ namespace UnityEngine.UI
             return InternalGetBounds(m_Corners, ref viewWorldToLocalMatrix);
         }
 
-        internal static Bounds InternalGetBounds(Vector3[] corners, ref Matrix4x4 viewWorldToLocalMatrix)
+        static Bounds InternalGetBounds(Vector3[] corners, ref Matrix4x4 viewWorldToLocalMatrix)
         {
             var vMin = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
             var vMax = new Vector3(float.MinValue, float.MinValue, float.MinValue);
@@ -1314,7 +1219,7 @@ namespace UnityEngine.UI
             return InternalCalculateOffset(ref m_ViewBounds, ref m_ContentBounds, m_Horizontal, m_Vertical, m_MovementType, ref delta);
         }
 
-        internal static Vector2 InternalCalculateOffset(ref Bounds viewBounds, ref Bounds contentBounds, bool horizontal, bool vertical, MovementType movementType, ref Vector2 delta)
+        static Vector2 InternalCalculateOffset(ref Bounds viewBounds, ref Bounds contentBounds, bool horizontal, bool vertical, MovementType movementType, ref Vector2 delta)
         {
             Vector2 offset = Vector2.zero;
             if (movementType == MovementType.Unrestricted)
@@ -1359,7 +1264,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// Override to alter or add to the code that keeps the appearance of the scroll rect synced with its data.
         /// </summary>
-        protected void SetDirty()
+        void SetDirty()
         {
             if (!IsActive())
                 return;
@@ -1370,7 +1275,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// Override to alter or add to the code that caches data to avoid repeated heavy operations.
         /// </summary>
-        protected void SetDirtyCaching()
+        void SetDirtyCaching()
         {
             if (!IsActive())
                 return;
@@ -1380,13 +1285,5 @@ namespace UnityEngine.UI
 
             m_ViewRect = null;
         }
-
-        #if UNITY_EDITOR
-        protected virtual void OnValidate()
-        {
-            SetDirtyCaching();
-        }
-
-        #endif
     }
 }

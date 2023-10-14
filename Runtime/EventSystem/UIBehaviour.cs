@@ -3,12 +3,12 @@ namespace UnityEngine.EventSystems
     /// <summary>
     /// Base behaviour that has protected implementations of Unity lifecycle functions.
     /// </summary>
-    public abstract class UIBehaviour : MonoBehaviour
+    public class UIBehaviour : MonoBehaviour
     {
         /// <summary>
         /// Returns true if the GameObject and the Component are active.
         /// </summary>
-        public virtual bool IsActive()
+        public bool IsActive()
         {
             return isActiveAndEnabled;
         }
