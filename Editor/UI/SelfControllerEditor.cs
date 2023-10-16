@@ -15,9 +15,8 @@ namespace UnityEditor.UI
             bool anyHaveLayoutParent = false;
             for (int i = 0; i < targets.Length; i++)
             {
-                Component comp = (targets[i] as Component);
-                ILayoutIgnorer ignorer = comp.GetComponent(typeof(ILayoutIgnorer)) as ILayoutIgnorer;
-                if (ignorer != null && ignorer.ignoreLayout)
+                var comp = (targets[i] as Component);
+                if (comp.TryGetComponent(out LayoutIgnorer _))
                     continue;
 
                 RectTransform parent = comp.transform.parent as RectTransform;

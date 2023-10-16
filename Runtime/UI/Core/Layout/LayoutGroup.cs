@@ -39,8 +39,6 @@ namespace UnityEngine.UI
 
         protected readonly List<RectTransform> rectChildren = new();
 
-        static readonly List<ILayoutIgnorer> _layoutIgnorerBuf = new();
-
         public virtual void CalculateLayoutInputHorizontal()
         {
             rectChildren.Clear();
@@ -50,22 +48,9 @@ namespace UnityEngine.UI
                 var rect = rectTransform.GetChild(i) as RectTransform;
                 if (rect is null || !rect.gameObject.activeInHierarchy)
                     continue;
-
-                rect.GetComponents(_layoutIgnorerBuf);
-
-                if (_layoutIgnorerBuf.Count == 0)
-                {
-                    rectChildren.Add(rect);
+                if (rect.TryGetComponent(out LayoutIgnorer _))
                     continue;
-                }
-
-                foreach (var ignorer in _layoutIgnorerBuf)
-                {
-                    if (ignorer.ignoreLayout)
-                        continue;
-                    rectChildren.Add(rect);
-                    break;
-                }
+                rectChildren.Add(rect);
             }
 
             m_Tracker.Clear();

@@ -8,9 +8,8 @@ namespace UnityEngine.UI
     /// <summary>
     /// Add this component to a GameObject to make it into a layout element or override values on an existing layout element.
     /// </summary>
-    public class LayoutElement : UIBehaviour, ILayoutElement, ILayoutIgnorer
+    public class LayoutElement : UIBehaviour, ILayoutElement
     {
-        [SerializeField] private bool m_IgnoreLayout = false;
         [SerializeField] private float m_MinWidth = -1;
         [SerializeField] private float m_MinHeight = -1;
         [SerializeField] private float m_PreferredWidth = -1;
@@ -18,14 +17,6 @@ namespace UnityEngine.UI
         [SerializeField] private float m_FlexibleWidth = -1;
         [SerializeField] private float m_FlexibleHeight = -1;
         [SerializeField] private int m_LayoutPriority = 1;
-
-        /// <summary>
-        /// Should this RectTransform be ignored by the layout system?
-        /// </summary>
-        /// <remarks>
-        /// Setting this property to true will make a parent layout group component not consider this RectTransform part of the group. The RectTransform can then be manually positioned despite being a child GameObject of a layout group.
-        /// </remarks>
-        public virtual bool ignoreLayout { get { return m_IgnoreLayout; } set { if (SetPropertyUtility.SetValue(ref m_IgnoreLayout, value)) SetDirty(); } }
 
         /// <summary>
         /// The minimum width this layout element may be allocated.

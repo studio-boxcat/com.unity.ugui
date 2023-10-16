@@ -2702,7 +2702,7 @@ namespace UnityEngine.UI
                 m_CachedInputRenderer.SetMaterial(Graphic.defaultGraphicMaterial, Texture2D.whiteTexture);
 
                 // Needed as if any layout is present we want the caret to always be the same as the text area.
-                go.AddComponent<LayoutElement>().ignoreLayout = true;
+                go.AddComponent<LayoutIgnorer>();
 
                 AssignPositioningIfNeeded();
             }

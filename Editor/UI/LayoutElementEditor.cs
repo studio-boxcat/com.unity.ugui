@@ -1,7 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEditorInternal;
-using UnityEditor.AnimatedValues;
 
 namespace UnityEditor.UI
 {
@@ -13,7 +11,6 @@ namespace UnityEditor.UI
     /// </summary>
     public class LayoutElementEditor : Editor
     {
-        SerializedProperty m_IgnoreLayout;
         SerializedProperty m_MinWidth;
         SerializedProperty m_MinHeight;
         SerializedProperty m_PreferredWidth;
@@ -24,7 +21,6 @@ namespace UnityEditor.UI
 
         protected virtual void OnEnable()
         {
-            m_IgnoreLayout = serializedObject.FindProperty("m_IgnoreLayout");
             m_MinWidth = serializedObject.FindProperty("m_MinWidth");
             m_MinHeight = serializedObject.FindProperty("m_MinHeight");
             m_PreferredWidth = serializedObject.FindProperty("m_PreferredWidth");
@@ -38,19 +34,14 @@ namespace UnityEditor.UI
         {
             serializedObject.Update();
 
-            EditorGUILayout.PropertyField(m_IgnoreLayout);
+            EditorGUILayout.Space();
 
-            if (!m_IgnoreLayout.boolValue)
-            {
-                EditorGUILayout.Space();
-
-                LayoutElementField(m_MinWidth, 0);
-                LayoutElementField(m_MinHeight, 0);
-                LayoutElementField(m_PreferredWidth, t => t.rect.width);
-                LayoutElementField(m_PreferredHeight, t => t.rect.height);
-                LayoutElementField(m_FlexibleWidth, 1);
-                LayoutElementField(m_FlexibleHeight, 1);
-            }
+            LayoutElementField(m_MinWidth, 0);
+            LayoutElementField(m_MinHeight, 0);
+            LayoutElementField(m_PreferredWidth, t => t.rect.width);
+            LayoutElementField(m_PreferredHeight, t => t.rect.height);
+            LayoutElementField(m_FlexibleWidth, 1);
+            LayoutElementField(m_FlexibleHeight, 1);
 
             EditorGUILayout.PropertyField(m_LayoutPriority);
 
