@@ -579,26 +579,11 @@ namespace UnityEngine.UI
         /// </summary>
         public Text textComponent
         {
-            get { return m_TextComponent; }
+            get => m_TextComponent;
             set
             {
-                if (m_TextComponent != null)
-                {
-                    m_TextComponent.UnregisterDirtyVerticesCallback(MarkGeometryAsDirty);
-                    m_TextComponent.UnregisterDirtyVerticesCallback(UpdateLabel);
-                    m_TextComponent.UnregisterDirtyMaterialCallback(UpdateCaretMaterial);
-                }
-
                 if (SetPropertyUtility.SetClass(ref m_TextComponent, value))
-                {
                     EnforceTextHOverflow();
-                    if (m_TextComponent != null)
-                    {
-                        m_TextComponent.RegisterDirtyVerticesCallback(MarkGeometryAsDirty);
-                        m_TextComponent.RegisterDirtyVerticesCallback(UpdateLabel);
-                        m_TextComponent.RegisterDirtyMaterialCallback(UpdateCaretMaterial);
-                    }
-                }
             }
         }
 
@@ -1144,12 +1129,7 @@ namespace UnityEngine.UI
                 m_CachedInputRenderer.SetMaterial(m_TextComponent.GetModifiedMaterial(Graphic.defaultGraphicMaterial), Texture2D.whiteTexture);
 
             if (m_TextComponent != null)
-            {
-                m_TextComponent.RegisterDirtyVerticesCallback(MarkGeometryAsDirty);
-                m_TextComponent.RegisterDirtyVerticesCallback(UpdateLabel);
-                m_TextComponent.RegisterDirtyMaterialCallback(UpdateCaretMaterial);
                 UpdateLabel();
-            }
         }
 
         protected override void OnDisable()
@@ -1158,12 +1138,6 @@ namespace UnityEngine.UI
             m_BlinkCoroutine = null;
 
             DeactivateInputField();
-            if (m_TextComponent != null)
-            {
-                m_TextComponent.UnregisterDirtyVerticesCallback(MarkGeometryAsDirty);
-                m_TextComponent.UnregisterDirtyVerticesCallback(UpdateLabel);
-                m_TextComponent.UnregisterDirtyMaterialCallback(UpdateCaretMaterial);
-            }
             CanvasUpdateRegistry.UnRegisterCanvasElementForRebuild(this);
 
             // Clear needs to be called otherwise sync never happens as the object is disabled.
@@ -1229,12 +1203,6 @@ namespace UnityEngine.UI
             {
                 m_CaretVisible = true;
             }
-        }
-
-        private void UpdateCaretMaterial()
-        {
-            if (m_TextComponent != null && m_CachedInputRenderer != null)
-                m_CachedInputRenderer.SetMaterial(m_TextComponent.GetModifiedMaterial(Graphic.defaultGraphicMaterial), Texture2D.whiteTexture);
         }
 
         /// <summary>
@@ -2449,77 +2417,77 @@ namespace UnityEngine.UI
         /// </summary>
         protected void UpdateLabel()
         {
-            if (m_TextComponent != null && m_TextComponent.font != null && !m_PreventFontCallback)
+            if (m_TextComponent == null || m_TextComponent.font == null || m_PreventFontCallback)
+                return;
+
+            // TextGenerator.Populate invokes a callback that's called for anything
+            // that needs to be updated when the data for that font has changed.
+            // This makes all Text components that use that font update their vertices.
+            // In turn, this makes the InputField that's associated with that Text component
+            // update its label by calling this UpdateLabel method.
+            // This is a recursive call we want to prevent, since it makes the InputField
+            // update based on font data that didn't yet finish executing, or alternatively
+            // hang on infinite recursion, depending on whether the cached value is cached
+            // before or after the calculation.
+            //
+            // This callback also occurs when assigning text to our Text component, i.e.,
+            // m_TextComponent.text = processed;
+
+            m_PreventFontCallback = true;
+
+            string fullText;
+
+            if (EventSystem.current != null && gameObject == EventSystem.current.currentSelectedGameObject && compositionString.Length > 0)
             {
-                // TextGenerator.Populate invokes a callback that's called for anything
-                // that needs to be updated when the data for that font has changed.
-                // This makes all Text components that use that font update their vertices.
-                // In turn, this makes the InputField that's associated with that Text component
-                // update its label by calling this UpdateLabel method.
-                // This is a recursive call we want to prevent, since it makes the InputField
-                // update based on font data that didn't yet finish executing, or alternatively
-                // hang on infinite recursion, depending on whether the cached value is cached
-                // before or after the calculation.
-                //
-                // This callback also occurs when assigning text to our Text component, i.e.,
-                // m_TextComponent.text = processed;
-
-                m_PreventFontCallback = true;
-
-                string fullText;
-
-                if (EventSystem.current != null && gameObject == EventSystem.current.currentSelectedGameObject && compositionString.Length > 0)
-                {
-                    m_IsCompositionActive = true;
-                    fullText = text.Substring(0, m_CaretPosition) + compositionString + text.Substring(m_CaretPosition);
-                }
-                else
-                {
-                    m_IsCompositionActive = false;
-                    fullText = text;
-                }
-
-                string processed;
-                if (inputType == InputType.Password)
-                    processed = new string(asteriskChar, fullText.Length);
-                else
-                    processed = fullText;
-
-                bool isEmpty = string.IsNullOrEmpty(fullText);
-
-                if (m_Placeholder != null)
-                    m_Placeholder.enabled = isEmpty;
-
-                // If not currently editing the text, set the visible range to the whole text.
-                // The UpdateLabel method will then truncate it to the part that fits inside the Text area.
-                // We can't do this when text is being edited since it would discard the current scroll,
-                // which is defined by means of the m_DrawStart and m_DrawEnd indices.
-                if (!m_AllowInput)
-                {
-                    m_DrawStart = 0;
-                    m_DrawEnd = m_Text.Length;
-                }
-
-                if (!isEmpty)
-                {
-                    // Determine what will actually fit into the given line
-                    Vector2 extents = m_TextComponent.rectTransform.rect.size;
-
-                    var settings = m_TextComponent.GetGenerationSettings(extents);
-                    settings.generateOutOfBounds = true;
-
-                    cachedInputTextGenerator.PopulateWithErrors(processed, settings, gameObject);
-
-                    SetDrawRangeToContainCaretPosition(caretSelectPositionInternal);
-
-                    processed = processed.Substring(m_DrawStart, Mathf.Min(m_DrawEnd, processed.Length) - m_DrawStart);
-
-                    SetCaretVisible();
-                }
-                m_TextComponent.text = processed;
-                MarkGeometryAsDirty();
-                m_PreventFontCallback = false;
+                m_IsCompositionActive = true;
+                fullText = text.Substring(0, m_CaretPosition) + compositionString + text.Substring(m_CaretPosition);
             }
+            else
+            {
+                m_IsCompositionActive = false;
+                fullText = text;
+            }
+
+            string processed;
+            if (inputType == InputType.Password)
+                processed = new string(asteriskChar, fullText.Length);
+            else
+                processed = fullText;
+
+            bool isEmpty = string.IsNullOrEmpty(fullText);
+
+            if (m_Placeholder != null)
+                m_Placeholder.enabled = isEmpty;
+
+            // If not currently editing the text, set the visible range to the whole text.
+            // The UpdateLabel method will then truncate it to the part that fits inside the Text area.
+            // We can't do this when text is being edited since it would discard the current scroll,
+            // which is defined by means of the m_DrawStart and m_DrawEnd indices.
+            if (!m_AllowInput)
+            {
+                m_DrawStart = 0;
+                m_DrawEnd = m_Text.Length;
+            }
+
+            if (!isEmpty)
+            {
+                // Determine what will actually fit into the given line
+                Vector2 extents = m_TextComponent.rectTransform.rect.size;
+
+                var settings = m_TextComponent.GetGenerationSettings(extents);
+                settings.generateOutOfBounds = true;
+
+                cachedInputTextGenerator.PopulateWithErrors(processed, settings, gameObject);
+
+                SetDrawRangeToContainCaretPosition(caretSelectPositionInternal);
+
+                processed = processed.Substring(m_DrawStart, Mathf.Min(m_DrawEnd, processed.Length) - m_DrawStart);
+
+                SetCaretVisible();
+            }
+            m_TextComponent.text = processed;
+            MarkGeometryAsDirty();
+            m_PreventFontCallback = false;
         }
 
         private bool IsSelectionVisible()
@@ -2731,7 +2699,7 @@ namespace UnityEngine.UI
 
                 caretRectTrans = go.GetComponent<RectTransform>();
                 m_CachedInputRenderer = go.GetComponent<CanvasRenderer>();
-                m_CachedInputRenderer.SetMaterial(m_TextComponent.GetModifiedMaterial(Graphic.defaultGraphicMaterial), Texture2D.whiteTexture);
+                m_CachedInputRenderer.SetMaterial(Graphic.defaultGraphicMaterial, Texture2D.whiteTexture);
 
                 // Needed as if any layout is present we want the caret to always be the same as the text area.
                 go.AddComponent<LayoutElement>().ignoreLayout = true;
@@ -3291,11 +3259,9 @@ namespace UnityEngine.UI
 
         void EnforceTextHOverflow()
         {
-            if (m_TextComponent != null)
-                if (multiLine)
-                    m_TextComponent.horizontalOverflow = HorizontalWrapMode.Wrap;
-                else
-                    m_TextComponent.horizontalOverflow = HorizontalWrapMode.Overflow;
+            if (m_TextComponent == null) return;
+            m_TextComponent.horizontalOverflow = multiLine
+                ? HorizontalWrapMode.Wrap : HorizontalWrapMode.Overflow;
         }
 
         void SetToCustomIfContentTypeIsNot(params ContentType[] allowedContentTypes)

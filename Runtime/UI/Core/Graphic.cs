@@ -199,9 +199,6 @@ namespace UnityEngine.UI
         [NonSerialized] private bool m_VertsDirty;
         [NonSerialized] private bool m_MaterialDirty;
 
-        [NonSerialized] protected UnityAction m_OnDirtyVertsCallback;
-        [NonSerialized] protected UnityAction m_OnDirtyMaterialCallback;
-
         [NonSerialized] protected static Mesh s_Mesh;
 
         /// <summary>
@@ -263,9 +260,6 @@ namespace UnityEngine.UI
 
             m_VertsDirty = true;
             CanvasUpdateRegistry.RegisterCanvasElementForGraphicRebuild(this);
-
-            if (m_OnDirtyVertsCallback != null)
-                m_OnDirtyVertsCallback();
         }
 
         /// <summary>
@@ -281,9 +275,6 @@ namespace UnityEngine.UI
 
             m_MaterialDirty = true;
             CanvasUpdateRegistry.RegisterCanvasElementForGraphicRebuild(this);
-
-            if (m_OnDirtyMaterialCallback != null)
-                m_OnDirtyMaterialCallback();
         }
 
         public void SetRaycastDirty()
@@ -760,42 +751,6 @@ namespace UnityEngine.UI
                 return rectTransform.rect;
             else
                 return RectTransformUtility.PixelAdjustRect(rectTransform, canvas);
-        }
-
-        /// <summary>
-        /// Add a listener to receive notification when the graphics vertices are dirtied.
-        /// </summary>
-        /// <param name="action">The method to call when invoked.</param>
-        public void RegisterDirtyVerticesCallback(UnityAction action)
-        {
-            m_OnDirtyVertsCallback += action;
-        }
-
-        /// <summary>
-        /// Remove a listener from receiving notifications when the graphics vertices are dirtied
-        /// </summary>
-        /// <param name="action">The method to call when invoked.</param>
-        public void UnregisterDirtyVerticesCallback(UnityAction action)
-        {
-            m_OnDirtyVertsCallback -= action;
-        }
-
-        /// <summary>
-        /// Add a listener to receive notification when the graphics material is dirtied.
-        /// </summary>
-        /// <param name="action">The method to call when invoked.</param>
-        public void RegisterDirtyMaterialCallback(UnityAction action)
-        {
-            m_OnDirtyMaterialCallback += action;
-        }
-
-        /// <summary>
-        /// Remove a listener from receiving notifications when the graphics material are dirtied
-        /// </summary>
-        /// <param name="action">The method to call when invoked.</param>
-        public void UnregisterDirtyMaterialCallback(UnityAction action)
-        {
-            m_OnDirtyMaterialCallback -= action;
         }
 
 #if UNITY_EDITOR
