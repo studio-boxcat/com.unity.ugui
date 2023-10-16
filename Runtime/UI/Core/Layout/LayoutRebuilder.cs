@@ -11,7 +11,7 @@ namespace UnityEngine.UI
     public class LayoutRebuilder : ICanvasElement
     {
         private RectTransform m_ToRebuild;
-        //There are a few of reasons we need to cache the Hash fromt he transform:
+        //There are a few of reasons we need to cache the Hash from the transform:
         //  - This is a ValueType (struct) and .Net calculates Hash from the Value Type fields.
         //  - The key of a Dictionary should have a constant Hash value.
         //  - It's possible for the Transform to get nulled from the Native side.
@@ -19,7 +19,7 @@ namespace UnityEngine.UI
         // So this struct gets used as a key to a dictionary, so we need to guarantee a constant Hash value.
         private int m_CachedHashFromTransform;
 
-        static ObjectPool<LayoutRebuilder> s_Rebuilders = new ObjectPool<LayoutRebuilder>(() => new LayoutRebuilder(), null, x => x.Clear());
+        static ObjectPool<LayoutRebuilder> s_Rebuilders = new(() => new LayoutRebuilder(), null, x => x.Clear());
 
         private void Initialize(RectTransform controller)
         {
@@ -201,12 +201,12 @@ namespace UnityEngine.UI
                 s_Rebuilders.Release(rebuilder);
         }
 
-        public void LayoutComplete()
+        void ICanvasElement.LayoutComplete()
         {
             s_Rebuilders.Release(this);
         }
 
-        public void GraphicUpdateComplete()
+        void ICanvasElement.GraphicUpdateComplete()
         {}
 
         public override int GetHashCode()
