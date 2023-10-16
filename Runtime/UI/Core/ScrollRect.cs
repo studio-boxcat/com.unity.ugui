@@ -690,9 +690,9 @@ namespace UnityEngine.UI
             if (m_MovementType == MovementType.Elastic)
             {
                 if (offset.x != 0)
-                    position.x = position.x - RubberDelta(offset.x, m_ViewBounds.size.x);
+                    position.x -= RubberDelta(offset.x, m_ViewBounds.size.x);
                 if (offset.y != 0)
-                    position.y = position.y - RubberDelta(offset.y, m_ViewBounds.size.y);
+                    position.y -= RubberDelta(offset.y, m_ViewBounds.size.y);
             }
 
             SetContentAnchoredPosition(position);
@@ -789,10 +789,7 @@ namespace UnityEngine.UI
         /// </summary>
         void UpdatePrevData()
         {
-            if (m_Content == null)
-                m_PrevPosition = Vector2.zero;
-            else
-                m_PrevPosition = m_Content.anchoredPosition;
+            m_PrevPosition = m_Content.anchoredPosition;
             m_PrevViewBounds = m_ViewBounds;
             m_PrevContentBounds = m_ContentBounds;
         }
