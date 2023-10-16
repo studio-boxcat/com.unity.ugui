@@ -1,3 +1,5 @@
+using JetBrains.Annotations;
+using UnityEngine.EventSystems;
 using UnityEngine.Pool;
 
 namespace UnityEngine.UI
@@ -26,7 +28,7 @@ namespace UnityEngine.UI
         /// <remarks>
         /// All components on the GameObject that implement the ILayoutElement are queried. The one with the highest priority which has a value for this setting is used. If multiple componets have this setting and have the same priority, the maximum value out of those is used.
         /// </remarks>
-        public static float GetPreferredSize(RectTransform rect, int axis)
+        public static float GetPreferredSize([NotNull] RectTransform rect, int axis)
         {
             return axis == 0 ? GetPreferredWidth(rect) : GetPreferredHeight(rect);
         }
@@ -39,7 +41,7 @@ namespace UnityEngine.UI
         /// </remarks>
         /// <param name="rect">The RectTransform of the layout element to query.</param>
         /// <param name="axis">The axis to query. This can be 0 or 1.</param>
-        public static float GetFlexibleSize(RectTransform rect, int axis)
+        public static float GetFlexibleSize([NotNull] RectTransform rect, int axis)
         {
             return axis == 0 ? GetFlexibleWidth(rect) : GetFlexibleHeight(rect);
         }
@@ -51,7 +53,7 @@ namespace UnityEngine.UI
         /// <remarks>
         /// All components on the GameObject that implement the ILayoutElement are queried. The one with the highest priority which has a value for this setting is used. If multiple componets have this setting and have the same priority, the maximum value out of those is used.
         /// </remarks>
-        public static float GetMinWidth(RectTransform rect)
+        public static float GetMinWidth([NotNull] RectTransform rect)
         {
             return GetLayoutProperty(rect, e => e.minWidth, 0);
         }
@@ -75,7 +77,7 @@ namespace UnityEngine.UI
         /// All components on the GameObject that implement the ILayoutElement are queried. The one with the highest priority which has a value for this setting is used. If multiple componets have this setting and have the same priority, the maximum value out of those is used
         /// </remarks>
         /// <param name="rect">The RectTransform of the layout element to query.</param>
-        public static float GetFlexibleWidth(RectTransform rect)
+        public static float GetFlexibleWidth([NotNull] RectTransform rect)
         {
             return GetLayoutProperty(rect, e => e.flexibleWidth, 0);
         }
@@ -87,7 +89,7 @@ namespace UnityEngine.UI
         /// <remarks>
         /// All components on the GameObject that implement the ILayoutElement are queried. The one with the highest priority which has a value for this setting is used. If multiple componets have this setting and have the same priority, the maximum value out of those is used.
         /// </remarks>
-        public static float GetMinHeight(RectTransform rect)
+        public static float GetMinHeight([NotNull] RectTransform rect)
         {
             return GetLayoutProperty(rect, e => e.minHeight, 0);
         }
@@ -99,7 +101,7 @@ namespace UnityEngine.UI
         /// <remarks>
         /// All components on the GameObject that implement the ILayoutElement are queried. The one with the highest priority which has a value for this setting is used. If multiple componets have this setting and have the same priority, the maximum value out of those is used.
         /// </remarks>
-        public static float GetPreferredHeight(RectTransform rect)
+        public static float GetPreferredHeight([NotNull] RectTransform rect)
         {
             return Mathf.Max(GetLayoutProperty(rect, e => e.minHeight, 0), GetLayoutProperty(rect, e => e.preferredHeight, 0));
         }
@@ -111,7 +113,7 @@ namespace UnityEngine.UI
         /// All components on the GameObject that implement the ILayoutElement are queried. The one with the highest priority which has a value for this setting is used. If multiple componets have this setting and have the same priority, the maximum value out of those is used.
         /// </remarks>
         /// <param name="rect">The RectTransform of the layout element to query.</param>
-        public static float GetFlexibleHeight(RectTransform rect)
+        public static float GetFlexibleHeight([NotNull] RectTransform rect)
         {
             return GetLayoutProperty(rect, e => e.flexibleHeight, 0);
         }
@@ -123,10 +125,9 @@ namespace UnityEngine.UI
         /// <param name="property">The property to calculate.</param>
         /// <param name="defaultValue">The default value to use if no component on the layout element supplies the given property</param>
         /// <returns>The calculated value of the layout property.</returns>
-        public static float GetLayoutProperty(RectTransform rect, System.Func<ILayoutElement, float> property, float defaultValue)
+        static float GetLayoutProperty(RectTransform rect, System.Func<ILayoutElement, float> property, float defaultValue)
         {
-            ILayoutElement dummy;
-            return GetLayoutProperty(rect, property, defaultValue, out dummy);
+            return GetLayoutProperty(rect, property, defaultValue, out _);
         }
 
         /// <summary>
@@ -141,47 +142,45 @@ namespace UnityEngine.UI
         {
             source = null;
             if (rect == null)
-                return 0;
-            float min = defaultValue;
-            int maxPriority = System.Int32.MinValue;
-            var components = ListPool<Component>.Get();
-            rect.GetComponents(typeof(ILayoutElement), components);
+                return defaultValue;
+            var value = defaultValue;
+            var maxPriority = int.MinValue;
 
-            var componentsCount = components.Count;
-            for (int i = 0; i < componentsCount; i++)
+            using var _ = CompBuf.GetComponents(rect, typeof(ILayoutElement), out var components);
+
+            foreach (ILayoutElement layoutComp in components)
             {
-                var layoutComp = components[i] as ILayoutElement;
-                if (layoutComp is Behaviour && !((Behaviour)layoutComp).isActiveAndEnabled)
+                if (layoutComp is Behaviour {isActiveAndEnabled: false})
                     continue;
 
                 int priority = layoutComp.layoutPriority;
                 // If this layout components has lower priority than a previously used, ignore it.
                 if (priority < maxPriority)
                     continue;
-                float prop = property(layoutComp);
+                float curValue = property(layoutComp);
                 // If this layout property is set to a negative value, it means it should be ignored.
-                if (prop < 0)
+                if (curValue < 0)
                     continue;
 
                 // If this layout component has higher priority than all previous ones,
                 // overwrite with this one's value.
                 if (priority > maxPriority)
                 {
-                    min = prop;
+                    value = curValue;
                     maxPriority = priority;
                     source = layoutComp;
                 }
+                // We already checked priority < maxPriority (false) && priority > maxPriority (false), so priority == maxPriority here.
                 // If the layout component has the same priority as a previously used,
                 // use the largest of the values with the same priority.
-                else if (prop > min)
+                else if (curValue > value)
                 {
-                    min = prop;
+                    value = curValue;
                     source = layoutComp;
                 }
             }
 
-            ListPool<Component>.Release(components);
-            return min;
+            return value;
         }
     }
 }

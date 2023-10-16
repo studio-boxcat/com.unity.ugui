@@ -1,3 +1,5 @@
+using JetBrains.Annotations;
+
 namespace UnityEngine.UI
 {
     /// <summary>
@@ -217,7 +219,7 @@ namespace UnityEngine.UI
             }
         }
 
-        private void GetChildSizes(RectTransform child, int axis, bool controlSize, bool childForceExpand,
+        private void GetChildSizes([NotNull] RectTransform child, int axis, bool controlSize, bool childForceExpand,
             out float min, out float preferred, out float flexible)
         {
             if (!controlSize)

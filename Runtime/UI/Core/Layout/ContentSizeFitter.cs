@@ -103,7 +103,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// Calculate and apply the horizontal component of the size to the RectTransform
         /// </summary>
-        public virtual void SetLayoutHorizontal()
+        void ILayoutController.SetLayoutHorizontal()
         {
             m_Tracker.Clear();
             HandleSelfFittingAlongAxis(0);
@@ -112,7 +112,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// Calculate and apply the vertical component of the size to the RectTransform
         /// </summary>
-        public virtual void SetLayoutVertical()
+        void ILayoutController.SetLayoutVertical()
         {
             HandleSelfFittingAlongAxis(1);
         }

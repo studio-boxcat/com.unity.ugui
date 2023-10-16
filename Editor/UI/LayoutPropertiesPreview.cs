@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Globalization;
@@ -46,13 +44,8 @@ namespace UnityEditor.Events
 
         public override bool HasPreviewGUI()
         {
-            GameObject go = target as GameObject;
-            if (!go)
-                return false;
-
-            // Prevent allocations in the editor by using TryGetComponent
-            ILayoutElement layoutElement;
-            return go.TryGetComponent(out layoutElement);
+            var go = target as GameObject;
+            return go && go.TryGetComponent(out ILayoutElement _);
         }
 
         public override void OnPreviewGUI(Rect r, GUIStyle background)
