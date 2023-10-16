@@ -61,12 +61,12 @@ namespace UnityEngine.UI
         /// <summary>
         /// See LayoutElement.minWidth
         /// </summary>
-        public virtual float minWidth => GetTotalMinSize(0);
+        float ILayoutElement.minWidth => GetTotalMinSize(0);
 
         /// <summary>
         /// See LayoutElement.preferredWidth
         /// </summary>
-        public virtual float preferredWidth => GetTotalPreferredSize(0);
+        float ILayoutElement.preferredWidth => GetTotalPreferredSize(0);
 
         /// <summary>
         /// See LayoutElement.flexibleWidth
@@ -100,12 +100,12 @@ namespace UnityEngine.UI
 
         // Implementation
 
-        protected virtual void OnEnable()
+        void OnEnable()
         {
             SetDirty();
         }
 
-        protected virtual void OnDisable()
+        void OnDisable()
         {
             m_Tracker.Clear();
             LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
