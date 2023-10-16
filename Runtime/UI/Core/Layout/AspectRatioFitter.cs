@@ -50,7 +50,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// The aspect ratio to enforce. This means width divided by height.
         /// </summary>
-        public float aspectRatio { get { return m_AspectRatio; } set { if (SetPropertyUtility.SetStruct(ref m_AspectRatio, value)) SetDirty(); } }
+        public float aspectRatio { get { return m_AspectRatio; } set { if (SetPropertyUtility.SetValue(ref m_AspectRatio, value)) SetDirty(); } }
 
         [System.NonSerialized]
         private RectTransform m_Rect;

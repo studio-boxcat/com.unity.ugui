@@ -391,7 +391,7 @@ namespace UnityEngine.UI
         {
             set
             {
-                SetPropertyUtility.SetStruct(ref m_HideMobileInput, value);
+                SetPropertyUtility.SetValue(ref m_HideMobileInput, value);
             }
             get
             {
@@ -561,7 +561,7 @@ namespace UnityEngine.UI
             get { return m_CaretBlinkRate; }
             set
             {
-                if (SetPropertyUtility.SetStruct(ref m_CaretBlinkRate, value))
+                if (SetPropertyUtility.SetValue(ref m_CaretBlinkRate, value))
                 {
                     if (m_AllowInput)
                         SetCaretActive();
@@ -572,7 +572,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// The width of the caret in pixels.
         /// </summary>
-        public int caretWidth { get { return m_CaretWidth; } set { if (SetPropertyUtility.SetStruct(ref m_CaretWidth, value)) MarkGeometryAsDirty(); } }
+        public int caretWidth { get { return m_CaretWidth; } set { if (SetPropertyUtility.SetValue(ref m_CaretWidth, value)) MarkGeometryAsDirty(); } }
 
         /// <summary>
         /// The Text component that is going to be used to render the text to screen.
@@ -808,7 +808,7 @@ namespace UnityEngine.UI
             get { return m_CharacterLimit; }
             set
             {
-                if (SetPropertyUtility.SetStruct(ref m_CharacterLimit, Math.Max(0, value)))
+                if (SetPropertyUtility.SetValue(ref m_CharacterLimit, Math.Max(0, value)))
                 {
                     UpdateLabel();
                     if (m_Keyboard != null)
@@ -989,7 +989,7 @@ namespace UnityEngine.UI
         /// ]]>
         ///</code>
         /// </example>
-        public char asteriskChar { get { return m_AsteriskChar; } set { if (SetPropertyUtility.SetStruct(ref m_AsteriskChar, value)) UpdateLabel(); } }
+        public char asteriskChar { get { return m_AsteriskChar; } set { if (SetPropertyUtility.SetValue(ref m_AsteriskChar, value)) UpdateLabel(); } }
 
         /// <summary>
         /// If the InputField was canceled and will revert back to the original text upon DeactivateInputField.

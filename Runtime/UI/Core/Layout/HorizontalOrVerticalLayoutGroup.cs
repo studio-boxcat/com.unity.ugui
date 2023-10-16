@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace UnityEngine.UI
 {
     /// <summary>
@@ -14,21 +12,22 @@ namespace UnityEngine.UI
         /// <summary>
         /// The spacing to use between layout elements in the layout group.
         /// </summary>
-        public float spacing { get { return m_Spacing; } set { SetProperty(ref m_Spacing, value); } }
+        public float spacing { get => m_Spacing; set => SetPropertyUtility.SetValue(ref m_Spacing, value); }
 
         [SerializeField] protected bool m_ChildForceExpandWidth = true;
 
         /// <summary>
         /// Whether to force the children to expand to fill additional available horizontal space.
         /// </summary>
-        public bool childForceExpandWidth { get { return m_ChildForceExpandWidth; } set { SetProperty(ref m_ChildForceExpandWidth, value); } }
+        public bool childForceExpandWidth { get => m_ChildForceExpandWidth; set => SetPropertyUtility.SetValue(ref m_ChildForceExpandWidth, value);
+        }
 
         [SerializeField] protected bool m_ChildForceExpandHeight = true;
 
         /// <summary>
         /// Whether to force the children to expand to fill additional available vertical space.
         /// </summary>
-        public bool childForceExpandHeight { get { return m_ChildForceExpandHeight; } set { SetProperty(ref m_ChildForceExpandHeight, value); } }
+        public bool childForceExpandHeight { get { return m_ChildForceExpandHeight; } set { SetPropertyUtility.SetValue(ref m_ChildForceExpandHeight, value); } }
 
         [SerializeField] protected bool m_ChildControlWidth = true;
 
@@ -40,7 +39,7 @@ namespace UnityEngine.UI
         ///
         /// If set to true, the widths of the children are automatically driven by the layout group according to their respective minimum, preferred, and flexible widths. This is useful if the widths of the children should change depending on how much space is available.In this case the width of each child cannot be set manually in the RectTransform, but the minimum, preferred and flexible width for each child can be controlled by adding a LayoutElement component to it.
         /// </remarks>
-        public bool childControlWidth { get { return m_ChildControlWidth; } set { SetProperty(ref m_ChildControlWidth, value); } }
+        public bool childControlWidth { get { return m_ChildControlWidth; } set { SetPropertyUtility.SetValue(ref m_ChildControlWidth, value); } }
 
         [SerializeField] protected bool m_ChildControlHeight = true;
 
@@ -52,21 +51,21 @@ namespace UnityEngine.UI
         ///
         /// If set to true, the heights of the children are automatically driven by the layout group according to their respective minimum, preferred, and flexible heights. This is useful if the heights of the children should change depending on how much space is available.In this case the height of each child cannot be set manually in the RectTransform, but the minimum, preferred and flexible height for each child can be controlled by adding a LayoutElement component to it.
         /// </remarks>
-        public bool childControlHeight { get { return m_ChildControlHeight; } set { SetProperty(ref m_ChildControlHeight, value); } }
+        public bool childControlHeight { get { return m_ChildControlHeight; } set { SetPropertyUtility.SetValue(ref m_ChildControlHeight, value); } }
 
         [SerializeField] protected bool m_ChildScaleWidth = false;
 
         /// <summary>
         /// Whether to use the x scale of each child when calculating its width.
         /// </summary>
-        public bool childScaleWidth { get { return m_ChildScaleWidth; } set { SetProperty(ref m_ChildScaleWidth, value); } }
+        public bool childScaleWidth { get { return m_ChildScaleWidth; } set { SetPropertyUtility.SetValue(ref m_ChildScaleWidth, value); } }
 
         [SerializeField] protected bool m_ChildScaleHeight = false;
 
         /// <summary>
         /// Whether to use the y scale of each child when calculating its height.
         /// </summary>
-        public bool childScaleHeight { get { return m_ChildScaleHeight; } set { SetProperty(ref m_ChildScaleHeight, value); } }
+        public bool childScaleHeight { get { return m_ChildScaleHeight; } set { SetPropertyUtility.SetValue(ref m_ChildScaleHeight, value); } }
 
         /// <summary>
         /// Whether the order of children objects should be sorted in reverse.
@@ -75,7 +74,7 @@ namespace UnityEngine.UI
         /// If False the first child object will be positioned first.
         /// If True the last child object will be positioned first.
         /// </remarks>
-        public bool reverseArrangement { get { return m_ReverseArrangement; } set { SetProperty(ref m_ReverseArrangement, value); } }
+        public bool reverseArrangement { get { return m_ReverseArrangement; } set { SetPropertyUtility.SetValue(ref m_ReverseArrangement, value); } }
 
         [SerializeField] protected bool m_ReverseArrangement = false;
 

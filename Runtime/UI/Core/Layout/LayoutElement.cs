@@ -25,7 +25,7 @@ namespace UnityEngine.UI
         /// <remarks>
         /// Setting this property to true will make a parent layout group component not consider this RectTransform part of the group. The RectTransform can then be manually positioned despite being a child GameObject of a layout group.
         /// </remarks>
-        public virtual bool ignoreLayout { get { return m_IgnoreLayout; } set { if (SetPropertyUtility.SetStruct(ref m_IgnoreLayout, value)) SetDirty(); } }
+        public virtual bool ignoreLayout { get { return m_IgnoreLayout; } set { if (SetPropertyUtility.SetValue(ref m_IgnoreLayout, value)) SetDirty(); } }
 
         /// <summary>
         /// The minimum width this layout element may be allocated.
@@ -57,7 +57,7 @@ namespace UnityEngine.UI
         /// ]]>
         ///</code>
         /// </example>
-        public virtual float minWidth { get { return m_MinWidth; } set { if (SetPropertyUtility.SetStruct(ref m_MinWidth, value)) SetDirty(); } }
+        public virtual float minWidth { get { return m_MinWidth; } set { if (SetPropertyUtility.SetValue(ref m_MinWidth, value)) SetDirty(); } }
 
         /// <summary>
         /// The minimum height this layout element may be allocated.
@@ -89,7 +89,7 @@ namespace UnityEngine.UI
         /// ]]>
         ///</code>
         /// </example>
-        public virtual float minHeight { get { return m_MinHeight; } set { if (SetPropertyUtility.SetStruct(ref m_MinHeight, value)) SetDirty(); } }
+        public virtual float minHeight { get { return m_MinHeight; } set { if (SetPropertyUtility.SetValue(ref m_MinHeight, value)) SetDirty(); } }
 
         /// <summary>
         /// The preferred width this layout element should be allocated if there is sufficient space. The preferredWidth can be set to -1 to remove the size.
@@ -121,7 +121,7 @@ namespace UnityEngine.UI
         /// ]]>
         ///</code>
         /// </example>
-        public virtual float preferredWidth { get { return m_PreferredWidth; } set { if (SetPropertyUtility.SetStruct(ref m_PreferredWidth, value)) SetDirty(); } }
+        public virtual float preferredWidth { get { return m_PreferredWidth; } set { if (SetPropertyUtility.SetValue(ref m_PreferredWidth, value)) SetDirty(); } }
 
         /// <summary>
         /// The preferred height this layout element should be allocated if there is sufficient space.
@@ -153,22 +153,22 @@ namespace UnityEngine.UI
         /// ]]>
         ///</code>
         /// </example>
-        public virtual float preferredHeight { get { return m_PreferredHeight; } set { if (SetPropertyUtility.SetStruct(ref m_PreferredHeight, value)) SetDirty(); } }
+        public virtual float preferredHeight { get { return m_PreferredHeight; } set { if (SetPropertyUtility.SetValue(ref m_PreferredHeight, value)) SetDirty(); } }
 
         /// <summary>
         /// The extra relative width this layout element should be allocated if there is additional available space.
         /// </summary>
-        public virtual float flexibleWidth { get { return m_FlexibleWidth; } set { if (SetPropertyUtility.SetStruct(ref m_FlexibleWidth, value)) SetDirty(); } }
+        public virtual float flexibleWidth { get { return m_FlexibleWidth; } set { if (SetPropertyUtility.SetValue(ref m_FlexibleWidth, value)) SetDirty(); } }
 
         /// <summary>
         /// The extra relative height this layout element should be allocated if there is additional available space.
         /// </summary>
-        public virtual float flexibleHeight { get { return m_FlexibleHeight; } set { if (SetPropertyUtility.SetStruct(ref m_FlexibleHeight, value)) SetDirty(); } }
+        public virtual float flexibleHeight { get { return m_FlexibleHeight; } set { if (SetPropertyUtility.SetValue(ref m_FlexibleHeight, value)) SetDirty(); } }
 
         /// <summary>
         /// The Priority of layout this element has.
         /// </summary>
-        public virtual int layoutPriority { get { return m_LayoutPriority; } set { if (SetPropertyUtility.SetStruct(ref m_LayoutPriority, value)) SetDirty(); } }
+        public virtual int layoutPriority { get { return m_LayoutPriority; } set { if (SetPropertyUtility.SetValue(ref m_LayoutPriority, value)) SetDirty(); } }
 
 
         protected LayoutElement()

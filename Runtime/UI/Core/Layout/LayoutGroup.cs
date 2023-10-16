@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.EventSystems;
-using UnityEngine.Pool;
 
 namespace UnityEngine.UI
 {
@@ -13,12 +12,12 @@ namespace UnityEngine.UI
     /// </summary>
     public abstract class LayoutGroup : UIBehaviour, ILayoutElement, ILayoutGroup
     {
-        [SerializeField] protected RectOffset m_Padding = new RectOffset();
+        [SerializeField] protected RectOffset m_Padding;
 
         /// <summary>
         /// The padding to add around the child layout elements.
         /// </summary>
-        public RectOffset padding { get { return m_Padding; } set { SetProperty(ref m_Padding, value); } }
+        public RectOffset padding => m_Padding ??= new RectOffset();
 
         [SerializeField] protected TextAnchor m_ChildAlignment = TextAnchor.UpperLeft;
 
@@ -28,56 +27,47 @@ namespace UnityEngine.UI
         /// <remarks>
         /// If a layout element does not specify a flexible width or height, its child elements many not use the available space within the layout group. In this case, use the alignment settings to specify how to align child elements within their layout group.
         /// </remarks>
-        public TextAnchor childAlignment { get { return m_ChildAlignment; } set { SetProperty(ref m_ChildAlignment, value); } }
+        public TextAnchor childAlignment { get => m_ChildAlignment; set => SetPropertyUtility.SetEnum(ref m_ChildAlignment, value); }
 
         [System.NonSerialized] private RectTransform m_Rect;
-        protected RectTransform rectTransform
-        {
-            get
-            {
-                if (m_Rect == null)
-                    m_Rect = GetComponent<RectTransform>();
-                return m_Rect;
-            }
-        }
+        protected RectTransform rectTransform => m_Rect ??= (RectTransform) transform;
 
         protected DrivenRectTransformTracker m_Tracker;
         private Vector2 m_TotalMinSize = Vector2.zero;
         private Vector2 m_TotalPreferredSize = Vector2.zero;
         private Vector2 m_TotalFlexibleSize = Vector2.zero;
 
-        [System.NonSerialized] private List<RectTransform> m_RectChildren = new List<RectTransform>();
-        protected List<RectTransform> rectChildren { get { return m_RectChildren; } }
+        protected readonly List<RectTransform> rectChildren = new();
+
+        static readonly List<ILayoutIgnorer> _layoutIgnorerBuf = new();
 
         public virtual void CalculateLayoutInputHorizontal()
         {
-            m_RectChildren.Clear();
-            var toIgnoreList = ListPool<Component>.Get();
-            for (int i = 0; i < rectTransform.childCount; i++)
+            rectChildren.Clear();
+
+            for (var i = 0; i < rectTransform.childCount; i++)
             {
                 var rect = rectTransform.GetChild(i) as RectTransform;
-                if (rect == null || !rect.gameObject.activeInHierarchy)
+                if (rect is null || !rect.gameObject.activeInHierarchy)
                     continue;
 
-                rect.GetComponents(typeof(ILayoutIgnorer), toIgnoreList);
+                rect.GetComponents(_layoutIgnorerBuf);
 
-                if (toIgnoreList.Count == 0)
+                if (_layoutIgnorerBuf.Count == 0)
                 {
-                    m_RectChildren.Add(rect);
+                    rectChildren.Add(rect);
                     continue;
                 }
 
-                for (int j = 0; j < toIgnoreList.Count; j++)
+                foreach (var ignorer in _layoutIgnorerBuf)
                 {
-                    var ignorer = (ILayoutIgnorer)toIgnoreList[j];
-                    if (!ignorer.ignoreLayout)
-                    {
-                        m_RectChildren.Add(rect);
-                        break;
-                    }
+                    if (ignorer.ignoreLayout)
+                        continue;
+                    rectChildren.Add(rect);
+                    break;
                 }
             }
-            ListPool<Component>.Release(toIgnoreList);
+
             m_Tracker.Clear();
         }
 
@@ -86,37 +76,37 @@ namespace UnityEngine.UI
         /// <summary>
         /// See LayoutElement.minWidth
         /// </summary>
-        public virtual float minWidth { get { return GetTotalMinSize(0); } }
+        public virtual float minWidth => GetTotalMinSize(0);
 
         /// <summary>
         /// See LayoutElement.preferredWidth
         /// </summary>
-        public virtual float preferredWidth { get { return GetTotalPreferredSize(0); } }
+        public virtual float preferredWidth => GetTotalPreferredSize(0);
 
         /// <summary>
         /// See LayoutElement.flexibleWidth
         /// </summary>
-        public virtual float flexibleWidth { get { return GetTotalFlexibleSize(0); } }
+        float ILayoutElement.flexibleWidth => GetTotalFlexibleSize(0);
 
         /// <summary>
         /// See LayoutElement.minHeight
         /// </summary>
-        public virtual float minHeight { get { return GetTotalMinSize(1); } }
+        float ILayoutElement.minHeight => GetTotalMinSize(1);
 
         /// <summary>
         /// See LayoutElement.preferredHeight
         /// </summary>
-        public virtual float preferredHeight { get { return GetTotalPreferredSize(1); } }
+        float ILayoutElement.preferredHeight => GetTotalPreferredSize(1);
 
         /// <summary>
         /// See LayoutElement.flexibleHeight
         /// </summary>
-        public virtual float flexibleHeight { get { return GetTotalFlexibleSize(1); } }
+        float ILayoutElement.flexibleHeight => GetTotalFlexibleSize(1);
 
         /// <summary>
         /// See LayoutElement.layoutPriority
         /// </summary>
-        public virtual int layoutPriority { get { return 0; } }
+        int ILayoutElement.layoutPriority => 0;
 
         // ILayoutController Interface
 
@@ -124,12 +114,6 @@ namespace UnityEngine.UI
         public abstract void SetLayoutVertical();
 
         // Implementation
-
-        protected LayoutGroup()
-        {
-            if (m_Padding == null)
-                m_Padding = new RectOffset();
-        }
 
         protected virtual void OnEnable()
         {
@@ -145,7 +129,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// Callback for when properties have been changed by animation.
         /// </summary>
-        protected virtual void OnDidApplyAnimationProperties()
+        void OnDidApplyAnimationProperties()
         {
             SetDirty();
         }
@@ -203,9 +187,9 @@ namespace UnityEngine.UI
         protected float GetAlignmentOnAxis(int axis)
         {
             if (axis == 0)
-                return ((int)childAlignment % 3) * 0.5f;
+                return ((int) childAlignment % 3) * 0.5f;
             else
-                return ((int)childAlignment / 3) * 0.5f;
+                return ((int) childAlignment / 3) * 0.5f;
         }
 
         /// <summary>
@@ -312,45 +296,28 @@ namespace UnityEngine.UI
             rect.anchoredPosition = anchoredPosition;
         }
 
-        private bool isRootLayoutGroup
+        void OnRectTransformDimensionsChange()
         {
-            get
+            if (IsRootLayoutGroup(rectTransform))
+                SetDirty();
+
+            static bool IsRootLayoutGroup(Transform transform)
             {
-                Transform parent = transform.parent;
-                if (parent == null)
-                    return true;
-                return transform.parent.GetComponent(typeof(ILayoutGroup)) == null;
+                var parent = transform.parent;
+                if (parent is null) return true;
+                return parent.TryGetComponent(typeof(ILayoutGroup), out _) == false;
             }
         }
 
-        protected virtual void OnRectTransformDimensionsChange()
+        void OnTransformChildrenChanged()
         {
-            if (isRootLayoutGroup)
-                SetDirty();
-        }
-
-        protected virtual void OnTransformChildrenChanged()
-        {
-            SetDirty();
-        }
-
-        /// <summary>
-        /// Helper method used to set a given property if it has changed.
-        /// </summary>
-        /// <param name="currentValue">A reference to the member value.</param>
-        /// <param name="newValue">The new value.</param>
-        protected void SetProperty<T>(ref T currentValue, T newValue)
-        {
-            if ((currentValue == null && newValue == null) || (currentValue != null && currentValue.Equals(newValue)))
-                return;
-            currentValue = newValue;
             SetDirty();
         }
 
         /// <summary>
         /// Mark the LayoutGroup as dirty.
         /// </summary>
-        protected void SetDirty()
+        void SetDirty()
         {
             if (!IsActive())
                 return;
@@ -361,18 +328,17 @@ namespace UnityEngine.UI
                 StartCoroutine(DelayedSetDirty(rectTransform));
         }
 
-        IEnumerator DelayedSetDirty(RectTransform rectTransform)
+        static IEnumerator DelayedSetDirty(RectTransform rectTransform)
         {
             yield return null;
             LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
         }
 
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
         protected virtual void OnValidate()
         {
             SetDirty();
         }
-
-    #endif
+#endif
     }
 }

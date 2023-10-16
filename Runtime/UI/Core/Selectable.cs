@@ -181,7 +181,7 @@ namespace UnityEngine.UI
             get { return m_Interactable; }
             set
             {
-                if (SetPropertyUtility.SetStruct(ref m_Interactable, value))
+                if (SetPropertyUtility.SetValue(ref m_Interactable, value))
                 {
                     if (!m_Interactable && EventSystem.current != null && EventSystem.current.currentSelectedGameObject == gameObject)
                         EventSystem.current.SetSelectedGameObject(null);

@@ -45,7 +45,7 @@ namespace UnityEngine.UI
         }
         */
 
-        public Transform transform { get { return m_ToRebuild; }}
+        public Transform transform => m_ToRebuild;
 
         /// <summary>
         /// Has the native representation of this LayoutRebuilder been destroyed?
@@ -149,10 +149,10 @@ namespace UnityEngine.UI
                 // Layout calculations needs to executed bottom up with children being done before their parents,
                 // because the parent calculated sizes rely on the sizes of the children.
 
-                for (int i = 0; i < rect.childCount; i++)
+                for (var i = 0; i < rect.childCount; i++)
                     PerformLayoutCalculation(rect.GetChild(i) as RectTransform, action);
 
-                for (int i = 0; i < components.Count; i++)
+                for (var i = 0; i < components.Count; i++)
                     action(components[i]);
             }
 
@@ -169,7 +169,7 @@ namespace UnityEngine.UI
             // 1. If it's topmost gameObject with ILayoutGroup, or,
             // 2. There's no ILayoutGroup in it's parents, but it has ILayoutController.
 
-            RectTransform layoutRoot = rect;
+            var layoutRoot = rect;
             var parent = layoutRoot.parent as RectTransform;
             while (parent is not null)
             {
