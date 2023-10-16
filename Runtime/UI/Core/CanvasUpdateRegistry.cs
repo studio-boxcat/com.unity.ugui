@@ -87,7 +87,7 @@ namespace UnityEngine.UI
         private readonly IndexedSet<ICanvasElement> m_LayoutRebuildQueue = new();
         private readonly IndexedSet<ICanvasElement> m_GraphicRebuildQueue = new();
         static readonly List<ICanvasElement> _canvasElementsBuf = new();
-        static readonly List<(ICanvasElement, int)> _canvasElementsBufForSort = new();
+        static readonly List<(ICanvasElement Element, int Depth)> _canvasElementsBufForSort = new();
 
         protected CanvasUpdateRegistry()
         {
@@ -158,17 +158,17 @@ namespace UnityEngine.UI
             _canvasElementsBufForSort.Clear();
             foreach (var canvasElement in _canvasElementsBuf)
                 _canvasElementsBufForSort.Add((canvasElement, ParentCount(canvasElement.transform)));
-            _canvasElementsBufForSort.Sort((a, b) => a.Item2 - b.Item2);
+            _canvasElementsBufForSort.Sort((a, b) => a.Depth - b.Depth);
 
             for (int i = 0; i <= (int)CanvasUpdate.PostLayout; i++)
             {
-                UnityEngine.Profiling.Profiler.BeginSample(m_CanvasUpdateProfilerStrings[i]);
+                Profiling.Profiler.BeginSample(m_CanvasUpdateProfilerStrings[i]);
 
                 foreach (var rebuild in _canvasElementsBufForSort)
                 {
                     try
                     {
-                        rebuild.Item1.Rebuild((CanvasUpdate)i);
+                        rebuild.Element.Rebuild((CanvasUpdate) i);
                     }
                     catch (Exception e)
                     {
@@ -177,7 +177,7 @@ namespace UnityEngine.UI
 #endif
                     }
                 }
-                UnityEngine.Profiling.Profiler.EndSample();
+                Profiling.Profiler.EndSample();
             }
 
             foreach (var element in _canvasElementsBuf)
@@ -188,9 +188,9 @@ namespace UnityEngine.UI
             UISystemProfilerApi.BeginSample(UISystemProfilerApi.SampleType.Render);
 
             // now layout is complete do culling...
-            UnityEngine.Profiling.Profiler.BeginSample(m_CullingUpdateProfilerString);
+            Profiling.Profiler.BeginSample(m_CullingUpdateProfilerString);
             ClipperRegistry.instance.Cull();
-            UnityEngine.Profiling.Profiler.EndSample();
+            Profiling.Profiler.EndSample();
 
             m_PerformingGraphicUpdate = true;
 
@@ -200,7 +200,7 @@ namespace UnityEngine.UI
 
             for (var i = (int)CanvasUpdate.PreRender; i < (int)CanvasUpdate.MaxUpdateValue; i++)
             {
-                UnityEngine.Profiling.Profiler.BeginSample(m_CanvasUpdateProfilerStrings[i]);
+                Profiling.Profiler.BeginSample(m_CanvasUpdateProfilerStrings[i]);
                 foreach (var element in _canvasElementsBuf)
                 {
                     try
@@ -214,7 +214,7 @@ namespace UnityEngine.UI
 #endif
                     }
                 }
-                UnityEngine.Profiling.Profiler.EndSample();
+                Profiling.Profiler.EndSample();
             }
 
             foreach (var element in _canvasElementsBuf)
