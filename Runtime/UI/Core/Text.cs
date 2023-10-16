@@ -464,13 +464,13 @@ namespace UnityEngine.UI
             TextMeshUtils.Translate((List<UIVertex>) cachedTextGenerator.verts, pixelsPerUnit, toFill);
         }
 
-        public virtual float minWidth => 0;
-        public virtual float minHeight => 0;
-        public virtual float flexibleWidth => -1;
-        public virtual float flexibleHeight => -1;
-        public virtual int layoutPriority => 0;
+        float ILayoutElement.minWidth => 0;
+        float ILayoutElement.minHeight => 0;
+        float ILayoutElement.flexibleWidth => -1;
+        float ILayoutElement.flexibleHeight => -1;
+        int ILayoutElement.layoutPriority => 0;
 
-        public virtual float preferredWidth
+        float ILayoutElement.preferredWidth
         {
             get
             {
@@ -479,7 +479,7 @@ namespace UnityEngine.UI
             }
         }
 
-        public virtual float preferredHeight
+        float ILayoutElement.preferredHeight
         {
             get
             {
