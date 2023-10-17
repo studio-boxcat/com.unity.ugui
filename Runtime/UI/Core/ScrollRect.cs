@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using UnityEngine.EventSystems;
 
 namespace UnityEngine.UI
@@ -685,7 +686,7 @@ namespace UnityEngine.UI
             Vector2 position = m_ContentStartPosition + pointerDelta;
 
             // Offset to get content into place in the view.
-            Vector2 offset = CalculateOffset(position - m_Content.anchoredPosition);
+            var offset = CalculateOffset(position - m_Content.anchoredPosition);
             position += offset;
             if (m_MovementType == MovementType.Elastic)
             {
@@ -1211,51 +1212,43 @@ namespace UnityEngine.UI
             return bounds;
         }
 
+        /// <summary>
+        /// Calculates how much and in which direction the content of a ScrollRect should be moved
+        /// to ensure it remains within the viewable bounds, given the latest position change (delta).
+        /// The small thresholds (0.001) is used to prevent tiny, potentially imperceptible
+        /// adjustments which might trigger unnecessary layout recalculations.
+        /// </summary>
         private Vector2 CalculateOffset(Vector2 delta)
         {
-            return InternalCalculateOffset(ref m_ViewBounds, ref m_ContentBounds, m_Horizontal, m_Vertical, m_MovementType, ref delta);
-        }
+            if (m_MovementType == MovementType.Unrestricted)
+                return default;
 
-        static Vector2 InternalCalculateOffset(ref Bounds viewBounds, ref Bounds contentBounds, bool horizontal, bool vertical, MovementType movementType, ref Vector2 delta)
-        {
-            Vector2 offset = Vector2.zero;
-            if (movementType == MovementType.Unrestricted)
-                return offset;
-
-            Vector2 min = contentBounds.min;
-            Vector2 max = contentBounds.max;
+            Vector2 viewMin = m_ViewBounds.min;
+            Vector2 viewMax = m_ViewBounds.max;
+            Vector2 contentMin = m_ContentBounds.min;
+            Vector2 contentMax = m_ContentBounds.max;
 
             // min/max offset extracted to check if approximately 0 and avoid recalculating layout every frame (case 1010178)
 
-            if (horizontal)
-            {
-                min.x += delta.x;
-                max.x += delta.x;
+            return new Vector2(
+                m_Horizontal ? Calculate(viewMin.x, viewMax.x, contentMin.x, contentMax.x, delta.x) : 0,
+                m_Vertical ? Calculate(viewMin.y, viewMax.y, contentMin.y, contentMax.y, delta.y) : 0);
 
-                float maxOffset = viewBounds.max.x - max.x;
-                float minOffset = viewBounds.min.x - min.x;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            static float Calculate(float viewMin, float viewMax, float contentMin, float contentMax, float delta)
+            {
+                contentMin += delta;
+                contentMax += delta;
+
+                var maxOffset = viewMax - contentMax;
+                var minOffset = viewMin - contentMin;
 
                 if (minOffset < -0.001f)
-                    offset.x = minOffset;
-                else if (maxOffset > 0.001f)
-                    offset.x = maxOffset;
-            }
-
-            if (vertical)
-            {
-                min.y += delta.y;
-                max.y += delta.y;
-
-                float maxOffset = viewBounds.max.y - max.y;
-                float minOffset = viewBounds.min.y - min.y;
-
+                    return minOffset;
                 if (maxOffset > 0.001f)
-                    offset.y = maxOffset;
-                else if (minOffset < -0.001f)
-                    offset.y = minOffset;
+                    return maxOffset;
+                return 0;
             }
-
-            return offset;
         }
 
         /// <summary>
