@@ -479,10 +479,6 @@ namespace UnityEngine.UI
             }
         }
 
-        void ICanvasElement.LayoutComplete() {}
-
-        void ICanvasElement.GraphicUpdateComplete() {}
-
         void UpdateCachedData()
         {
             Transform transform = rectTransform;

@@ -2667,18 +2667,6 @@ namespace UnityEngine.UI
             }
         }
 
-        /// <summary>
-        /// See ICanvasElement.LayoutComplete. Does nothing by default.
-        /// </summary>
-        public virtual void LayoutComplete()
-        {}
-
-        /// <summary>
-        /// See ICanvasElement.GraphicUpdateComplete. Does nothing by default.
-        /// </summary>
-        public virtual void GraphicUpdateComplete()
-        {}
-
         private void UpdateGeometry()
         {
 #if UNITY_EDITOR

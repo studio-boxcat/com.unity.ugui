@@ -133,13 +133,7 @@ namespace UnityEngine.UI
 #endif
         }
 
-        public virtual void LayoutComplete()
-        {}
-
-        public virtual void GraphicUpdateComplete()
-        {}
-
-        protected virtual void OnDestroy()
+        protected void OnDestroy()
         {
             if (m_Group != null)
                 m_Group.EnsureValidState();

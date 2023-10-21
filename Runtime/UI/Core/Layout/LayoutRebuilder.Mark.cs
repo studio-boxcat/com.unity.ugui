@@ -55,6 +55,15 @@ namespace UnityEngine.UI
             }
         }
 
+        public static void AfterLayoutCompleted(List<ICanvasElement> canvasElements)
+        {
+            foreach (var canvasElement in canvasElements)
+            {
+                if (canvasElement is LayoutBuildProxy proxy)
+                    LayoutBuildProxy.Release(proxy);
+            }
+        }
+
         class LayoutBuildProxy : ICanvasElement
         {
             static readonly List<LayoutBuildProxy> _pool = new();
@@ -106,10 +115,6 @@ namespace UnityEngine.UI
                 if (_target == null) return;
                 ForceRebuildLayoutImmediate(_target);
             }
-
-            void ICanvasElement.LayoutComplete() => Release(this);
-
-            void ICanvasElement.GraphicUpdateComplete() { }
 
             public override int GetHashCode() => _target.GetInstanceID();
 

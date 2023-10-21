@@ -675,7 +675,7 @@ namespace UnityEngine.UI
             {
                 if (m_Material != null)
                     return m_Material;
-                return defaultMaterial;
+                return defaultGraphicMaterial;
             }
 
             set

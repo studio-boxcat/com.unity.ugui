@@ -82,13 +82,13 @@ namespace UnityEngine.UI
         : UIBehaviour,
             ICanvasElement
     {
-        static protected Material s_DefaultUI = null;
-        static protected Texture2D s_WhiteTexture = null;
+        protected static Material s_DefaultUI = null;
+        protected static Texture2D s_WhiteTexture = null;
 
         /// <summary>
         /// Default material used to draw UI elements if no explicit material was specified.
         /// </summary>
-        static public Material defaultGraphicMaterial => s_DefaultUI ??= Canvas.GetDefaultCanvasMaterial();
+        public static Material defaultGraphicMaterial => s_DefaultUI ??= Canvas.GetDefaultCanvasMaterial();
 
         // Cached and saved values
         [FormerlySerializedAs("m_Mat")]
@@ -373,32 +373,8 @@ namespace UnityEngine.UI
         /// <summary>
         /// A reference to the CanvasRenderer populated by this Graphic.
         /// </summary>
-        public CanvasRenderer canvasRenderer
-        {
-            get
-            {
-                // The CanvasRenderer is a required component that must not be destroyed. Based on this assumption, a
-                // null-reference check is sufficient.
-                if (ReferenceEquals(m_CanvasRenderer, null))
-                {
-                    m_CanvasRenderer = GetComponent<CanvasRenderer>();
-
-                    if (ReferenceEquals(m_CanvasRenderer, null))
-                    {
-                        m_CanvasRenderer = gameObject.AddComponent<CanvasRenderer>();
-                    }
-                }
-                return m_CanvasRenderer;
-            }
-        }
-
-        /// <summary>
-        /// Returns the default material for the graphic.
-        /// </summary>
-        public virtual Material defaultMaterial
-        {
-            get { return defaultGraphicMaterial; }
-        }
+        // The CanvasRenderer is a required component that must not be destroyed. Based on this assumption, a null-reference check is sufficient.
+        public CanvasRenderer canvasRenderer => m_CanvasRenderer ??= (GetComponent<CanvasRenderer>() ?? gameObject.AddComponent<CanvasRenderer>());
 
         /// <summary>
         /// The Material set by the user
@@ -407,11 +383,11 @@ namespace UnityEngine.UI
         {
             get
             {
-                return (m_Material != null) ? m_Material : defaultMaterial;
+                return (m_Material != null) ? m_Material : defaultGraphicMaterial;
             }
             set
             {
-                if (m_Material == value)
+                if (ReferenceEquals(m_Material, value))
                     return;
 
                 m_Material = value;
@@ -545,12 +521,6 @@ namespace UnityEngine.UI
                     break;
             }
         }
-
-        public virtual void LayoutComplete()
-        {}
-
-        public virtual void GraphicUpdateComplete()
-        {}
 
         /// <summary>
         /// Call to update the Material of the graphic onto the CanvasRenderer.

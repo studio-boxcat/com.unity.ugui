@@ -182,18 +182,6 @@ namespace UnityEngine.UI
 #endif
         }
 
-        /// <summary>
-        /// See ICanvasElement.LayoutComplete.
-        /// </summary>
-        public virtual void LayoutComplete()
-        {}
-
-        /// <summary>
-        /// See ICanvasElement.GraphicUpdateComplete.
-        /// </summary>
-        public virtual void GraphicUpdateComplete()
-        {}
-
         protected override void OnEnable()
         {
             base.OnEnable();
