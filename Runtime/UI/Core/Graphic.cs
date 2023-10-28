@@ -484,7 +484,7 @@ namespace UnityEngine.UI
         /// <remarks>
         /// This can be used to perform operations that were previously skipped because the <c>Graphic</c> was culled.
         /// </remarks>
-        public virtual void OnCullingChanged()
+        protected void OnCullingChanged()
         {
             if (!canvasRenderer.cull && (m_VertsDirty || m_MaterialDirty))
             {
