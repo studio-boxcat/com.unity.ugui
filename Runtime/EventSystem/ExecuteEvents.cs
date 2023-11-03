@@ -48,7 +48,7 @@ namespace UnityEngine.EventSystems
                 }
                 catch (Exception e)
                 {
-                    Debug.LogException(e);
+                    Debug.LogException(e, arg);
                 }
             }
 
@@ -77,7 +77,7 @@ namespace UnityEngine.EventSystems
                 }
                 catch (Exception e)
                 {
-                    Debug.LogException(e);
+                    Debug.LogException(e, arg);
                 }
             }
 
