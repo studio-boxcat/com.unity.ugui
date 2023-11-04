@@ -11,12 +11,12 @@ namespace UnityEngine.UI
         protected T[] Data { get; private set; }
         public int Count { get; private set; }
 
-        T[] _data;
+        T[] _buf;
 
 
         protected MeshChannel(int capacity)
         {
-            _data = new T[capacity];
+            _buf = new T[capacity];
         }
 
         public T this[int index]
@@ -34,11 +34,11 @@ namespace UnityEngine.UI
             Assert.IsNull(Data, "MeshChannel.SetUp() must be called only once.");
             Assert.IsTrue(count >= 0);
 
-            if (_data.Length < count)
-                _data = new T[count];
-            Data = _data;
+            if (_buf.Length < count)
+                _buf = new T[count];
+            Data = _buf;
             Count = count;
-            return _data;
+            return _buf;
         }
 
         public void SetUp(T[] data)
@@ -65,20 +65,20 @@ namespace UnityEngine.UI
         }
 
         [MustUseReturnValue]
-        public T[] Edit()
+        public Span<T> Edit()
         {
             Assert.IsNotNull(Data, "MeshChannel.SetUp() must be called before editing.");
 
             // If the data is already writable, return it.
-            if (ReferenceEquals(_data, Data))
-                return _data;
+            if (ReferenceEquals(_buf, Data))
+                return _buf.AsSpan(0, Count);
 
             // Otherwise, copy the data to a writable array.
-            if (_data.Length < Count)
-                _data = new T[Count];
-            Array.Copy(Data, 0, _data, 0, Count);
-            Data = _data;
-            return _data;
+            if (_buf.Length < Count)
+                _buf = new T[Count];
+            Array.Copy(Data, 0, _buf, 0, Count);
+            Data = _buf;
+            return _buf.AsSpan(0, Count);
         }
 
         public T[] Resize(int count)
@@ -87,28 +87,29 @@ namespace UnityEngine.UI
             Assert.IsTrue(count >= 0);
 
             // When resizing is not necessary.
-            if (_data.Length >= count)
+            if (_buf.Length >= count)
             {
-                var _ = Edit();
-                Count = count;
-                return _data;
-            }
+                // Nothing to do when the data is already writable.
+                if (ReferenceEquals(_buf, Data))
+                    return _buf;
 
+                Array.Copy(Data, 0, _buf, 0, Mathf.Min(Count, _buf.Length));
+            }
             // When the data is already writable.
-            if (ReferenceEquals(_data, Data))
+            else if (ReferenceEquals(_buf, Data))
             {
-                Array.Resize(ref _data, count);
-                Data = _data;
-                Count = count;
-                return _data;
+                Array.Resize(ref _buf, count);
+            }
+            // When the data is not writable.
+            else
+            {
+                _buf = new T[count];
+                Array.Copy(Data, 0, _buf, 0, Count); // Data is smaller than _buf.
             }
 
-            // When the data is not writable.
-            _data = new T[count];
-            Array.Copy(Data, 0, _data, 0, Count);
-            Data = _data;
+            Data = _buf;
             Count = count;
-            return _data;
+            return _buf;
         }
 
         public void TrimEnd(int fromIndex)
