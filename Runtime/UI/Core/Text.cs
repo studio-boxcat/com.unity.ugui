@@ -464,6 +464,8 @@ namespace UnityEngine.UI
             TextMeshUtils.Translate(cachedTextGenerator, pixelsPerUnit, toFill);
         }
 
+        public void ForcePopulateMesh(MeshBuilder toFill) => OnPopulateMesh(toFill);
+
         float ILayoutElement.minWidth => 0;
         float ILayoutElement.minHeight => 0;
         float ILayoutElement.flexibleWidth => -1;
