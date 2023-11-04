@@ -6,10 +6,19 @@ namespace UnityEngine.UI
 {
     public static class TextMeshUtils
     {
-        public static void Translate(List<UIVertex> verts, float pixelsPerUnit, MeshBuilder toFill)
+        static readonly List<UIVertex> _vertBuf = new();
+
+        public static void Translate(TextGenerator textGen, float pixelsPerUnit, MeshBuilder toFill)
         {
+            // Vertex order:
+            // 0 1
+            // 3 2
+
+            _vertBuf.Clear();
+            textGen.GetVertices(_vertBuf);
+
             // If there's no vertices, skip.
-            var vertCount = verts.Count;
+            var vertCount = _vertBuf.Count;
             if (vertCount == 0)
                 return;
 
@@ -24,7 +33,7 @@ namespace UnityEngine.UI
             var unitsPerPixel = 1 / pixelsPerUnit;
             for (var i = 0; i < vertCount; ++i)
             {
-                var v = verts[i];
+                var v = _vertBuf[i];
                 var pos = v.position;
                 pos.x *= unitsPerPixel;
                 pos.y *= unitsPerPixel;

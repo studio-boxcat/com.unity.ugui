@@ -461,7 +461,7 @@ namespace UnityEngine.UI
             cachedTextGenerator.PopulateWithErrors(text, settings, gameObject);
             m_DisableFontTextureRebuiltCallback = false;
 
-            TextMeshUtils.Translate((List<UIVertex>) cachedTextGenerator.verts, pixelsPerUnit, toFill);
+            TextMeshUtils.Translate(cachedTextGenerator, pixelsPerUnit, toFill);
         }
 
         float ILayoutElement.minWidth => 0;
