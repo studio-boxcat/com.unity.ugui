@@ -91,7 +91,10 @@ namespace UnityEngine.UI
             {
                 // Nothing to do when the data is already writable.
                 if (ReferenceEquals(_buf, Data))
+                {
+                    Count = count;
                     return _buf;
+                }
 
                 Array.Copy(Data, 0, _buf, 0, Mathf.Min(Count, count));
             }

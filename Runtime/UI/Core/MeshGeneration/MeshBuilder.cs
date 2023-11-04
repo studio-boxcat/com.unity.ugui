@@ -159,13 +159,15 @@ namespace UnityEngine.UI
                 return;
             }
 
-#if DEBUG
             // Check all index is in range.
-            var vertCount = Poses.Count;
-            var indexCount = Indices.Count;
-            for (var i = 0; i < indexCount; i++)
-                Assert.IsTrue(Indices[i] < vertCount, "Index is out of range.");
-#endif
+            // var vertCount = Poses.Count;
+            // var indexCount = Indices.Count;
+            // for (var i = 0; i < indexCount; i++)
+            // {
+            //     if (Indices[i] < vertCount) continue;
+            //     Debug.LogError("Index is out of range: " + Indices[i] + " / " + vertCount);
+            //     break;
+            // }
 
             Poses.FillMesh(mesh);
             UVs.FillMesh(mesh);
