@@ -20,7 +20,10 @@ namespace UnityEngine.UI
             // If there's no vertices, skip.
             var vertCount = _vertBuf.Count;
             if (vertCount == 0)
+            {
+                toFill.SetUp_Empty();
                 return;
+            }
 
             Assert.IsTrue(vertCount % 4 == 0);
             var quadCount = vertCount / 4;

@@ -554,13 +554,31 @@ namespace UnityEngine.UI
             catch (Exception e)
             {
                 Debug.LogException(e, this);
-                mb.Clear();
+                mb.Invalidate();
+                canvasRenderer.Clear();
+                return;
             }
 #endif
 
             var mesh = workerMesh;
             mesh.Clear();
-            mb.FillMesh(mesh);
+
+#if DEBUG
+            try
+#endif
+            {
+                mb.FillMesh(mesh);
+            }
+#if DEBUG
+            catch (Exception e)
+            {
+                Debug.LogException(e, this);
+                mb.Invalidate();
+                canvasRenderer.Clear();
+                return;
+            }
+#endif
+
             mb.Invalidate();
             canvasRenderer.SetMesh(mesh);
         }
