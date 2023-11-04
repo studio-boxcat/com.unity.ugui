@@ -89,6 +89,14 @@ namespace UnityEngine.UI
                    && indexCount >= posCount;
         }
 
+        public void SetUp_Empty()
+        {
+            Poses.SetUp(0);
+            UVs.SetUp(0);
+            Colors.SetUp(0);
+            Indices.SetUp(0);
+        }
+
         [MustUseReturnValue]
         public MeshQuadBuilder SetUp_Quad(int quadCapacity)
         {

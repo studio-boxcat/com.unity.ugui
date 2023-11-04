@@ -450,7 +450,10 @@ namespace UnityEngine.UI
         protected override void OnPopulateMesh(MeshBuilder toFill)
         {
             if (font == null || string.IsNullOrEmpty(text))
+            {
+                toFill.SetUp_Empty();
                 return;
+            }
 
             // We don't care if we the font Texture changes while we are doing our Update.
             // The end result of cachedTextGenerator will be valid for this instance.
