@@ -29,6 +29,7 @@ namespace UnityEngine.UI
             }
         }
 
+        [MustUseReturnValue]
         public T[] SetUp(int count)
         {
             Assert.IsNull(Data, "MeshChannel.SetUp() must be called only once.");
