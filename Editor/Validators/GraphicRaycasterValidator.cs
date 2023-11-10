@@ -20,21 +20,10 @@ namespace UnityEngine.UI
             }
 
             // Canvas must be attached.
-            if (value.TryGetComponent<Canvas>(out var canvas) == false)
+            if (value.TryGetComponent<Canvas>(out _) == false)
             {
                 result.ResultType = ValidationResultType.Error;
                 result.Message = "Canvas must be attached.";
-            }
-
-            // Canvas must override sorting if it is not the root canvas.
-            // This is because the sorting order of the root canvas is used to determine to which canvas the raycast should be sent.
-            if (ReferenceEquals(canvas, canvas.rootCanvas) == false)
-            {
-                if (canvas.overrideSorting == false)
-                {
-                    result.ResultType = ValidationResultType.Error;
-                    result.Message = "Canvas must override sorting if it is not the root canvas.";
-                }
             }
         }
     }

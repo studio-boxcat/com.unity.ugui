@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
@@ -23,6 +21,7 @@ namespace UnityEngine.EventSystems
 
         private void Awake()
         {
+            // For the component added on runtime, m_Canvas is not set.
             if (m_Canvas is null)
             {
                 TryGetComponent(out m_Canvas);

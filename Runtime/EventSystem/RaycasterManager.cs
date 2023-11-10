@@ -4,7 +4,7 @@ namespace UnityEngine.EventSystems
 {
     public static class RaycasterManager
     {
-        private static readonly List<BaseRaycaster> s_Raycasters = new List<BaseRaycaster>();
+        private static readonly List<BaseRaycaster> s_Raycasters = new();
 
         public static void AddRaycaster(BaseRaycaster baseRaycaster)
         {

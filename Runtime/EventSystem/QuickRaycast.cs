@@ -183,6 +183,8 @@ namespace UnityEngine.EventSystems
                 _canvasRendererDepth = int.MaxValue;
             }
 
+            public override string ToString() => $"{Raycaster.name} ({Camera.name})";
+
             public bool CompareCameraDepth(RaycasterComparisonData other, out int result)
             {
                 if (ReferenceEquals(Camera, other.Camera))
