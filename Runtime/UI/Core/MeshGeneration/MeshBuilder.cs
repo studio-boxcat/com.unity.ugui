@@ -62,8 +62,8 @@ namespace UnityEngine.UI
         public void Commit(Color32 color)
         {
             var vertCount = _count * 4;
-            _mb.Poses.TrimEnd(vertCount);
-            _mb.UVs.TrimEnd(vertCount);
+            _mb.Poses.TrimAfter(vertCount);
+            _mb.UVs.TrimAfter(vertCount);
             _mb.Colors.SetUp(color, vertCount);
             _mb.Indices.SetUp_Quad(_count);
         }
@@ -137,14 +137,14 @@ namespace UnityEngine.UI
             Indices.Clear();
         }
 
-        public void TrimEnd(int trimVert, int trimIndex)
+        public void TrimAfter(int trimVert, int trimIndex)
         {
             Assert.IsTrue(CheckPrepared());
 
-            Poses.TrimEnd(trimVert);
-            UVs.TrimEnd(trimVert);
-            Colors.TrimEnd(trimVert);
-            Indices.TrimEnd(trimIndex);
+            Poses.TrimAfter(trimVert);
+            UVs.TrimAfter(trimVert);
+            Colors.TrimAfter(trimVert);
+            Indices.TrimAfter(trimIndex);
         }
 
         public void FillMesh(Mesh mesh)

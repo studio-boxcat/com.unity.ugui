@@ -116,7 +116,7 @@ namespace UnityEngine.UI
             return _buf;
         }
 
-        public void TrimEnd(int fromIndex)
+        public void TrimAfter(int fromIndex)
         {
             Assert.IsNotNull(Data, "MeshChannel.SetUp() must be called before trimming.");
             Assert.IsTrue(fromIndex <= Count, "fromIndex must be less than Count.");
