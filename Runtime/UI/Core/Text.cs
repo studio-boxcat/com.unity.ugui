@@ -475,7 +475,7 @@ namespace UnityEngine.UI
         float ILayoutElement.flexibleHeight => -1;
         int ILayoutElement.layoutPriority => 0;
 
-        float ILayoutElement.preferredWidth
+        public float preferredWidth
         {
             get
             {
@@ -484,7 +484,7 @@ namespace UnityEngine.UI
             }
         }
 
-        float ILayoutElement.preferredHeight
+        public float preferredHeight
         {
             get
             {
