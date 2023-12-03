@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
 using UnityEngine.EventSystems;
@@ -175,7 +176,7 @@ namespace UnityEngine.UI
         }
 
 
-        static List<CanvasScaler> _instances;
+        [CanBeNull] static List<CanvasScaler> _instances;
 
         static void AddInstance(CanvasScaler instance)
         {
@@ -204,7 +205,16 @@ namespace UnityEngine.UI
 
         static void RemoveInstance(CanvasScaler instance)
         {
-            _instances.Remove(instance);
+            Assert.IsNotNull(_instances, "RemoveInstance called but _instances is null.");
+
+            // XXX: We don't use List.Remove() for performance.
+            for (var i = 0; i < _instances.Count; i++)
+            {
+                if (ReferenceEquals(_instances[i], instance) is false)
+                    continue;
+                _instances.RemoveAt(i);
+                return;
+            }
         }
 
 #if UNITY_EDITOR
