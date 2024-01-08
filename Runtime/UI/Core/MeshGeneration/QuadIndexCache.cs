@@ -1,4 +1,5 @@
 using System;
+using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
@@ -8,111 +9,64 @@ namespace UnityEngine.UI
         // 2 3
         // 0 1
 
-        const int _cachedQuadCount = 70;
-
-        static readonly ushort[] _indices =
-        {
-            0 + 0 * 4, 2 + 0 * 4, 3 + 0 * 4, 3 + 0 * 4, 1 + 0 * 4, 0 + 0 * 4,
-            0 + 1 * 4, 2 + 1 * 4, 3 + 1 * 4, 3 + 1 * 4, 1 + 1 * 4, 0 + 1 * 4,
-            0 + 2 * 4, 2 + 2 * 4, 3 + 2 * 4, 3 + 2 * 4, 1 + 2 * 4, 0 + 2 * 4,
-            0 + 3 * 4, 2 + 3 * 4, 3 + 3 * 4, 3 + 3 * 4, 1 + 3 * 4, 0 + 3 * 4,
-            0 + 4 * 4, 2 + 4 * 4, 3 + 4 * 4, 3 + 4 * 4, 1 + 4 * 4, 0 + 4 * 4,
-            0 + 5 * 4, 2 + 5 * 4, 3 + 5 * 4, 3 + 5 * 4, 1 + 5 * 4, 0 + 5 * 4,
-            0 + 6 * 4, 2 + 6 * 4, 3 + 6 * 4, 3 + 6 * 4, 1 + 6 * 4, 0 + 6 * 4,
-            0 + 7 * 4, 2 + 7 * 4, 3 + 7 * 4, 3 + 7 * 4, 1 + 7 * 4, 0 + 7 * 4,
-            0 + 8 * 4, 2 + 8 * 4, 3 + 8 * 4, 3 + 8 * 4, 1 + 8 * 4, 0 + 8 * 4,
-            0 + 9 * 4, 2 + 9 * 4, 3 + 9 * 4, 3 + 9 * 4, 1 + 9 * 4, 0 + 9 * 4,
-
-            0 + 10 * 4, 2 + 10 * 4, 3 + 10 * 4, 3 + 10 * 4, 1 + 10 * 4, 0 + 10 * 4,
-            0 + 11 * 4, 2 + 11 * 4, 3 + 11 * 4, 3 + 11 * 4, 1 + 11 * 4, 0 + 11 * 4,
-            0 + 12 * 4, 2 + 12 * 4, 3 + 12 * 4, 3 + 12 * 4, 1 + 12 * 4, 0 + 12 * 4,
-            0 + 13 * 4, 2 + 13 * 4, 3 + 13 * 4, 3 + 13 * 4, 1 + 13 * 4, 0 + 13 * 4,
-            0 + 14 * 4, 2 + 14 * 4, 3 + 14 * 4, 3 + 14 * 4, 1 + 14 * 4, 0 + 14 * 4,
-            0 + 15 * 4, 2 + 15 * 4, 3 + 15 * 4, 3 + 15 * 4, 1 + 15 * 4, 0 + 15 * 4,
-            0 + 16 * 4, 2 + 16 * 4, 3 + 16 * 4, 3 + 16 * 4, 1 + 16 * 4, 0 + 16 * 4,
-            0 + 17 * 4, 2 + 17 * 4, 3 + 17 * 4, 3 + 17 * 4, 1 + 17 * 4, 0 + 17 * 4,
-            0 + 18 * 4, 2 + 18 * 4, 3 + 18 * 4, 3 + 18 * 4, 1 + 18 * 4, 0 + 18 * 4,
-            0 + 19 * 4, 2 + 19 * 4, 3 + 19 * 4, 3 + 19 * 4, 1 + 19 * 4, 0 + 19 * 4,
-
-            0 + 20 * 4, 2 + 20 * 4, 3 + 20 * 4, 3 + 20 * 4, 1 + 20 * 4, 0 + 20 * 4,
-            0 + 21 * 4, 2 + 21 * 4, 3 + 21 * 4, 3 + 21 * 4, 1 + 21 * 4, 0 + 21 * 4,
-            0 + 22 * 4, 2 + 22 * 4, 3 + 22 * 4, 3 + 22 * 4, 1 + 22 * 4, 0 + 22 * 4,
-            0 + 23 * 4, 2 + 23 * 4, 3 + 23 * 4, 3 + 23 * 4, 1 + 23 * 4, 0 + 23 * 4,
-            0 + 24 * 4, 2 + 24 * 4, 3 + 24 * 4, 3 + 24 * 4, 1 + 24 * 4, 0 + 24 * 4,
-            0 + 25 * 4, 2 + 25 * 4, 3 + 25 * 4, 3 + 25 * 4, 1 + 25 * 4, 0 + 25 * 4,
-            0 + 26 * 4, 2 + 26 * 4, 3 + 26 * 4, 3 + 26 * 4, 1 + 26 * 4, 0 + 26 * 4,
-            0 + 27 * 4, 2 + 27 * 4, 3 + 27 * 4, 3 + 27 * 4, 1 + 27 * 4, 0 + 27 * 4,
-            0 + 28 * 4, 2 + 28 * 4, 3 + 28 * 4, 3 + 28 * 4, 1 + 28 * 4, 0 + 28 * 4,
-            0 + 29 * 4, 2 + 29 * 4, 3 + 29 * 4, 3 + 29 * 4, 1 + 29 * 4, 0 + 29 * 4,
-
-            0 + 30 * 4, 2 + 30 * 4, 3 + 30 * 4, 3 + 30 * 4, 1 + 30 * 4, 0 + 30 * 4,
-            0 + 31 * 4, 2 + 31 * 4, 3 + 31 * 4, 3 + 31 * 4, 1 + 31 * 4, 0 + 31 * 4,
-            0 + 32 * 4, 2 + 32 * 4, 3 + 32 * 4, 3 + 32 * 4, 1 + 32 * 4, 0 + 32 * 4,
-            0 + 33 * 4, 2 + 33 * 4, 3 + 33 * 4, 3 + 33 * 4, 1 + 33 * 4, 0 + 33 * 4,
-            0 + 34 * 4, 2 + 34 * 4, 3 + 34 * 4, 3 + 34 * 4, 1 + 34 * 4, 0 + 34 * 4,
-            0 + 35 * 4, 2 + 35 * 4, 3 + 35 * 4, 3 + 35 * 4, 1 + 35 * 4, 0 + 35 * 4,
-            0 + 36 * 4, 2 + 36 * 4, 3 + 36 * 4, 3 + 36 * 4, 1 + 36 * 4, 0 + 36 * 4,
-            0 + 37 * 4, 2 + 37 * 4, 3 + 37 * 4, 3 + 37 * 4, 1 + 37 * 4, 0 + 37 * 4,
-            0 + 38 * 4, 2 + 38 * 4, 3 + 38 * 4, 3 + 38 * 4, 1 + 38 * 4, 0 + 38 * 4,
-            0 + 39 * 4, 2 + 39 * 4, 3 + 39 * 4, 3 + 39 * 4, 1 + 39 * 4, 0 + 39 * 4,
-
-            0 + 40 * 4, 2 + 40 * 4, 3 + 40 * 4, 3 + 40 * 4, 1 + 40 * 4, 0 + 40 * 4,
-            0 + 41 * 4, 2 + 41 * 4, 3 + 41 * 4, 3 + 41 * 4, 1 + 41 * 4, 0 + 41 * 4,
-            0 + 42 * 4, 2 + 42 * 4, 3 + 42 * 4, 3 + 42 * 4, 1 + 42 * 4, 0 + 42 * 4,
-            0 + 43 * 4, 2 + 43 * 4, 3 + 43 * 4, 3 + 43 * 4, 1 + 43 * 4, 0 + 43 * 4,
-            0 + 44 * 4, 2 + 44 * 4, 3 + 44 * 4, 3 + 44 * 4, 1 + 44 * 4, 0 + 44 * 4,
-            0 + 45 * 4, 2 + 45 * 4, 3 + 45 * 4, 3 + 45 * 4, 1 + 45 * 4, 0 + 45 * 4,
-            0 + 46 * 4, 2 + 46 * 4, 3 + 46 * 4, 3 + 46 * 4, 1 + 46 * 4, 0 + 46 * 4,
-            0 + 47 * 4, 2 + 47 * 4, 3 + 47 * 4, 3 + 47 * 4, 1 + 47 * 4, 0 + 47 * 4,
-            0 + 48 * 4, 2 + 48 * 4, 3 + 48 * 4, 3 + 48 * 4, 1 + 48 * 4, 0 + 48 * 4,
-            0 + 49 * 4, 2 + 49 * 4, 3 + 49 * 4, 3 + 49 * 4, 1 + 49 * 4, 0 + 49 * 4,
-
-            0 + 50 * 4, 2 + 50 * 4, 3 + 50 * 4, 3 + 50 * 4, 1 + 50 * 4, 0 + 50 * 4,
-            0 + 51 * 4, 2 + 51 * 4, 3 + 51 * 4, 3 + 51 * 4, 1 + 51 * 4, 0 + 51 * 4,
-            0 + 52 * 4, 2 + 52 * 4, 3 + 52 * 4, 3 + 52 * 4, 1 + 52 * 4, 0 + 52 * 4,
-            0 + 53 * 4, 2 + 53 * 4, 3 + 53 * 4, 3 + 53 * 4, 1 + 53 * 4, 0 + 53 * 4,
-            0 + 54 * 4, 2 + 54 * 4, 3 + 54 * 4, 3 + 54 * 4, 1 + 54 * 4, 0 + 54 * 4,
-            0 + 55 * 4, 2 + 55 * 4, 3 + 55 * 4, 3 + 55 * 4, 1 + 55 * 4, 0 + 55 * 4,
-            0 + 56 * 4, 2 + 56 * 4, 3 + 56 * 4, 3 + 56 * 4, 1 + 56 * 4, 0 + 56 * 4,
-            0 + 57 * 4, 2 + 57 * 4, 3 + 57 * 4, 3 + 57 * 4, 1 + 57 * 4, 0 + 57 * 4,
-            0 + 58 * 4, 2 + 58 * 4, 3 + 58 * 4, 3 + 58 * 4, 1 + 58 * 4, 0 + 58 * 4,
-            0 + 59 * 4, 2 + 59 * 4, 3 + 59 * 4, 3 + 59 * 4, 1 + 59 * 4, 0 + 59 * 4,
-
-            0 + 60 * 4, 2 + 60 * 4, 3 + 60 * 4, 3 + 60 * 4, 1 + 60 * 4, 0 + 60 * 4,
-            0 + 61 * 4, 2 + 61 * 4, 3 + 61 * 4, 3 + 61 * 4, 1 + 61 * 4, 0 + 61 * 4,
-            0 + 62 * 4, 2 + 62 * 4, 3 + 62 * 4, 3 + 62 * 4, 1 + 62 * 4, 0 + 62 * 4,
-            0 + 63 * 4, 2 + 63 * 4, 3 + 63 * 4, 3 + 63 * 4, 1 + 63 * 4, 0 + 63 * 4,
-            0 + 64 * 4, 2 + 64 * 4, 3 + 64 * 4, 3 + 64 * 4, 1 + 64 * 4, 0 + 64 * 4,
-            0 + 65 * 4, 2 + 65 * 4, 3 + 65 * 4, 3 + 65 * 4, 1 + 65 * 4, 0 + 65 * 4,
-            0 + 66 * 4, 2 + 66 * 4, 3 + 66 * 4, 3 + 66 * 4, 1 + 66 * 4, 0 + 66 * 4,
-            0 + 67 * 4, 2 + 67 * 4, 3 + 67 * 4, 3 + 67 * 4, 1 + 67 * 4, 0 + 67 * 4,
-            0 + 68 * 4, 2 + 68 * 4, 3 + 68 * 4, 3 + 68 * 4, 1 + 68 * 4, 0 + 68 * 4,
-            0 + 69 * 4, 2 + 69 * 4, 3 + 69 * 4, 3 + 69 * 4, 1 + 69 * 4, 0 + 69 * 4,
-        };
+        const int _minQuadCount = 40;
+        const int _maxQuadCount = 250;
+        static int _cachedQuadCount = 0;
+        static ushort[] _indices = Array.Empty<ushort>();
 
         public static readonly ushort[] Single = {0, 2, 3, 3, 1, 0};
 
         public static ushort[] Get(int quadCount)
         {
+            Assert.IsTrue(_indices.Length % 6 == 0, "Indices must be a multiple of 6.");
+            Assert.IsTrue(_indices.Length / 6 == _cachedQuadCount, "_indices.Length / 6 == _cachedQuadCount");
+
+
+            // If the requested quad count is already allocated, return the indices.
             if (quadCount <= _cachedQuadCount)
                 return _indices;
 
-            var indices = new ushort[quadCount * 6];
-            Array.Copy(_indices, indices, _cachedQuadCount * 6);
 
-            for (var i = _cachedQuadCount; i < quadCount; i++)
+            // Resize if the requested quad count is larger than the current cache.
+            var oldQuadCount = _indices.Length / 6;
+            if (oldQuadCount < quadCount // If not enough indices, resize.
+                && oldQuadCount != _maxQuadCount) // but not if it's already maxed out.
             {
-                var offset = i * 6;
-                var baseIndex = i * 4;
-                indices[offset + 0] = (ushort) (0 + baseIndex);
-                indices[offset + 1] = (ushort) (2 + baseIndex);
-                indices[offset + 2] = (ushort) (3 + baseIndex);
-                indices[offset + 3] = (ushort) (3 + baseIndex);
-                indices[offset + 4] = (ushort) (1 + baseIndex);
-                indices[offset + 5] = (ushort) (0 + baseIndex);
+                var newQuadCount = Mathf.Clamp(quadCount, _minQuadCount, _maxQuadCount);
+                Array.Resize(ref _indices, newQuadCount * 6);
+
+                // Fill newly allocated quads.
+                for (var i = oldQuadCount; i < newQuadCount; i++)
+                    SetQuadIndices(_indices, i);
+                _cachedQuadCount = newQuadCount;
             }
 
-            return indices;
+            // If the requested quad count is successfully allocated, return the indices.
+            if (quadCount <= _cachedQuadCount)
+                return _indices;
+
+            // If the requested quad count is larger than the max, return a new array.
+#if DEBUG
+            Debug.LogWarning($"[QuadIndexCache] Quad count is larger than the max: {quadCount} > {_maxQuadCount}");
+#endif
+            Assert.IsTrue(quadCount > _maxQuadCount, "Quad count must be larger than the max.");
+            var tmpIndices = new ushort[quadCount * 6];
+            Array.Copy(_indices, tmpIndices, _cachedQuadCount * 6);
+            for (var i = _cachedQuadCount; i < quadCount; i++)
+                SetQuadIndices(tmpIndices, i);
+            return tmpIndices;
+
+            static void SetQuadIndices(ushort[] indices, int quadIndex)
+            {
+                var startingIndex = quadIndex * 6;
+                var vertexOffset = quadIndex * 4;
+                indices[startingIndex + 0] = (ushort) (0 + vertexOffset);
+                indices[startingIndex + 1] = (ushort) (2 + vertexOffset);
+                indices[startingIndex + 2] = (ushort) (3 + vertexOffset);
+                indices[startingIndex + 3] = (ushort) (3 + vertexOffset);
+                indices[startingIndex + 4] = (ushort) (1 + vertexOffset);
+                indices[startingIndex + 5] = (ushort) (0 + vertexOffset);
+            }
         }
     }
 }
