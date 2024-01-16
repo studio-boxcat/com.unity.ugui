@@ -430,7 +430,7 @@ namespace UnityEngine.UI
         protected Dropdown()
         {}
 
-        protected override void Awake()
+        private void Awake()
         {
             #if UNITY_EDITOR
             if (!Application.isPlaying)
@@ -453,10 +453,8 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
-        protected override void OnValidate()
+        private void OnValidate()
         {
-            base.OnValidate();
-
             if (!IsActive())
                 return;
 

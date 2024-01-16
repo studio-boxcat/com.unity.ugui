@@ -153,10 +153,8 @@ namespace UnityEngine.UI
         private bool m_DelayedUpdateVisuals = false;
 
 #if UNITY_EDITOR
-        protected override void OnValidate()
+        private void OnValidate()
         {
-            base.OnValidate();
-
             m_Size = Mathf.Clamp01(m_Size);
 
             //This can be invoked before OnEnabled is called. So we shouldn't be accessing other objects, before OnEnable is called.

@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using UnityEngine.Assertions;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
@@ -1077,9 +1076,8 @@ namespace UnityEngine.UI
     #if UNITY_EDITOR
         // Remember: This is NOT related to text validation!
         // This is Unity's own OnValidate method which is invoked when changing values in the Inspector.
-        protected override void OnValidate()
+        private void OnValidate()
         {
-            base.OnValidate();
             EnforceContentType();
             EnforceTextHOverflow();
 
@@ -1102,10 +1100,8 @@ namespace UnityEngine.UI
     #endif // if UNITY_EDITOR
 
     #if UNITY_ANDROID
-        protected override void Awake()
+        private void Awake()
         {
-            base.Awake();
-
             if (s_IsQuestDeviceEvaluated)
                 return;
 

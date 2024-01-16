@@ -115,10 +115,8 @@ namespace UnityEngine.UI
         {}
 
 #if UNITY_EDITOR
-        protected override void OnValidate()
+        private void OnValidate()
         {
-            base.OnValidate();
-
             if (!UnityEditor.PrefabUtility.IsPartOfPrefabAsset(this) && !Application.isPlaying)
                 CanvasUpdateRegistry.RegisterCanvasElementForLayoutRebuild(this);
         }

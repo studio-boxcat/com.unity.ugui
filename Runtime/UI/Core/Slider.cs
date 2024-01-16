@@ -377,10 +377,8 @@ namespace UnityEngine.UI
         {}
 
 #if UNITY_EDITOR
-        protected override void OnValidate()
+        private void OnValidate()
         {
-            base.OnValidate();
-
             if (wholeNumbers)
             {
                 m_MinValue = Mathf.Round(m_MinValue);
@@ -398,7 +396,6 @@ namespace UnityEngine.UI
             if (!UnityEditor.PrefabUtility.IsPartOfPrefabAsset(this) && !Application.isPlaying)
                 CanvasUpdateRegistry.RegisterCanvasElementForLayoutRebuild(this);
         }
-
 #endif // if UNITY_EDITOR
 
         public virtual void Rebuild(CanvasUpdate executing)
