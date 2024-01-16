@@ -1,3 +1,4 @@
+#if PACKAGE_PHYSICS2D
 namespace UnityEngine.EventSystems
 {
     /// <summary>
@@ -15,7 +16,6 @@ namespace UnityEngine.EventSystems
         /// </summary>
         public override bool Raycast(Vector2 screenPosition, out RaycastResult result)
         {
-#if PACKAGE_PHYSICS2D
             if (!ComputeRayAndDistance(screenPosition, out var ray, out var distance))
             {
                 result = default;
@@ -36,7 +36,7 @@ namespace UnityEngine.EventSystems
                 screenPosition = screenPosition,
             };
             return true;
-#endif
         }
     }
 }
+#endif

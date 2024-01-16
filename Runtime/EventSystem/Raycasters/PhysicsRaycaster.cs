@@ -1,3 +1,4 @@
+#if PACKAGE_PHYSICS2D || PACKAGE_PHYSICS3D
 using Sirenix.OdinInspector;
 
 namespace UnityEngine.EventSystems
@@ -68,3 +69,4 @@ namespace UnityEngine.EventSystems
         }
     }
 }
+#endif
