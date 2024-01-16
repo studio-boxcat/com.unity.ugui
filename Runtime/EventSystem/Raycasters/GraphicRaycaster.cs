@@ -86,13 +86,11 @@ namespace UnityEngine.EventSystems
                 if (graphic.canvasRenderer.cull)
                     continue;
 
-                if (!RectTransformUtility.RectangleContainsScreenPoint(graphic.rectTransform, pointerPosition, eventCamera, graphic.raycastPadding))
+                var t = graphic.rectTransform;
+                if (!RectTransformUtility.RectangleContainsScreenPoint(t, pointerPosition, eventCamera, graphic.raycastPadding))
                     continue;
 
-                if (eventCamera.WorldToScreenPoint(graphic.rectTransform.position).z > eventCamera.farClipPlane)
-                    continue;
-
-                if (graphic.Raycast(pointerPosition, eventCamera))
+                if (RaycastUtils.IsEligibleForRaycast(graphic.transform, pointerPosition, eventCamera))
                 {
                     maxDepthGraphic = graphic;
                     maxDepth = graphicDepth;

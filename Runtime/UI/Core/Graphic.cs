@@ -646,60 +646,6 @@ namespace UnityEngine.UI
         /// </summary>
         public virtual void SetNativeSize() { }
 
-        static readonly List<ICanvasRaycastFilter> _raycastFilterBuf = new();
-
-        /// <summary>
-        /// When a GraphicRaycaster is raycasting into the scene it does two things. First it filters the elements using their RectTransform rect. Then it uses this Raycast function to determine the elements hit by the raycast.
-        /// </summary>
-        /// <param name="sp">Screen point being tested</param>
-        /// <param name="eventCamera">Camera that is being used for the testing.</param>
-        /// <returns>True if the provided point is a valid location for GraphicRaycaster raycasts.</returns>
-        public bool Raycast(Vector2 sp, Camera eventCamera)
-        {
-            Assert.IsTrue(isActiveAndEnabled);
-
-            var t = transform;
-            var ignoreParentGroups = false;
-            while (t is not null)
-            {
-                // For most cases, there's no ICanvasRaycastFilter so we can avoid the GetComponents call.
-                if (t.TryGetComponent(out ICanvasRaycastFilter _))
-                {
-                    t.GetComponents(_raycastFilterBuf);
-                    foreach (var filter in _raycastFilterBuf)
-                    {
-                        // If the filter is disabled, skip it.
-                        if (filter is Behaviour {enabled: false})
-                            continue;
-
-                        // Skip if we've set ignoreParentGroups to true.
-                        if (filter is CanvasGroup group)
-                        {
-                            if (ignoreParentGroups)
-                                continue;
-                            if (group.ignoreParentGroups)
-                                ignoreParentGroups = true;
-                        }
-
-                        // If any filter says it's not valid, return false.
-                        if (filter.IsRaycastLocationValid(sp, eventCamera) == false)
-                            return false;
-                    }
-                }
-
-
-                // If canvas.overrideSorting is set, raycast traversal should stop at the canvas.
-                if (t.TryGetComponent(out Canvas canvas) && canvas.overrideSorting)
-                    break;
-
-
-                // Go up the hierarchy.
-                t = t.parent;
-            }
-
-            return true;
-        }
-
 #if UNITY_EDITOR
         protected virtual void OnValidate()
         {
