@@ -571,12 +571,7 @@ namespace UnityEngine.UI
         /// </summary>
         public Text textComponent
         {
-            get => m_TextComponent;
-            set
-            {
-                if (SetPropertyUtility.SetClass(ref m_TextComponent, value))
-                    EnforceTextHOverflow();
-            }
+            get { return m_TextComponent; }
         }
 
         /// <summary>
@@ -1181,6 +1176,12 @@ namespace UnityEngine.UI
             }
         }
 
+        private void UpdateCaretMaterial()
+        {
+            if (m_TextComponent != null && m_CachedInputRenderer != null)
+                m_CachedInputRenderer.SetMaterial(m_TextComponent.GetModifiedMaterial(Graphic.defaultGraphicMaterial), Texture2D.whiteTexture);
+        }
+
         /// <summary>
         /// Focus the input field initializing properties.
         /// </summary>
@@ -1296,6 +1297,8 @@ namespace UnityEngine.UI
             {
                 case RuntimePlatform.Android:
                     return !TouchScreenKeyboard.isInPlaceEditingAllowed;
+                case RuntimePlatform.WebGLPlayer:
+                    return !TouchScreenKeyboard.isInPlaceEditingAllowed;
                 default:
                     return TouchScreenKeyboard.isSupported;
             }
@@ -1311,6 +1314,26 @@ namespace UnityEngine.UI
         private bool InPlaceEditingChanged()
         {
             return m_TouchKeyboardAllowsInPlaceEditing != TouchScreenKeyboard.isInPlaceEditingAllowed;
+        }
+
+        RangeInt GetInternalSelection()
+        {
+            var selectionStart = Mathf.Min(caretSelectPositionInternal, caretPositionInternal);
+            var selectionLength = Mathf.Abs(caretSelectPositionInternal - caretPositionInternal);
+            return new RangeInt(selectionStart, selectionLength);
+        }
+
+        void UpdateKeyboardCaret()
+        {
+            // On iOS/tvOS we only update SoftKeyboard selection when we know that it might have changed by touch/pointer interactions with InputField
+            // Setting the TouchScreenKeyboard selection here instead of LateUpdate so that we wouldn't override
+            // TouchScreenKeyboard selection when it's changed with cmd+a/ctrl+a/arrow/etc. in the TouchScreenKeyboard
+            // This is only applicable for iOS/tvOS as we have instance of TouchScreenKeyboard even when external keyboard is connected
+            if (m_HideMobileInput && m_Keyboard != null && m_Keyboard.canSetSelection &&
+                (Application.platform == RuntimePlatform.IPhonePlayer || Application.platform == RuntimePlatform.tvOS))
+            {
+                m_Keyboard.selection = GetInternalSelection();
+            }
         }
 
         void UpdateCaretFromKeyboard()
@@ -1454,17 +1477,17 @@ namespace UnityEngine.UI
                     SendOnValueChangedAndUpdateLabel();
                 }
             }
-            else if (m_HideMobileInput && m_Keyboard.canSetSelection)
+            // On iOS/tvOS we always have TouchScreenKeyboard instance even when using external keyboard
+            // so we keep track of the caret position there
+            else if (m_HideMobileInput && m_Keyboard != null && m_Keyboard.canSetSelection &&
+                     Application.platform != RuntimePlatform.IPhonePlayer && Application.platform != RuntimePlatform.tvOS)
             {
-                var selectionStart = Mathf.Min(caretSelectPositionInternal, caretPositionInternal);
-                var selectionLength = Mathf.Abs(caretSelectPositionInternal - caretPositionInternal);
-                m_Keyboard.selection = new RangeInt(selectionStart, selectionLength);
+                m_Keyboard.selection = GetInternalSelection();
             }
-            else if (m_Keyboard.canGetSelection && !m_HideMobileInput)
+            else if (m_Keyboard != null && m_Keyboard.canGetSelection)
             {
                 UpdateCaretFromKeyboard();
             }
-
 
             if (m_Keyboard.status != TouchScreenKeyboard.Status.Visible)
             {
@@ -1617,6 +1640,7 @@ namespace UnityEngine.UI
             if (m_DragPositionOutOfBounds && m_DragCoroutine == null)
                 m_DragCoroutine = StartCoroutine(MouseDragOutsideRect(eventData));
 
+            UpdateKeyboardCaret();
             eventData.Use();
         }
 
@@ -1703,6 +1727,7 @@ namespace UnityEngine.UI
             }
 
             UpdateLabel();
+            UpdateKeyboardCaret();
             eventData.Use();
         }
 
@@ -2390,77 +2415,82 @@ namespace UnityEngine.UI
         /// </summary>
         protected void UpdateLabel()
         {
-            if (m_TextComponent == null || m_TextComponent.font == null || m_PreventFontCallback)
-                return;
-
-            // TextGenerator.Populate invokes a callback that's called for anything
-            // that needs to be updated when the data for that font has changed.
-            // This makes all Text components that use that font update their vertices.
-            // In turn, this makes the InputField that's associated with that Text component
-            // update its label by calling this UpdateLabel method.
-            // This is a recursive call we want to prevent, since it makes the InputField
-            // update based on font data that didn't yet finish executing, or alternatively
-            // hang on infinite recursion, depending on whether the cached value is cached
-            // before or after the calculation.
-            //
-            // This callback also occurs when assigning text to our Text component, i.e.,
-            // m_TextComponent.text = processed;
-
-            m_PreventFontCallback = true;
-
-            string fullText;
-
-            if (EventSystem.current != null && gameObject == EventSystem.current.currentSelectedGameObject && compositionString.Length > 0)
+            if (m_TextComponent != null && m_TextComponent.font != null && !m_PreventFontCallback)
             {
-                m_IsCompositionActive = true;
-                fullText = text.Substring(0, m_CaretPosition) + compositionString + text.Substring(m_CaretPosition);
+                // TextGenerator.Populate invokes a callback that's called for anything
+                // that needs to be updated when the data for that font has changed.
+                // This makes all Text components that use that font update their vertices.
+                // In turn, this makes the InputField that's associated with that Text component
+                // update its label by calling this UpdateLabel method.
+                // This is a recursive call we want to prevent, since it makes the InputField
+                // update based on font data that didn't yet finish executing, or alternatively
+                // hang on infinite recursion, depending on whether the cached value is cached
+                // before or after the calculation.
+                //
+                // This callback also occurs when assigning text to our Text component, i.e.,
+                // m_TextComponent.text = processed;
+
+                m_PreventFontCallback = true;
+
+                string fullText;
+
+                if (EventSystem.current != null && gameObject == EventSystem.current.currentSelectedGameObject && compositionString.Length > 0)
+                {
+                    m_IsCompositionActive = true;
+                    fullText = text.Substring(0, m_CaretPosition) + compositionString + text.Substring(m_CaretPosition);
+                }
+                else
+                {
+                    m_IsCompositionActive = false;
+                    fullText = text;
+                }
+
+                string processed;
+                if (inputType == InputType.Password)
+                    processed = new string(asteriskChar, fullText.Length);
+                else
+                    processed = fullText;
+
+                bool isEmpty = string.IsNullOrEmpty(fullText);
+
+                if (m_Placeholder != null)
+                    m_Placeholder.enabled = isEmpty;
+
+                // If not currently editing the text, set the visible range to the whole text.
+                // The UpdateLabel method will then truncate it to the part that fits inside the Text area.
+                // We can't do this when text is being edited since it would discard the current scroll,
+                // which is defined by means of the m_DrawStart and m_DrawEnd indices.
+                if (!m_AllowInput)
+                {
+                    m_DrawStart = 0;
+                    m_DrawEnd = m_Text.Length;
+                }
+
+                // To fix case 1320719; we need to rebuild the layout before we check the number of characters that can fit within the extents.
+                // Otherwise, the extents provided may not be good.
+                textComponent.SetLayoutDirty();
+                Canvas.ForceUpdateCanvases();
+
+                if (!isEmpty)
+                {
+                    // Determine what will actually fit into the given line
+                    Vector2 extents = m_TextComponent.rectTransform.rect.size;
+
+                    var settings = m_TextComponent.GetGenerationSettings(extents);
+                    settings.generateOutOfBounds = true;
+
+                    cachedInputTextGenerator.PopulateWithErrors(processed, settings, gameObject);
+
+                    SetDrawRangeToContainCaretPosition(caretSelectPositionInternal);
+
+                    processed = processed.Substring(m_DrawStart, Mathf.Min(m_DrawEnd, processed.Length) - m_DrawStart);
+
+                    SetCaretVisible();
+                }
+                m_TextComponent.text = processed;
+                MarkGeometryAsDirty();
+                m_PreventFontCallback = false;
             }
-            else
-            {
-                m_IsCompositionActive = false;
-                fullText = text;
-            }
-
-            string processed;
-            if (inputType == InputType.Password)
-                processed = new string(asteriskChar, fullText.Length);
-            else
-                processed = fullText;
-
-            bool isEmpty = string.IsNullOrEmpty(fullText);
-
-            if (m_Placeholder != null)
-                m_Placeholder.enabled = isEmpty;
-
-            // If not currently editing the text, set the visible range to the whole text.
-            // The UpdateLabel method will then truncate it to the part that fits inside the Text area.
-            // We can't do this when text is being edited since it would discard the current scroll,
-            // which is defined by means of the m_DrawStart and m_DrawEnd indices.
-            if (!m_AllowInput)
-            {
-                m_DrawStart = 0;
-                m_DrawEnd = m_Text.Length;
-            }
-
-            if (!isEmpty)
-            {
-                // Determine what will actually fit into the given line
-                Vector2 extents = m_TextComponent.rectTransform.rect.size;
-
-                var settings = m_TextComponent.GetGenerationSettings(extents);
-                settings.generateOutOfBounds = true;
-
-                cachedInputTextGenerator.PopulateWithErrors(processed, settings, gameObject);
-
-                SetDrawRangeToContainCaretPosition(caretSelectPositionInternal);
-
-                processed = processed.Substring(m_DrawStart, Mathf.Min(m_DrawEnd, processed.Length) - m_DrawStart);
-
-                SetCaretVisible();
-            }
-            m_TextComponent.text = processed;
-            MarkGeometryAsDirty();
-            m_PreventFontCallback = false;
         }
 
         private bool IsSelectionVisible()
@@ -3220,9 +3250,11 @@ namespace UnityEngine.UI
 
         void EnforceTextHOverflow()
         {
-            if (m_TextComponent == null) return;
-            m_TextComponent.horizontalOverflow = multiLine
-                ? HorizontalWrapMode.Wrap : HorizontalWrapMode.Overflow;
+            if (m_TextComponent != null)
+                if (multiLine)
+                    m_TextComponent.horizontalOverflow = HorizontalWrapMode.Wrap;
+                else
+                    m_TextComponent.horizontalOverflow = HorizontalWrapMode.Overflow;
         }
 
         void SetToCustomIfContentTypeIsNot(params ContentType[] allowedContentTypes)
@@ -3258,7 +3290,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// See ILayoutElement.minWidth.
         /// </summary>
-        public virtual float minWidth { get { return 0; } }
+        public virtual float minWidth { get { return 5; } }
 
         /// <summary>
         /// Get the displayed with of all input characters.
