@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
@@ -28,6 +29,7 @@ namespace UnityEngine.UI
 
         public static void Return(MeshBuilder mb)
         {
+            Assert.AreEqual(0, mb.Poses.Count, "MeshBuilder must be invalidated before returning to the pool.");
             _pool.Add(mb);
         }
 
