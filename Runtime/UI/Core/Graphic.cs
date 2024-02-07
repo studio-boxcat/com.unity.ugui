@@ -590,6 +590,7 @@ namespace UnityEngine.UI
                 return s_Mesh ??= new Mesh
                 {
                     name = "Shared UI Mesh",
+                    hideFlags = HideFlags.HideAndDontSave // XXX: To prevent destroying the mesh after exiting play mode.
                 };
             }
         }
