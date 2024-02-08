@@ -87,7 +87,7 @@ namespace UnityEngine.UI
         /// </summary>
         public static void UntrackText(Font font, IFontUpdateListener listener)
         {
-            Assert.IsNotNull(font);
+            Assert.IsNotNull(font, "Font is null");
 
             var texts = _tracked[font];
             texts.Remove(listener);
