@@ -26,7 +26,7 @@ namespace UnityEngine.UI
 
         public void Update(Font font)
         {
-            Assert.IsNotNull(_listener);
+            Assert.IsNotNull(_listener, "No listener to update");
 
             if (ReferenceEquals(_font, font))
                 return;
@@ -40,7 +40,7 @@ namespace UnityEngine.UI
 
         public void Untrack()
         {
-            Assert.IsNotNull(_listener);
+            Assert.IsNotNull(_listener, "No listener to untrack");
 
             if (_font is null)
                 return;
