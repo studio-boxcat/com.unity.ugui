@@ -64,7 +64,7 @@ namespace UnityEngine.UI
         /// </summary>
         public static void TrackText(Font font, IFontUpdateListener listener)
         {
-            Assert.IsNotNull(font);
+            Assert.IsNotNull(font, "Font is null");
 
             if (_tracked.TryGetValue(font, out var texts) == false)
             {
