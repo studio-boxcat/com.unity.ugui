@@ -33,9 +33,14 @@ namespace UnityEngine.UI
 
             if (_font is not null)
                 FontUpdateTracker.UntrackText(_font, _listener);
+
             _font = font;
+
             if (font is not null)
+            {
+                Assert.IsNotNull(font, "Font is destroyed");
                 FontUpdateTracker.TrackText(font, _listener);
+            }
         }
 
         public void Untrack()
