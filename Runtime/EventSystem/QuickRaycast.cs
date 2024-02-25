@@ -19,8 +19,9 @@ namespace UnityEngine.EventSystems
             foreach (var module in modules)
             {
                 var eventCamera = module.eventCamera;
-                if (targetCamera is not null && ReferenceEquals(eventCamera, targetCamera) == false)
+                if (targetCamera is not null && ReferenceEquals(eventCamera, targetCamera) is false)
                     continue;
+                Assert.IsTrue(module.isActiveAndEnabled, $"{module.name} is not active and enabled.");
 
                 _raycasterBuffer.Add(RaycasterComparisonData.Rent(module, eventCamera));
             }
@@ -284,12 +285,10 @@ namespace UnityEngine.EventSystems
                     return false;
                 }
 
-                var canvasRenderer = Canvas.GetComponent<CanvasRenderer>();
-                var otherCanvasRenderer = other.Canvas.GetComponent<CanvasRenderer>();
                 if (_canvasRendererDepth == int.MaxValue)
-                    _canvasRendererDepth = canvasRenderer.absoluteDepth;
+                    _canvasRendererDepth = Canvas.GetComponent<CanvasRenderer>().absoluteDepth;
                 if (other._canvasRendererDepth == int.MaxValue)
-                    other._canvasRendererDepth = otherCanvasRenderer.absoluteDepth;
+                    other._canvasRendererDepth = other.Canvas.GetComponent<CanvasRenderer>().absoluteDepth;
 
                 if (_canvasRendererDepth != other._canvasRendererDepth)
                 {
@@ -298,6 +297,7 @@ namespace UnityEngine.EventSystems
                 }
                 else
                 {
+                    Assert.AreEqual(-1, _canvasRendererDepth, "CanvasRenderer is initialized but there's other renderer with the same depth.");
                     compareResult = default;
                     return false;
                 }
@@ -331,7 +331,7 @@ namespace UnityEngine.EventSystems
                 if (lhs.CompareCanvasRendererDepth(rhs, out compareResult))
                     return compareResult;
 
-                throw new Exception($"두 Raycaster 의 순서를 비교할 수 없습니다: {lhs.Raycaster.name}, {rhs.Raycaster.name}");
+                return lhs.Raycaster.GetInstanceID().CompareTo(rhs.Raycaster.GetInstanceID());
             }
         }
     }
