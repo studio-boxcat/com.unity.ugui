@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using JetBrains.Annotations;
 using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
@@ -13,44 +12,45 @@ namespace UnityEngine.UI
     public struct FontUpdateLink
     {
         readonly IFontUpdateListener _listener;
-        [CanBeNull] Font _font;
+        int _fontId; // It is always unique, and never has the value 0.
 
 
         public FontUpdateLink(IFontUpdateListener listener)
         {
             _listener = listener;
-            _font = null;
+            _fontId = 0;
         }
 
-        public bool IsTracking() => _font is not null;
+        public bool IsTracking() => _fontId is not 0;
 
         public void Update(Font font)
         {
             Assert.IsNotNull(_listener, "No listener to update");
+            Assert.IsFalse(font is null, "Given font is null");
 
-            if (ReferenceEquals(_font, font))
+            var fontId = font.GetInstanceID();
+            if (fontId == _fontId)
                 return;
 
-            if (_font is not null)
-                FontUpdateTracker.UntrackText(_font, _listener);
+            // Untrack the previous font.
+            if (_fontId is not 0)
+                FontUpdateTracker.UntrackText(_fontId, _listener);
 
-            _font = font;
+            _fontId = fontId;
 
-            if (font is not null)
-            {
-                Assert.IsNotNull(font, "Font is destroyed");
-                FontUpdateTracker.TrackText(font, _listener);
-            }
+            // Track the new font.
+            if (fontId is not 0)
+                FontUpdateTracker.TrackText(fontId, _listener);
         }
 
         public void Untrack()
         {
             Assert.IsNotNull(_listener, "No listener to untrack");
 
-            if (_font is null)
+            if (_fontId is 0)
                 return;
-            FontUpdateTracker.UntrackText(_font, _listener);
-            _font = null;
+            FontUpdateTracker.UntrackText(_fontId, _listener);
+            _fontId = 0;
         }
     }
 
@@ -62,18 +62,14 @@ namespace UnityEngine.UI
     /// </remarks>
     public static class FontUpdateTracker
     {
-        static readonly Dictionary<Font, HashSet<IFontUpdateListener>> _tracked = new(ReferenceEqualityComparer.Object);
+        static readonly Dictionary<int, HashSet<IFontUpdateListener>> _tracked = new();
 
         /// <summary>
         /// Register a Text element for receiving texture atlas rebuild calls.
         /// </summary>
-        public static void TrackText(Font font, IFontUpdateListener listener)
+        public static void TrackText(int fontId, IFontUpdateListener listener)
         {
-            // Doesn't matter if font is destroyed.
-            // Assert.IsNotNull(font, "Font is null");
-            Assert.IsTrue(font is not null, "Font is null");
-
-            if (_tracked.TryGetValue(font, out var listeners) == false)
+            if (_tracked.TryGetValue(fontId, out var listeners) == false)
             {
                 // The textureRebuilt event is global for all fonts, so we add our delegate the first time we register *any* Text
                 if (_tracked.Count == 0)
@@ -83,7 +79,7 @@ namespace UnityEngine.UI
                 }
 
                 listeners = new HashSet<IFontUpdateListener>();
-                _tracked.Add(font, listeners);
+                _tracked.Add(fontId, listeners);
             }
 
             listeners.Add(listener);
@@ -92,17 +88,13 @@ namespace UnityEngine.UI
         /// <summary>
         /// Deregister a Text element from receiving texture atlas rebuild calls.
         /// </summary>
-        public static void UntrackText(Font font, IFontUpdateListener listener)
+        public static void UntrackText(int fontId, IFontUpdateListener listener)
         {
-            // Doesn't matter if font is destroyed.
-            // Assert.IsNotNull(font, "Font is null");
-            Assert.IsTrue(font is not null, "Font is null");
-
-            var listeners = _tracked[font];
+            var listeners = _tracked[fontId];
             listeners.Remove(listener);
             if (listeners.Count != 0) return;
 
-            _tracked.Remove(font);
+            _tracked.Remove(fontId);
 
             // There is a global textureRebuilt event for all fonts, so once the last Text reference goes away, remove our delegate
             if (_tracked.Count == 0)
@@ -113,7 +105,8 @@ namespace UnityEngine.UI
 
         static void RebuildForFont(Font font)
         {
-            if (_tracked.TryGetValue(font, out var listeners) == false)
+            var fontId = font.GetInstanceID();
+            if (_tracked.TryGetValue(fontId, out var listeners) == false)
                 return;
 
             foreach (var listener in listeners)
