@@ -69,9 +69,11 @@ namespace UnityEngine.UI
         /// </summary>
         public static void TrackText(Font font, IFontUpdateListener listener)
         {
-            Assert.IsNotNull(font, "Font is null");
+            // Doesn't matter if font is destroyed.
+            // Assert.IsNotNull(font, "Font is null");
+            Assert.IsTrue(font is not null, "Font is null");
 
-            if (_tracked.TryGetValue(font, out var texts) == false)
+            if (_tracked.TryGetValue(font, out var listeners) == false)
             {
                 // The textureRebuilt event is global for all fonts, so we add our delegate the first time we register *any* Text
                 if (_tracked.Count == 0)
@@ -80,11 +82,11 @@ namespace UnityEngine.UI
                     Font.textureRebuilt += _rebuildForFont;
                 }
 
-                texts = new HashSet<IFontUpdateListener>();
-                _tracked.Add(font, texts);
+                listeners = new HashSet<IFontUpdateListener>();
+                _tracked.Add(font, listeners);
             }
 
-            texts.Add(listener);
+            listeners.Add(listener);
         }
 
         /// <summary>
@@ -92,11 +94,13 @@ namespace UnityEngine.UI
         /// </summary>
         public static void UntrackText(Font font, IFontUpdateListener listener)
         {
-            Assert.IsNotNull(font, "Font is null");
+            // Doesn't matter if font is destroyed.
+            // Assert.IsNotNull(font, "Font is null");
+            Assert.IsTrue(font is not null, "Font is null");
 
-            var texts = _tracked[font];
-            texts.Remove(listener);
-            if (texts.Count != 0) return;
+            var listeners = _tracked[font];
+            listeners.Remove(listener);
+            if (listeners.Count != 0) return;
 
             _tracked.Remove(font);
 
