@@ -23,8 +23,6 @@ namespace UnityEngine.EventSystems
         public static BaseEventFunc<IUpdateSelectedHandler> updateSelectedHandler = (h, e) => h.OnUpdateSelected(e);
         public static BaseEventFunc<ISelectHandler> selectHandler = (h, e) => h.OnSelect(e);
         public static BaseEventFunc<IDeselectHandler> deselectHandler = (h, e) => h.OnDeselect(e);
-        public static BaseEventFunc<ISubmitHandler> submitHandler = (h, e) => h.OnSubmit(e);
-        public static BaseEventFunc<ICancelHandler> cancelHandler = (h, e) => h.OnCancel(e);
 
         public static bool Execute<T>(GameObject target, PointerEventData eventData, PointerEventFunc<T> functor) where T : class, IEventSystemHandler
         {
@@ -37,10 +35,15 @@ namespace UnityEngine.EventSystems
             foreach (var arg in internalHandlers)
             {
                 // If the object is disabled, don't execute the event.
-                if (arg is Behaviour {isActiveAndEnabled: false})
+                if (arg is Behaviour { isActiveAndEnabled: false })
                     continue;
 
                 executed = true;
+
+#if DEBUG
+                var loggable = typeof(T) == typeof(IPointerClickHandler);
+                if (loggable) Debug.Log("[UGUI] Execute " + typeof(T).Name, arg);
+#endif
 
                 try
                 {
@@ -66,7 +69,7 @@ namespace UnityEngine.EventSystems
             foreach (var arg in internalHandlers)
             {
                 // If the object is disabled, don't execute the event.
-                if (arg is Behaviour {isActiveAndEnabled: false})
+                if (arg is Behaviour { isActiveAndEnabled: false })
                     continue;
 
                 executed = true;
