@@ -41,8 +41,8 @@ namespace UnityEngine.EventSystems
                 executed = true;
 
 #if DEBUG
-                var loggable = typeof(T) == typeof(IPointerClickHandler);
-                if (loggable) Debug.Log("[UGUI] Execute " + typeof(T).Name, arg);
+                if (ReferenceEquals(functor, pointerClickHandler))
+                    Debug.Log("[UGUI] Click: " + target.name, target);
 #endif
 
                 try

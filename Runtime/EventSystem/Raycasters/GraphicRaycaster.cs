@@ -80,17 +80,31 @@ namespace UnityEngine.EventSystems
                 }
 
                 var graphicDepth = graphic.depth;
-                if (graphicDepth < maxDepth)
+                var t = graphic.rectTransform;
+
+                // If there's hit graphic but not initialized,
+                // we should abort the raycast since it could be block the raycast if it's initialized later.
+                if (graphicDepth is -1)
+                {
+                    L.W("Uninitialized Graphic found: " + graphic.name, graphic);
+                    if (RectTransformUtility.RectangleContainsScreenPoint(t, pointerPosition, eventCamera, graphic.raycastPadding)
+                        && RaycastUtils.IsEligibleForRaycast(t, pointerPosition, eventCamera))
+                    {
+                        L.W("Aborting raycast since the blocking Graphic is not initialized yet.");
+                        result = graphic;
+                        return false;
+                    }
+                }
+
+                if (graphicDepth <= maxDepth)
                     continue;
 
                 if (graphic.canvasRenderer.cull)
                     continue;
 
-                var t = graphic.rectTransform;
-                if (!RectTransformUtility.RectangleContainsScreenPoint(t, pointerPosition, eventCamera, graphic.raycastPadding))
-                    continue;
-
-                if (RaycastUtils.IsEligibleForRaycast(graphic.transform, pointerPosition, eventCamera))
+                // Check hit & eligibility.
+                if (RectTransformUtility.RectangleContainsScreenPoint(t, pointerPosition, eventCamera, graphic.raycastPadding)
+                    && RaycastUtils.IsEligibleForRaycast(t, pointerPosition, eventCamera))
                 {
                     maxDepthGraphic = graphic;
                     maxDepth = graphicDepth;
