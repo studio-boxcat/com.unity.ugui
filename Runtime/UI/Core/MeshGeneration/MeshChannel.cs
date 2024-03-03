@@ -119,7 +119,7 @@ namespace UnityEngine.UI
         public void TrimAfter(int fromIndex)
         {
             Assert.IsNotNull(Data, "MeshChannel.SetUp() must be called before trimming.");
-            Assert.IsTrue(fromIndex <= Count, "fromIndex must be less than Count.");
+            Assert.IsTrue(fromIndex <= Count, $"fromIndex must be less than Count: fromIndex={fromIndex}, Count={Count}");
             Count = fromIndex;
         }
 
