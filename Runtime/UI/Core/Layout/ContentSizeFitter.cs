@@ -1,3 +1,4 @@
+using Sirenix.OdinInspector;
 using UnityEngine.EventSystems;
 
 namespace UnityEngine.UI
@@ -11,12 +12,12 @@ namespace UnityEngine.UI
     /// <remarks>
     /// The ContentSizeFitter can be used on GameObjects that have one or more ILayoutElement components, such as Text, Image, HorizontalLayoutGroup, VerticalLayoutGroup, and GridLayoutGroup.
     /// </remarks>
-    public class ContentSizeFitter : UIBehaviour, ILayoutSelfController
+    public sealed class ContentSizeFitter : UIBehaviour, ILayoutSelfController
     {
         /// <summary>
         /// The size fit modes avaliable to use.
         /// </summary>
-        public enum FitMode
+        enum FitMode
         {
             /// <summary>
             /// Don't perform any resizing.
@@ -32,58 +33,33 @@ namespace UnityEngine.UI
             PreferredSize
         }
 
-        [SerializeField] protected FitMode m_HorizontalFit = FitMode.Unconstrained;
-
-        /// <summary>
-        /// The fit mode to use to determine the width.
-        /// </summary>
-        public FitMode horizontalFit { get { return m_HorizontalFit; } set { if (SetPropertyUtility.SetEnum(ref m_HorizontalFit, value)) SetDirty(); } }
-
-        [SerializeField] protected FitMode m_VerticalFit = FitMode.Unconstrained;
-
-        /// <summary>
-        /// The fit mode to use to determine the height.
-        /// </summary>
-        public FitMode verticalFit { get { return m_VerticalFit; } set { if (SetPropertyUtility.SetEnum(ref m_VerticalFit, value)) SetDirty(); } }
+        [SerializeField, OnValueChanged(nameof(SetDirty))]
+        FitMode m_HorizontalFit = FitMode.Unconstrained;
+        [SerializeField, OnValueChanged(nameof(SetDirty))]
+        FitMode m_VerticalFit = FitMode.Unconstrained;
 
         [System.NonSerialized] private RectTransform m_Rect;
-        private RectTransform rectTransform
-        {
-            get
-            {
-                if (m_Rect == null)
-                    m_Rect = GetComponent<RectTransform>();
-                return m_Rect;
-            }
-        }
+        private RectTransform rectTransform => m_Rect ??= (RectTransform) transform;
 
         // field is never assigned warning
-        #pragma warning disable 649
         private DrivenRectTransformTracker m_Tracker;
-        #pragma warning restore 649
 
-        protected ContentSizeFitter()
-        {}
+        void OnEnable() => SetDirty();
 
-        protected virtual void OnEnable()
-        {
-            SetDirty();
-        }
-
-        protected virtual void OnDisable()
+        void OnDisable()
         {
             m_Tracker.Clear();
             LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
         }
 
-        protected virtual void OnRectTransformDimensionsChange()
+        void OnRectTransformDimensionsChange()
         {
             SetDirty();
         }
 
         private void HandleSelfFittingAlongAxis(int axis)
         {
-            FitMode fitting = (axis == 0 ? horizontalFit : verticalFit);
+            var fitting = axis == 0 ? m_HorizontalFit : m_VerticalFit;
             if (fitting == FitMode.Unconstrained)
             {
                 // Keep a reference to the tracked transform, but don't control its properties:
@@ -91,13 +67,16 @@ namespace UnityEngine.UI
                 return;
             }
 
-            m_Tracker.Add(this, rectTransform, (axis == 0 ? DrivenTransformProperties.SizeDeltaX : DrivenTransformProperties.SizeDeltaY));
+            m_Tracker.Add(this, rectTransform, axis == 0 ? DrivenTransformProperties.SizeDeltaX : DrivenTransformProperties.SizeDeltaY);
 
             // Set size to min or preferred size
-            if (fitting == FitMode.MinSize)
-                rectTransform.SetSizeWithCurrentAnchors((RectTransform.Axis)axis, LayoutUtility.GetMinSize(m_Rect, axis));
-            else
-                rectTransform.SetSizeWithCurrentAnchors((RectTransform.Axis)axis, LayoutUtility.GetPreferredSize(m_Rect, axis));
+            var size = fitting switch
+            {
+                FitMode.MinSize => LayoutUtility.GetMinSize(m_Rect, axis),
+                FitMode.PreferredSize => LayoutUtility.GetPreferredSize(m_Rect, axis),
+                _ => throw new System.ArgumentOutOfRangeException(nameof(fitting), fitting, null)
+            };
+            rectTransform.SetSizeWithCurrentAnchors((RectTransform.Axis) axis, size);
         }
 
         /// <summary>
@@ -126,11 +105,10 @@ namespace UnityEngine.UI
         }
 
     #if UNITY_EDITOR
-        protected virtual void OnValidate()
+        void OnValidate()
         {
             SetDirty();
         }
-
     #endif
     }
 }
