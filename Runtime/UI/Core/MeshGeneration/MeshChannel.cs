@@ -191,6 +191,12 @@ namespace UnityEngine.UI
         {
         }
 
+        public void SetUp(Vector2 uv, int count)
+        {
+            var data = SetUp(count);
+            Array.Fill(data, uv, 0, count);
+        }
+
         public void SetUp_Repeat(Vector2[] src, int repeat)
         {
             var count = src.Length;
