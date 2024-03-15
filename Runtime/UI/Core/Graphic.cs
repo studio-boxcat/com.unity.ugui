@@ -583,6 +583,8 @@ namespace UnityEngine.UI
             canvasRenderer.SetMesh(mesh);
         }
 
+        public void ForceUpdateGeometry() => UpdateGeometry();
+
         protected static Mesh workerMesh
         {
             get
