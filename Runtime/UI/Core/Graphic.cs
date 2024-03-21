@@ -5,7 +5,6 @@ using UnityEngine.Assertions;
 #if UNITY_EDITOR
 using System.Reflection;
 #endif
-using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
 
@@ -92,10 +91,10 @@ namespace UnityEngine.UI
 
         // Cached and saved values
         [FormerlySerializedAs("m_Mat")]
-        [ShowIf("m_Material_ShowIf")]
+        [ShowIf("@CanShow(GraphicPropertyFlag.Material)")]
         [SerializeField] protected Material m_Material;
 
-        [ShowIf("m_Color_ShowIf")]
+        [ShowIf("@CanShow(GraphicPropertyFlag.Color)")]
         [SerializeField] private Color m_Color = Color.white;
 
         [NonSerialized] protected bool m_SkipLayoutUpdate;
@@ -146,9 +145,17 @@ namespace UnityEngine.UI
         /// ]]>
         ///</code>
         /// </example>
-        public virtual Color color { get { return m_Color; } set { if (SetPropertyUtility.SetColor(ref m_Color, value)) SetVerticesDirty(); } }
+        public virtual Color color
+        {
+            get { return m_Color; }
+            set
+            {
+                if (SetPropertyUtility.SetColor(ref m_Color, value)) SetVerticesDirty();
+            }
+        }
 
-        [SerializeField, ShowIf("m_RaycastTarget_ShowIf")] private bool m_RaycastTarget = false;
+        [SerializeField, ShowIf("@CanShow(GraphicPropertyFlag.Raycast)")]
+        private bool m_RaycastTarget = false;
 
         protected RaycastRegisterLink m_RaycastRegisterLink;
 
@@ -157,10 +164,7 @@ namespace UnityEngine.UI
         /// </summary>
         public virtual bool raycastTarget
         {
-            get
-            {
-                return m_RaycastTarget;
-            }
+            get => m_RaycastTarget;
             set
             {
                 m_RaycastTarget = value;
@@ -176,7 +180,7 @@ namespace UnityEngine.UI
             }
         }
 
-        [SerializeField, ShowIf("m_RaycastPadding_ShowIf")]
+        [SerializeField, ShowIf("@CanShow(GraphicPropertyFlag.Raycast)")]
         private Vector4 m_RaycastPadding = new Vector4();
 
         /// <summary>
@@ -690,10 +694,7 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
-        protected virtual bool m_Material_ShowIf() => true;
-        protected virtual bool m_Color_ShowIf() => true;
-        protected virtual bool m_RaycastTarget_ShowIf() => true;
-        protected virtual bool m_RaycastPadding_ShowIf() => true;
+        bool CanShow(GraphicPropertyFlag flag) => GraphicPropertyVisible.IsVisible(GetType(), flag);
 #endif
     }
 }
