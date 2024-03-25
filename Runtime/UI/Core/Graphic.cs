@@ -155,6 +155,7 @@ namespace UnityEngine.UI
         }
 
         [SerializeField, ShowIf("@CanShow(GraphicPropertyFlag.Raycast)")]
+        [HorizontalGroup("RaycastTarget", DisableAutomaticLabelWidth = true)]
         private bool m_RaycastTarget = false;
 
         protected RaycastRegisterLink m_RaycastRegisterLink;
@@ -180,7 +181,8 @@ namespace UnityEngine.UI
             }
         }
 
-        [SerializeField, ShowIf("@CanShow(GraphicPropertyFlag.Raycast)")]
+        [SerializeField, ShowIf("@CanShow(GraphicPropertyFlag.Raycast) && m_RaycastTarget")]
+        [HorizontalGroup("RaycastTarget"), HideLabel]
         private Vector4 m_RaycastPadding = new Vector4();
 
         /// <summary>
