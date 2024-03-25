@@ -12,6 +12,8 @@ namespace UnityEngine.EventSystems
 
         public static bool Raycast(Vector2 screenPosition, Camera targetCamera, out RaycastResult raycastResult)
         {
+            // L.I($"Raycast: {screenPosition}, {targetCamera.name}");
+
             EnsureBufferCleared();
 
             // Raycaster 모으기.
