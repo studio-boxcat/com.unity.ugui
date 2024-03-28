@@ -267,9 +267,5 @@ namespace UnityEngine.UI
             m_ShouldRecalculateStencil = true;
             SetMaterialDirty();
         }
-
-#if UNITY_EDITOR
-        protected virtual bool m_Maskable_ShowIf() => true;
-#endif
     }
 }
