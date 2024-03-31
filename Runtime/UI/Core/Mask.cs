@@ -1,4 +1,5 @@
 using System;
+using JetBrains.Annotations;
 using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
 
@@ -14,7 +15,7 @@ namespace UnityEngine.UI
     /// <remarks>
     /// By using this element any children elements that have masking enabled will mask where a sibling Graphic would write 0 to the stencil buffer.
     /// </remarks>
-    public class Mask : UIBehaviour, ICanvasRaycastFilter, IMaterialModifier
+    public class Mask : UIBehaviour, IMaterialModifier
     {
         [NonSerialized]
         private RectTransform m_RectTransform;
@@ -28,7 +29,7 @@ namespace UnityEngine.UI
         /// </summary>
         public bool showMaskGraphic
         {
-            get { return m_ShowMaskGraphic; }
+            get => m_ShowMaskGraphic;
             set
             {
                 if (m_ShowMaskGraphic == value)
@@ -48,16 +49,12 @@ namespace UnityEngine.UI
         /// </summary>
         public Graphic graphic => m_Graphic ??= GetComponent<Graphic>();
 
-        [NonSerialized]
-        private Material m_MaskMaterial;
+        [NonSerialized, CanBeNull]
+        Material m_MaskMaterial;
+        [NonSerialized, CanBeNull]
+        Material m_UnmaskMaterial;
 
-        [NonSerialized]
-        private Material m_UnmaskMaterial;
-
-        protected Mask()
-        {}
-
-        public virtual bool MaskEnabled() { return IsActive() && graphic != null; }
+        public bool MaskEnabled() { return IsActive() && graphic != null; }
 
         protected virtual void OnEnable()
         {
@@ -67,8 +64,8 @@ namespace UnityEngine.UI
                 graphic.SetMaterialDirty();
 
                 // Default the graphic to being the maskable graphic if its found.
-                if (graphic is MaskableGraphic)
-                    (graphic as MaskableGraphic).isMaskingGraphic = true;
+                if (graphic is MaskableGraphic maskableGraphic)
+                    maskableGraphic.isMaskingGraphic = true;
             }
 
             MaskUtilities.NotifyStencilStateChanged(this);
@@ -86,14 +83,17 @@ namespace UnityEngine.UI
                 graphic.canvasRenderer.hasPopInstruction = false;
                 graphic.canvasRenderer.popMaterialCount = 0;
 
-                if (graphic is MaskableGraphic)
-                    (graphic as MaskableGraphic).isMaskingGraphic = false;
+                if (graphic is MaskableGraphic maskableGraphic)
+                    maskableGraphic.isMaskingGraphic = false;
             }
 
-            StencilMaterial.Remove(m_MaskMaterial);
-            m_MaskMaterial = null;
-            StencilMaterial.Remove(m_UnmaskMaterial);
-            m_UnmaskMaterial = null;
+            if (m_MaskMaterial is not null)
+            {
+                StencilMaterial.Remove(m_MaskMaterial);
+                StencilMaterial.Remove(m_UnmaskMaterial);
+                m_MaskMaterial = null;
+                m_UnmaskMaterial = null;
+            }
 
             MaskUtilities.NotifyStencilStateChanged(this);
         }
@@ -104,27 +104,17 @@ namespace UnityEngine.UI
             if (!IsActive())
                 return;
 
-            if (graphic != null)
+            if (graphic is not null)
             {
                 // Default the graphic to being the maskable graphic if its found.
-                if (graphic is MaskableGraphic)
-                    (graphic as MaskableGraphic).isMaskingGraphic = true;
-
+                if (graphic is MaskableGraphic maskableGraphic)
+                    maskableGraphic.isMaskingGraphic = true;
                 graphic.SetMaterialDirty();
             }
 
             MaskUtilities.NotifyStencilStateChanged(this);
         }
-
 #endif
-
-        public virtual bool IsRaycastLocationValid(Vector2 sp, Camera eventCamera)
-        {
-            if (!isActiveAndEnabled)
-                return true;
-
-            return RectTransformUtility.RectangleContainsScreenPoint(rectTransform, sp, eventCamera);
-        }
 
         /// Stencil calculation time!
         public virtual Material GetModifiedMaterial(Material baseMaterial)
@@ -132,45 +122,41 @@ namespace UnityEngine.UI
             if (!MaskEnabled())
                 return baseMaterial;
 
-            var rootSortCanvas = MaskUtilities.FindRootSortOverrideCanvas(transform);
-            var stencilDepth = MaskUtilities.GetStencilDepth(transform, rootSortCanvas);
+            var stencilDepth = MaskUtilities.GetStencilDepth(transform);
             if (stencilDepth >= 8)
             {
                 Debug.LogWarning("Attempting to use a stencil mask with depth > 8", gameObject);
                 return baseMaterial;
             }
 
-            int desiredStencilBit = 1 << stencilDepth;
             var renderer = graphic.canvasRenderer;
+            var oldMaskMaterial = m_MaskMaterial;
+            var oldUnmaskMaterial = m_UnmaskMaterial;
 
             // if we are at the first level...
             // we want to destroy what is there
+            var desiredStencilBit = 1 << stencilDepth;
             if (desiredStencilBit == 1)
             {
-                var maskMaterial = StencilMaterial.Add(baseMaterial, 1, StencilOp.Replace, CompareFunction.Always, m_ShowMaskGraphic ? ColorWriteMask.All : 0);
-                StencilMaterial.Remove(m_MaskMaterial);
-                m_MaskMaterial = maskMaterial;
-
-                var unmaskMaterial = StencilMaterial.Add(baseMaterial, 1, StencilOp.Zero, CompareFunction.Always, 0);
-                StencilMaterial.Remove(m_UnmaskMaterial);
-                m_UnmaskMaterial = unmaskMaterial;
-                renderer.popMaterialCount = 1;
-                renderer.SetPopMaterial(m_UnmaskMaterial, 0);
-
-                return m_MaskMaterial;
+                m_MaskMaterial = StencilMaterial.Add(baseMaterial, 1, StencilOp.Replace, CompareFunction.Always, m_ShowMaskGraphic ? ColorWriteMask.All : 0);
+                m_UnmaskMaterial = StencilMaterial.Add(baseMaterial, 1, StencilOp.Zero, CompareFunction.Always, 0);
+            }
+            //otherwise we need to be a bit smarter and set some read / write masks
+            else
+            {
+                m_MaskMaterial = StencilMaterial.Add(baseMaterial, desiredStencilBit | (desiredStencilBit - 1), StencilOp.Replace, CompareFunction.Equal, m_ShowMaskGraphic ? ColorWriteMask.All : 0, desiredStencilBit - 1, desiredStencilBit | (desiredStencilBit - 1));
+                m_UnmaskMaterial = StencilMaterial.Add(baseMaterial, desiredStencilBit - 1, StencilOp.Replace, CompareFunction.Equal, 0, desiredStencilBit - 1, desiredStencilBit | (desiredStencilBit - 1));
+                renderer.hasPopInstruction = true;
             }
 
-            //otherwise we need to be a bit smarter and set some read / write masks
-            var maskMaterial2 = StencilMaterial.Add(baseMaterial, desiredStencilBit | (desiredStencilBit - 1), StencilOp.Replace, CompareFunction.Equal, m_ShowMaskGraphic ? ColorWriteMask.All : 0, desiredStencilBit - 1, desiredStencilBit | (desiredStencilBit - 1));
-            StencilMaterial.Remove(m_MaskMaterial);
-            m_MaskMaterial = maskMaterial2;
-
-            renderer.hasPopInstruction = true;
-            var unmaskMaterial2 = StencilMaterial.Add(baseMaterial, desiredStencilBit - 1, StencilOp.Replace, CompareFunction.Equal, 0, desiredStencilBit - 1, desiredStencilBit | (desiredStencilBit - 1));
-            StencilMaterial.Remove(m_UnmaskMaterial);
-            m_UnmaskMaterial = unmaskMaterial2;
             renderer.popMaterialCount = 1;
             renderer.SetPopMaterial(m_UnmaskMaterial, 0);
+
+            if (oldMaskMaterial is not null)
+            {
+                StencilMaterial.Remove(oldMaskMaterial);
+                StencilMaterial.Remove(oldUnmaskMaterial);
+            }
 
             return m_MaskMaterial;
         }

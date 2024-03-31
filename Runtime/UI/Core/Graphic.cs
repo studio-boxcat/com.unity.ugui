@@ -373,7 +373,7 @@ namespace UnityEngine.UI
 
         private void CacheCanvas()
         {
-            m_Canvas = ComponentSearch.SearchActiveAndEnabledParentOrSelfComponent<Canvas>(this);
+            m_Canvas = ComponentSearch.SearchEnabledParentOrSelfComponent<Canvas>(this);
         }
 
         /// <summary>
@@ -497,6 +497,48 @@ namespace UnityEngine.UI
                 /// When we were culled, we potentially skipped calls to <c>Rebuild</c>.
                 CanvasUpdateRegistry.RegisterCanvasElementForGraphicRebuild(this);
             }
+        }
+
+        /// <summary>
+        /// See IClippable.Cull
+        /// </summary>
+        public virtual void Cull(Rect clipRect, bool validRect)
+        {
+            if (validRect is false)
+            {
+                UpdateCull(true);
+                return;
+            }
+
+            var graphicRect = CanvasUtils.GetRectInCanvas(rectTransform, canvas);
+            var cull = !clipRect.Overlaps(graphicRect);
+            UpdateCull(cull);
+        }
+
+        protected void UpdateCull(bool cull)
+        {
+            if (canvasRenderer.cull != cull)
+            {
+                canvasRenderer.cull = cull;
+                UISystemProfilerApi.AddMarker("MaskableGraphic.cullingChanged", this);
+                OnCullingChanged();
+            }
+        }
+
+        /// <summary>
+        /// See IClippable.SetClipRect
+        /// </summary>
+        public void SetClipRect(Rect clipRect, bool validRect)
+        {
+            if (validRect)
+                canvasRenderer.EnableRectClipping(clipRect);
+            else
+                canvasRenderer.DisableRectClipping();
+        }
+
+        public void SetClipSoftness(Vector2 clipSoftness)
+        {
+            canvasRenderer.clippingSoftness = clipSoftness;
         }
 
         /// <summary>

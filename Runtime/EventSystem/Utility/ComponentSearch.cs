@@ -6,7 +6,7 @@ namespace UnityEngine.EventSystems
 {
     public static class ComponentSearch
     {
-        public static T SearchActiveAndEnabledParentOrSelfComponent<T>(Component root) where T : Behaviour
+        public static T SearchEnabledParentOrSelfComponent<T>(Component root) where T : Behaviour
         {
             while (true)
             {
@@ -17,7 +17,7 @@ namespace UnityEngine.EventSystems
                     return null;
 
                 // Found valid component, break.
-                if (comp.isActiveAndEnabled)
+                if (comp.enabled)
                     return comp;
 
                 // Go up hierarchy.

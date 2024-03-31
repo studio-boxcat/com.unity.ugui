@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
+using UnityEngine.Assertions;
 using UnityEngine.EventSystems;
-using UnityEngine.Pool;
 
 namespace UnityEngine.UI
 {
@@ -21,33 +22,20 @@ namespace UnityEngine.UI
     /// *Requires fewer draw calls
     /// *Culls elements that are outside the mask area.
     /// </remarks>
-    public class RectMask2D : UIBehaviour, IClipper, ICanvasRaycastFilter
+    public sealed class RectMask2D : UIBehaviour, ICanvasRaycastFilter
     {
         [NonSerialized]
-        private readonly RectangularVertexClipper m_VertexClipper = new RectangularVertexClipper();
+        RectTransform _rectTransform;
+        public RectTransform rectTransform => _rectTransform ??= GetComponent<RectTransform>();
 
         [NonSerialized]
-        private RectTransform m_RectTransform;
+        readonly HashSet<Graphic> _targets = new(ReferenceEqualityComparer.Object);
 
-        [NonSerialized]
-        private HashSet<MaskableGraphic> m_MaskableTargets = new HashSet<MaskableGraphic>();
-
-        [NonSerialized]
-        private HashSet<IClippable> m_ClipTargets = new HashSet<IClippable>();
-
-        [NonSerialized]
-        private bool m_ShouldRecalculateClipRects;
-
-        [NonSerialized]
-        private List<RectMask2D> m_Clippers = new List<RectMask2D>();
-
-        [NonSerialized]
-        private Rect m_LastClipRectCanvasSpace;
-        [NonSerialized]
-        private bool m_ForceClip;
+        [NonSerialized] Rect _lastClipRect;
+        [NonSerialized] bool _forceClip;
 
         [SerializeField]
-        private Vector4 m_Padding = new Vector4();
+        Vector4 m_Padding;
 
         /// <summary>
         /// Padding to be applied to the masking
@@ -58,7 +46,7 @@ namespace UnityEngine.UI
         /// </summary>
         public Vector4 padding
         {
-            get { return m_Padding; }
+            get => m_Padding;
             set
             {
                 m_Padding = value;
@@ -67,14 +55,14 @@ namespace UnityEngine.UI
         }
 
         [SerializeField]
-        private Vector2Int m_Softness;
+        Vector2Int m_Softness;
 
         /// <summary>
         /// The softness to apply to the horizontal and vertical axis.
         /// </summary>
         public Vector2Int softness
         {
-            get { return m_Softness;  }
+            get => m_Softness;
             set
             {
                 m_Softness.x = Mathf.Max(0, value.x);
@@ -86,263 +74,123 @@ namespace UnityEngine.UI
         /// <remarks>
         /// Returns a non-destroyed instance or a null reference.
         /// </remarks>
-        [NonSerialized] private Canvas m_Canvas;
-        internal Canvas Canvas
+        [NonSerialized, CanBeNull] Canvas _canvas;
+        public Canvas Canvas => _canvas ??= ComponentSearch.SearchEnabledParentOrSelfComponent<Canvas>(this);
+
+        void OnEnable()
         {
-            get
-            {
-                if (m_Canvas == null)
-                {
-                    var list = ListPool<Canvas>.Get();
-                    gameObject.GetComponentsInParent(false, list);
-                    if (list.Count > 0)
-                        m_Canvas = list[list.Count - 1];
-                    else
-                        m_Canvas = null;
-                    ListPool<Canvas>.Release(list);
-                }
-
-                return m_Canvas;
-            }
-        }
-
-        /// <summary>
-        /// Get the Rect for the mask in canvas space.
-        /// </summary>
-        public Rect canvasRect
-        {
-            get
-            {
-                return m_VertexClipper.GetCanvasRect(rectTransform, Canvas);
-            }
-        }
-
-        /// <summary>
-        /// Helper function to get the RectTransform for the mask.
-        /// </summary>
-        public RectTransform rectTransform
-        {
-            get { return m_RectTransform ?? (m_RectTransform = GetComponent<RectTransform>()); }
-        }
-
-        protected RectMask2D()
-        {}
-
-        protected virtual void OnEnable()
-        {
-            m_ShouldRecalculateClipRects = true;
             ClipperRegistry.Register(this);
             MaskUtilities.Notify2DMaskStateChanged(this);
         }
 
-        protected virtual void OnDisable()
+        void OnDisable()
         {
             // we call base OnDisable first here
             // as we need to have the IsActive return the
             // correct value when we notify the children
             // that the mask state has changed.
-            m_ClipTargets.Clear();
-            m_MaskableTargets.Clear();
-            m_Clippers.Clear();
+            _targets.Clear();
             ClipperRegistry.Unregister(this);
             MaskUtilities.Notify2DMaskStateChanged(this);
         }
 
 #if UNITY_EDITOR
-        protected virtual void OnValidate()
+        void OnValidate()
         {
-            m_ShouldRecalculateClipRects = true;
-
             // Dont allow negative softness.
             m_Softness.x = Mathf.Max(0, m_Softness.x);
             m_Softness.y = Mathf.Max(0, m_Softness.y);
 
-            if (!IsActive())
-                return;
-
-            MaskUtilities.Notify2DMaskStateChanged(this);
+            if (isActiveAndEnabled)
+                MaskUtilities.Notify2DMaskStateChanged(this);
         }
-
 #endif
 
-        public virtual bool IsRaycastLocationValid(Vector2 sp, Camera eventCamera)
+        public bool IsRaycastLocationValid(Vector2 sp, Camera eventCamera)
         {
-            if (!isActiveAndEnabled)
-                return true;
-
+            Assert.IsTrue(isActiveAndEnabled, "Can't check raycast for disabled mask.");
             return RectTransformUtility.RectangleContainsScreenPoint(rectTransform, sp, eventCamera, m_Padding);
         }
 
-        private Vector3[] m_Corners = new Vector3[4];
-
-        private Rect rootCanvasRect
+        public void PerformClipping()
         {
-            get
-            {
-                rectTransform.GetWorldCorners(m_Corners);
-
-                if (!ReferenceEquals(Canvas, null))
-                {
-                    Canvas rootCanvas = Canvas.rootCanvas;
-                    for (int i = 0; i < 4; ++i)
-                        m_Corners[i] = rootCanvas.transform.InverseTransformPoint(m_Corners[i]);
-                }
-
-                return new Rect(m_Corners[0].x, m_Corners[0].y, m_Corners[2].x - m_Corners[0].x, m_Corners[2].y - m_Corners[0].y);
-            }
-        }
-
-        public virtual void PerformClipping()
-        {
-            if (ReferenceEquals(Canvas, null))
-            {
+            var canvas = Canvas;
+            if (ReferenceEquals(canvas, null))
                 return;
-            }
 
             //TODO See if an IsActive() test would work well here or whether it might cause unexpected side effects (re case 776771)
 
-            // if the parents are changed
-            // or something similar we
-            // do a recalculate here
-            if (m_ShouldRecalculateClipRects)
-            {
-                MaskUtilities.GetRectMasksForClip(this, m_Clippers);
-                m_ShouldRecalculateClipRects = false;
-            }
-
             // get the compound rects from
             // the clippers that are valid
-            bool validRect = true;
-            Rect clipRect = Clipping.FindCullAndClipWorldRect(m_Clippers, out validRect);
+            var clipRect = CanvasUtils.GetRectInCanvas(
+                rectTransform, canvas, padding, out var validRect);
 
-            // If the mask is in ScreenSpaceOverlay/Camera render mode, its content is only rendered when its rect
-            // overlaps that of the root canvas.
-            RenderMode renderMode = Canvas.rootCanvas.renderMode;
-            bool maskIsCulled =
-                (renderMode == RenderMode.ScreenSpaceCamera || renderMode == RenderMode.ScreenSpaceOverlay) &&
-                !clipRect.Overlaps(rootCanvasRect, true);
-
-            if (maskIsCulled)
+            if (clipRect != _lastClipRect)
             {
-                // Children are only displayed when inside the mask. If the mask is culled, then the children
-                // inside the mask are also culled. In that situation, we pass an invalid rect to allow callees
-                // to avoid some processing.
-                clipRect = Rect.zero;
-                validRect = false;
-            }
-
-            if (clipRect != m_LastClipRectCanvasSpace)
-            {
-                foreach (IClippable clipTarget in m_ClipTargets)
+                foreach (var target in _targets)
                 {
-                    clipTarget.SetClipRect(clipRect, validRect);
-                }
-
-                foreach (MaskableGraphic maskableTarget in m_MaskableTargets)
-                {
-                    maskableTarget.SetClipRect(clipRect, validRect);
-                    maskableTarget.Cull(clipRect, validRect);
+                    target.SetClipRect(clipRect, validRect);
+                    target.Cull(clipRect, validRect);
                 }
             }
-            else if (m_ForceClip)
+            else if (_forceClip)
             {
-                foreach (IClippable clipTarget in m_ClipTargets)
+                foreach (var target in _targets)
                 {
-                    clipTarget.SetClipRect(clipRect, validRect);
-                }
+                    target.SetClipRect(clipRect, validRect);
 
-                foreach (MaskableGraphic maskableTarget in m_MaskableTargets)
-                {
-                    maskableTarget.SetClipRect(clipRect, validRect);
-
-                    if (maskableTarget.canvasRenderer.hasMoved)
-                        maskableTarget.Cull(clipRect, validRect);
+                    if (target.canvasRenderer.hasMoved)
+                        target.Cull(clipRect, validRect);
                 }
             }
             else
             {
-                foreach (MaskableGraphic maskableTarget in m_MaskableTargets)
+                foreach (var target in _targets)
                 {
                     //Case 1170399 - hasMoved is not a valid check when animating on pivot of the object
-                    maskableTarget.Cull(clipRect, validRect);
+                    target.Cull(clipRect, validRect);
                 }
             }
 
-            m_LastClipRectCanvasSpace = clipRect;
-            m_ForceClip = false;
+            _lastClipRect = clipRect;
+            _forceClip = false;
 
             UpdateClipSoftness();
         }
 
-        public virtual void UpdateClipSoftness()
+        public void UpdateClipSoftness()
         {
-            if (ReferenceEquals(Canvas, null))
-            {
+            if (Canvas is null)
                 return;
-            }
 
-            foreach (IClippable clipTarget in m_ClipTargets)
-            {
-                clipTarget.SetClipSoftness(m_Softness);
-            }
-
-            foreach (MaskableGraphic maskableTarget in m_MaskableTargets)
-            {
+            foreach (var maskableTarget in _targets)
                 maskableTarget.SetClipSoftness(m_Softness);
-            }
         }
 
         /// <summary>
         /// Add a IClippable to be tracked by the mask.
         /// </summary>
-        /// <param name="clippable">Add the clippable object for this mask</param>
-        public void AddClippable(IClippable clippable)
+        /// <param name="target">Add the clippable object for this mask</param>
+        public void AddClippable(Graphic target)
         {
-            if (clippable == null)
-                return;
-            m_ShouldRecalculateClipRects = true;
-            MaskableGraphic maskable = clippable as MaskableGraphic;
-
-            if (maskable == null)
-                m_ClipTargets.Add(clippable);
-            else
-                m_MaskableTargets.Add(maskable);
-
-            m_ForceClip = true;
+            Assert.IsTrue(target is not null, "Given IClippable is null");
+            _targets.Add(target);
+            _forceClip = true;
         }
 
         /// <summary>
         /// Remove an IClippable from being tracked by the mask.
         /// </summary>
         /// <param name="clippable">Remove the clippable object from this mask</param>
-        public void RemoveClippable(IClippable clippable)
+        public void RemoveClippable(Graphic clippable)
         {
-            if (clippable == null)
-                return;
-
-            m_ShouldRecalculateClipRects = true;
+            Assert.IsTrue(clippable is not null, "Given IClippable is null");
             clippable.SetClipRect(new Rect(), false);
-
-            MaskableGraphic maskable = clippable as MaskableGraphic;
-
-            if (maskable == null)
-                m_ClipTargets.Remove(clippable);
-            else
-                m_MaskableTargets.Remove(maskable);
-
-            m_ForceClip = true;
+            _targets.Remove(clippable);
+            _forceClip = true;
         }
 
-        protected virtual void OnTransformParentChanged()
-        {
-            m_Canvas = null;
-            m_ShouldRecalculateClipRects = true;
-        }
-
-        protected virtual void OnCanvasHierarchyChanged()
-        {
-            m_Canvas = null;
-            m_ShouldRecalculateClipRects = true;
-        }
+        void OnTransformParentChanged() => _canvas = null;
+        void OnCanvasHierarchyChanged() => _canvas = null;
     }
 }

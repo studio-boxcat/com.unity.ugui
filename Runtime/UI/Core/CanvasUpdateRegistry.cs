@@ -135,7 +135,7 @@ namespace UnityEngine.UI
 
             // now layout is complete do culling...
             Profiling.Profiler.BeginSample(m_CullingUpdateProfilerString);
-            ClipperRegistry.instance.Cull();
+            ClipperRegistry.Cull();
             Profiling.Profiler.EndSample();
 
 

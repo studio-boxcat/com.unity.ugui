@@ -55,7 +55,7 @@ namespace UnityEngine.UI
         /// </remarks>
         public bool isMaskingGraphic
         {
-            get { return m_IsMaskingGraphic; }
+            get => m_IsMaskingGraphic;
             set
             {
                 if (value == m_IsMaskingGraphic)
@@ -77,14 +77,7 @@ namespace UnityEngine.UI
 
             if (m_ShouldRecalculateStencil)
             {
-                if (maskable)
-                {
-                    var rootCanvas = MaskUtilities.FindRootSortOverrideCanvas(transform);
-                    m_StencilValue = MaskUtilities.GetStencilDepth(transform, rootCanvas);
-                }
-                else
-                    m_StencilValue = 0;
-
+                m_StencilValue = maskable ? MaskUtilities.GetStencilDepth(transform) : 0;
                 m_ShouldRecalculateStencil = false;
             }
 
@@ -101,41 +94,6 @@ namespace UnityEngine.UI
             return toUse;
         }
 
-        /// <summary>
-        /// See IClippable.Cull
-        /// </summary>
-        public virtual void Cull(Rect clipRect, bool validRect)
-        {
-            var cull = !validRect || !clipRect.Overlaps(rootCanvasRect, true);
-            UpdateCull(cull);
-        }
-
-        private void UpdateCull(bool cull)
-        {
-            if (canvasRenderer.cull != cull)
-            {
-                canvasRenderer.cull = cull;
-                UISystemProfilerApi.AddMarker("MaskableGraphic.cullingChanged", this);
-                OnCullingChanged();
-            }
-        }
-
-        /// <summary>
-        /// See IClippable.SetClipRect
-        /// </summary>
-        public virtual void SetClipRect(Rect clipRect, bool validRect)
-        {
-            if (validRect)
-                canvasRenderer.EnableRectClipping(clipRect);
-            else
-                canvasRenderer.DisableRectClipping();
-        }
-
-        public virtual void SetClipSoftness(Vector2 clipSoftness)
-        {
-            canvasRenderer.clippingSoftness = clipSoftness;
-        }
-
         protected override void OnEnable()
         {
             base.OnEnable();
@@ -144,9 +102,7 @@ namespace UnityEngine.UI
             SetMaterialDirty();
 
             if (isMaskingGraphic)
-            {
                 MaskUtilities.NotifyStencilStateChanged(this);
-            }
         }
 
         protected override void OnDisable()
@@ -155,13 +111,15 @@ namespace UnityEngine.UI
             m_ShouldRecalculateStencil = true;
             SetMaterialDirty();
             UpdateClipParent();
-            StencilMaterial.Remove(m_MaskMaterial);
-            m_MaskMaterial = null;
+
+            if (m_MaskMaterial is not null)
+            {
+                StencilMaterial.Remove(m_MaskMaterial);
+                m_MaskMaterial = null;
+            }
 
             if (isMaskingGraphic)
-            {
                 MaskUtilities.NotifyStencilStateChanged(this);
-            }
         }
 
 #if UNITY_EDITOR
@@ -172,7 +130,6 @@ namespace UnityEngine.UI
             UpdateClipParent();
             SetMaterialDirty();
         }
-
 #endif
 
         protected override void OnTransformParentChanged()
@@ -197,36 +154,6 @@ namespace UnityEngine.UI
             m_ShouldRecalculateStencil = true;
             UpdateClipParent();
             SetMaterialDirty();
-        }
-
-        readonly Vector3[] m_Corners = new Vector3[4];
-        private Rect rootCanvasRect
-        {
-            get
-            {
-                rectTransform.GetWorldCorners(m_Corners);
-
-                if (canvas)
-                {
-                    Matrix4x4 mat = canvas.rootCanvas.transform.worldToLocalMatrix;
-                    for (int i = 0; i < 4; ++i)
-                        m_Corners[i] = mat.MultiplyPoint(m_Corners[i]);
-                }
-
-                // bounding box is now based on the min and max of all corners (case 1013182)
-
-                Vector2 min = m_Corners[0];
-                Vector2 max = m_Corners[0];
-                for (int i = 1; i < 4; i++)
-                {
-                    min.x = Mathf.Min(m_Corners[i].x, min.x);
-                    min.y = Mathf.Min(m_Corners[i].y, min.y);
-                    max.x = Mathf.Max(m_Corners[i].x, max.x);
-                    max.y = Mathf.Max(m_Corners[i].y, max.y);
-                }
-
-                return new Rect(min, max - min);
-            }
         }
 
         private void UpdateClipParent()
@@ -258,12 +185,16 @@ namespace UnityEngine.UI
         /// <summary>
         /// See IMaskable.RecalculateMasking
         /// </summary>
-        public virtual void RecalculateMasking()
+        public void RecalculateMasking()
         {
             // Remove the material reference as either the graphic of the mask has been enable/ disabled.
             // This will cause the material to be repopulated from the original if need be. (case 994413)
-            StencilMaterial.Remove(m_MaskMaterial);
-            m_MaskMaterial = null;
+            if (m_MaskMaterial is not null)
+            {
+                StencilMaterial.Remove(m_MaskMaterial);
+                m_MaskMaterial = null;
+            }
+
             m_ShouldRecalculateStencil = true;
             SetMaterialDirty();
         }

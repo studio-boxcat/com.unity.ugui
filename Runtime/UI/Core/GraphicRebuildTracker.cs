@@ -38,7 +38,6 @@ namespace UnityEngine.UI
 
         static void OnRebuildRequested()
         {
-            StencilMaterial.ClearAll();
             foreach (var graphic in m_Tracked)
                 graphic.OnRebuildRequested();
         }

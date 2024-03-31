@@ -8,7 +8,7 @@ namespace UnityEngine.UI
         {
             while (t is not null)
             {
-                var canvasGroup = ComponentSearch.SearchActiveAndEnabledParentOrSelfComponent<CanvasGroup>(t);
+                var canvasGroup = ComponentSearch.SearchEnabledParentOrSelfComponent<CanvasGroup>(t);
                 if (canvasGroup is null)
                     return true;
 

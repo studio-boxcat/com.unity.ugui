@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Diagnostics;
+using UnityEngine.Bindings;
 using UnityEngine.Rendering;
 
 namespace UnityEngine.UI
@@ -9,22 +11,29 @@ namespace UnityEngine.UI
     /// </summary>
     public static class StencilMaterial
     {
-        private class MatEntry
+        class MatEntry
         {
             public Material baseMat;
             public Material customMat;
-            public int count; // ref count
+            public int refCount;
 
             public int stencilId;
             public StencilOp operation = StencilOp.Keep;
             public CompareFunction compareFunction = CompareFunction.Always;
             public int readMask;
             public int writeMask;
-            public bool useAlphaClip;
             public ColorWriteMask colorMask;
         }
 
-        private static List<MatEntry> m_List = new List<MatEntry>();
+        static readonly List<MatEntry> m_List = new();
+
+        static readonly int _stencil = Shader.PropertyToID("_Stencil");
+        static readonly int _stencilOp = Shader.PropertyToID("_StencilOp");
+        static readonly int _stencilComp = Shader.PropertyToID("_StencilComp");
+        static readonly int _stencilReadMask = Shader.PropertyToID("_StencilReadMask");
+        static readonly int _stencilWriteMask = Shader.PropertyToID("_StencilWriteMask");
+        static readonly int _colorMask = Shader.PropertyToID("_ColorMask");
+        static readonly int _useUIAlphaClip = Shader.PropertyToID("_UseUIAlphaClip");
 
         /// <summary>
         /// Add a new material using the specified base and stencil ID.
@@ -32,13 +41,6 @@ namespace UnityEngine.UI
         public static Material Add(Material baseMat, int stencilID, StencilOp operation, CompareFunction compareFunction, ColorWriteMask colorWriteMask)
         {
             return Add(baseMat, stencilID, operation, compareFunction, colorWriteMask, 255, 255);
-        }
-
-        static void LogWarningWhenNotInBatchmode(string warning, Object context)
-        {
-            // Do not log warnings in batchmode (case 1350059)
-            if (!Application.isBatchMode)
-                Debug.LogWarning(warning, context);
         }
 
         /// <summary>
@@ -49,43 +51,20 @@ namespace UnityEngine.UI
             if ((stencilID <= 0 && colorWriteMask == ColorWriteMask.All) || baseMat == null)
                 return baseMat;
 
-            if (!baseMat.HasProperty("_Stencil"))
-            {
-                LogWarningWhenNotInBatchmode("Material " + baseMat.name + " doesn't have _Stencil property", baseMat);
-                return baseMat;
-            }
-            if (!baseMat.HasProperty("_StencilOp"))
-            {
-                LogWarningWhenNotInBatchmode("Material " + baseMat.name + " doesn't have _StencilOp property", baseMat);
-                return baseMat;
-            }
-            if (!baseMat.HasProperty("_StencilComp"))
-            {
-                LogWarningWhenNotInBatchmode("Material " + baseMat.name + " doesn't have _StencilComp property", baseMat);
-                return baseMat;
-            }
-            if (!baseMat.HasProperty("_StencilReadMask"))
-            {
-                LogWarningWhenNotInBatchmode("Material " + baseMat.name + " doesn't have _StencilReadMask property", baseMat);
-                return baseMat;
-            }
-            if (!baseMat.HasProperty("_StencilWriteMask"))
-            {
-                LogWarningWhenNotInBatchmode("Material " + baseMat.name + " doesn't have _StencilWriteMask property", baseMat);
-                return baseMat;
-            }
-            if (!baseMat.HasProperty("_ColorMask"))
-            {
-                LogWarningWhenNotInBatchmode("Material " + baseMat.name + " doesn't have _ColorMask property", baseMat);
-                return baseMat;
-            }
+#if DEBUG
+            CheckPropertyExists(baseMat, _stencil);
+            CheckPropertyExists(baseMat, _stencilOp);
+            CheckPropertyExists(baseMat, _stencilComp);
+            CheckPropertyExists(baseMat, _stencilReadMask);
+            CheckPropertyExists(baseMat, _stencilWriteMask);
+            CheckPropertyExists(baseMat, _colorMask);
+#endif
 
-            var listCount = m_List.Count;
-            for (int i = 0; i < listCount; ++i)
+            // If we have a pre-existing entry matching the description,
+            // just increase the ref count and return the material.
+            foreach (var ent in m_List)
             {
-                MatEntry ent = m_List[i];
-
-                if (ent.baseMat == baseMat
+                if (ReferenceEquals(ent.baseMat, baseMat)
                     && ent.stencilId == stencilID
                     && ent.operation == operation
                     && ent.compareFunction == compareFunction
@@ -93,65 +72,72 @@ namespace UnityEngine.UI
                     && ent.writeMask == writeMask
                     && ent.colorMask == colorWriteMask)
                 {
-                    ++ent.count;
+                    ++ent.refCount;
                     return ent.customMat;
                 }
             }
 
             var newEnt = new MatEntry();
-            newEnt.count = 1;
+            newEnt.refCount = 1;
             newEnt.baseMat = baseMat;
             newEnt.customMat = new Material(baseMat);
-            newEnt.customMat.hideFlags = HideFlags.HideAndDontSave;
+
             newEnt.stencilId = stencilID;
             newEnt.operation = operation;
             newEnt.compareFunction = compareFunction;
             newEnt.readMask = readMask;
             newEnt.writeMask = writeMask;
             newEnt.colorMask = colorWriteMask;
-            newEnt.useAlphaClip = operation != StencilOp.Keep && writeMask > 0;
 
-#if UNITY_EDITOR
-            newEnt.customMat.name = string.Format(
-                "Stencil Id:{0}, Op:{1}, Comp:{2}, WriteMask:{3}, ReadMask:{4}, ColorMask:{5} AlphaClip:{6} ({7})",
-                stencilID, operation, compareFunction, writeMask, readMask, colorWriteMask, newEnt.useAlphaClip, baseMat.name);
+
+            var newMat = newEnt.customMat;
+            newMat.hideFlags = HideFlags.HideAndDontSave; // Prevent material from unloading.
+#if DEBUG
+            newMat.name = $"{baseMat.name} (Stencil Id:{stencilID}, Op:{operation}, Comp:{compareFunction}, WriteMask:{writeMask}, ReadMask:{readMask}, ColorMask:{colorWriteMask})";
 #endif
+            newMat.SetFloat(_stencil, stencilID);
+            newMat.SetFloat(_stencilOp, (float) operation);
+            newMat.SetFloat(_stencilComp, (float) compareFunction);
+            newMat.SetFloat(_stencilReadMask, readMask);
+            newMat.SetFloat(_stencilWriteMask, writeMask);
+            newMat.SetFloat(_colorMask, (float) colorWriteMask);
 
-            newEnt.customMat.SetFloat("_Stencil", (float)stencilID);
-            newEnt.customMat.SetFloat("_StencilOp", (float)operation);
-            newEnt.customMat.SetFloat("_StencilComp", (float)compareFunction);
-            newEnt.customMat.SetFloat("_StencilReadMask", (float)readMask);
-            newEnt.customMat.SetFloat("_StencilWriteMask", (float)writeMask);
-            newEnt.customMat.SetFloat("_ColorMask", (float)colorWriteMask);
-            newEnt.customMat.SetFloat("_UseUIAlphaClip", newEnt.useAlphaClip ? 1.0f : 0.0f);
-
-            if (newEnt.useAlphaClip)
-                newEnt.customMat.EnableKeyword("UNITY_UI_ALPHACLIP");
+            var useAlphaClip = operation != StencilOp.Keep && writeMask > 0;
+            if (useAlphaClip)
+            {
+                newMat.SetFloat(_useUIAlphaClip, 1);
+                newMat.EnableKeyword("UNITY_UI_ALPHACLIP");
+            }
             else
-                newEnt.customMat.DisableKeyword("UNITY_UI_ALPHACLIP");
+            {
+                newMat.SetFloat(_useUIAlphaClip, 0);
+                newMat.DisableKeyword("UNITY_UI_ALPHACLIP");
+            }
 
             m_List.Add(newEnt);
-            return newEnt.customMat;
+
+            LogInfo("Stencil material created: " + newMat.name, baseMat);
+            return newMat;
         }
 
         /// <summary>
         /// Remove an existing material, automatically cleaning it up if it's no longer in use.
         /// </summary>
-        public static void Remove(Material customMat)
+        public static void Remove([NotNull] Material customMat)
         {
             if (customMat == null)
                 return;
 
             var listCount = m_List.Count;
-            for (int i = 0; i < listCount; ++i)
+            for (var i = 0; i < listCount; ++i)
             {
-                MatEntry ent = m_List[i];
-
-                if (ent.customMat != customMat)
+                var ent = m_List[i];
+                if (ReferenceEquals(ent.customMat, customMat) is false)
                     continue;
 
-                if (--ent.count == 0)
+                if (--ent.refCount == 0)
                 {
+                    LogInfo("Stencil material destroyed: " + customMat.name, ent.baseMat);
                     Misc.DestroyImmediate(ent.customMat);
                     ent.baseMat = null;
                     m_List.RemoveAt(i);
@@ -160,17 +146,18 @@ namespace UnityEngine.UI
             }
         }
 
-        public static void ClearAll()
+        [Conditional("DEBUG")]
+        static void LogInfo(string message, Object context)
         {
-            var listCount = m_List.Count;
-            for (int i = 0; i < listCount; ++i)
-            {
-                MatEntry ent = m_List[i];
-
-                Misc.DestroyImmediate(ent.customMat);
-                ent.baseMat = null;
-            }
-            m_List.Clear();
+            Debug.Log("[UGUI] " + message, context);
         }
+
+#if DEBUG
+        static void CheckPropertyExists(Material mat, int id)
+        {
+            if (mat.HasProperty(id)) return;
+            Debug.LogWarning("[UGUI] Material " + mat.name + " doesn't have " + id + " property", mat);
+        }
+#endif
     }
 }
