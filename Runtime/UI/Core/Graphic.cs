@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
 #if UNITY_EDITOR
@@ -16,67 +17,6 @@ namespace UnityEngine.UI
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform))]
     [ExecuteAlways]
-    /// <summary>
-    ///   Base class for all visual UI Component.
-    ///   When creating visual UI components you should inherit from this class.
-    /// </summary>
-    /// <example>
-    /// Below is a simple example that draws a colored quad inside the Rect Transform area.
-    /// <code>
-    /// <![CDATA[
-    /// using UnityEngine;
-    /// using UnityEngine.UI;
-    ///
-    /// [ExecuteInEditMode]
-    /// public class SimpleImage : Graphic
-    /// {
-    ///     protected override void OnPopulateMesh(VertexHelper vh)
-    ///     {
-    ///         Vector2 corner1 = Vector2.zero;
-    ///         Vector2 corner2 = Vector2.zero;
-    ///
-    ///         corner1.x = 0f;
-    ///         corner1.y = 0f;
-    ///         corner2.x = 1f;
-    ///         corner2.y = 1f;
-    ///
-    ///         corner1.x -= rectTransform.pivot.x;
-    ///         corner1.y -= rectTransform.pivot.y;
-    ///         corner2.x -= rectTransform.pivot.x;
-    ///         corner2.y -= rectTransform.pivot.y;
-    ///
-    ///         corner1.x *= rectTransform.rect.width;
-    ///         corner1.y *= rectTransform.rect.height;
-    ///         corner2.x *= rectTransform.rect.width;
-    ///         corner2.y *= rectTransform.rect.height;
-    ///
-    ///         vh.Clear();
-    ///
-    ///         UIVertex vert = UIVertex.simpleVert;
-    ///
-    ///         vert.position = new Vector2(corner1.x, corner1.y);
-    ///         vert.color = color;
-    ///         vh.AddVert(vert);
-    ///
-    ///         vert.position = new Vector2(corner1.x, corner2.y);
-    ///         vert.color = color;
-    ///         vh.AddVert(vert);
-    ///
-    ///         vert.position = new Vector2(corner2.x, corner2.y);
-    ///         vert.color = color;
-    ///         vh.AddVert(vert);
-    ///
-    ///         vert.position = new Vector2(corner2.x, corner1.y);
-    ///         vert.color = color;
-    ///         vh.AddVert(vert);
-    ///
-    ///         vh.AddTriangle(0, 1, 2);
-    ///         vh.AddTriangle(2, 3, 0);
-    ///     }
-    /// }
-    /// ]]>
-    ///</code>
-    /// </example>
     public abstract class Graphic
         : UIBehaviour,
             ICanvasElement
@@ -147,7 +87,7 @@ namespace UnityEngine.UI
         /// </example>
         public virtual Color color
         {
-            get { return m_Color; }
+            get => m_Color;
             set
             {
                 if (SetPropertyUtility.SetColor(ref m_Color, value)) SetVerticesDirty();
@@ -340,7 +280,7 @@ namespace UnityEngine.UI
         ///
         /// This value is used to determine draw and event ordering.
         /// </example>
-        public int depth { get { return canvasRenderer.absoluteDepth; } }
+        public int depth => canvasRenderer.absoluteDepth;
 
         /// <summary>
         /// The RectTransform component used by the Graphic. Cached for speed.
@@ -738,6 +678,7 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
+        [UsedImplicitly]
         bool CanShow(GraphicPropertyFlag flag) => GraphicPropertyVisible.IsVisible(GetType(), flag);
 #endif
     }
