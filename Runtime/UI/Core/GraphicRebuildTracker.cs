@@ -1,5 +1,5 @@
 #if UNITY_EDITOR
-using UnityEngine.UI.Collections;
+using System.Collections.Generic;
 
 namespace UnityEngine.UI
 {
@@ -9,7 +9,7 @@ namespace UnityEngine.UI
     /// </summary>
     public static class GraphicRebuildTracker
     {
-        static IndexedSet<Graphic> m_Tracked = new();
+        static HashSet<Graphic> m_Tracked = new(ReferenceEqualityComparer.Object);
         static bool s_Initialized;
 
         /// <summary>
