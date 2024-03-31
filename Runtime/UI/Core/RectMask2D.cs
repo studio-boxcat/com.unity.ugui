@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
 using UnityEngine.EventSystems;
 
@@ -23,6 +24,9 @@ namespace UnityEngine.UI
     /// *Culls elements that are outside the mask area.
     /// </remarks>
     public sealed class RectMask2D : UIBehaviour, ICanvasRaycastFilter
+#if UNITY_EDITOR
+        , ISelfValidator
+#endif
     {
         [NonSerialized]
         RectTransform _rectTransform;
@@ -192,5 +196,15 @@ namespace UnityEngine.UI
 
         void OnTransformParentChanged() => _canvas = null;
         void OnCanvasHierarchyChanged() => _canvas = null;
+
+
+#if UNITY_EDITOR
+        void ISelfValidator.Validate(SelfValidationResult result)
+        {
+            // ReSharper disable once Unity.NoNullPropagation
+            if (transform.parent?.GetComponentInParent<RectMask2D>() is not null)
+                result.AddError("RectMask2D nesting is not supported.");
+        }
+#endif
     }
 }
