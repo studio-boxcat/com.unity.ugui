@@ -10,22 +10,11 @@ namespace UnityEngine.UI
     /// </summary>
     public class GraphicRegistry
     {
-        private static GraphicRegistry s_Instance;
+        static GraphicRegistry s_Instance;
+        public static GraphicRegistry instance => s_Instance ??= new GraphicRegistry();
 
-        private readonly CanvasDictionary m_RaycastableGraphics = new(8);
 
-        /// <summary>
-        /// The singleton instance of the GraphicRegistry. Creates a new instance if it does not exist.
-        /// </summary>
-        public static GraphicRegistry instance
-        {
-            get
-            {
-                if (s_Instance == null)
-                    s_Instance = new GraphicRegistry();
-                return s_Instance;
-            }
-        }
+        readonly CanvasDictionary m_RaycastableGraphics = new(8);
 
         /// <summary>
         /// Associates a raycastable Graphic with a Canvas and stores this association in the registry.
