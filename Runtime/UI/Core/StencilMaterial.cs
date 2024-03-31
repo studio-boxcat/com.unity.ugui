@@ -128,21 +128,26 @@ namespace UnityEngine.UI
             if (customMat == null)
                 return;
 
-            var listCount = m_List.Count;
-            for (var i = 0; i < listCount; ++i)
+            // Iterate in reverse order as the most recently added materials are most likely to be removed.
+            var count = m_List.Count;
+            for (var i = count - 1; i >= 0; i--)
             {
                 var ent = m_List[i];
+
                 if (ReferenceEquals(ent.customMat, customMat) is false)
                     continue;
 
-                if (--ent.refCount == 0)
+                var noRef = --ent.refCount is 0;
+
+                // Destroy material if no longer in use.
+                // Keep some instances in the list to reduce allocations.
+                if (noRef && count > 4)
                 {
-                    LogInfo("Stencil material destroyed: " + customMat.name, ent.baseMat);
+                    LogInfo("Stencil material destroyed: " + ent.customMat.name, ent.baseMat);
                     Misc.DestroyImmediate(ent.customMat);
                     ent.baseMat = null;
                     m_List.RemoveAt(i);
                 }
-                return;
             }
         }
 
