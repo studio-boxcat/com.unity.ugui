@@ -81,7 +81,7 @@ namespace UnityEngine
             for (var i = components.Count - 1; i >= 0; i--)
             {
                 var component = components[i];
-                if (component is Behaviour {isActiveAndEnabled: false})
+                if (component is Behaviour { enabled: false })
                     components.RemoveAt(i);
             }
         }
