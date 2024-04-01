@@ -6,19 +6,19 @@ namespace UnityEngine
 {
     public static class ComponentSearch
     {
-        public static T SearchEnabledParentOrSelfComponent<T>(Component root) where T : Behaviour
+        public static T SearchEnabledParentOrSelfComponent<T>(Component root) where T : class
         {
             while (true)
             {
-                var comp = root.GetComponentInParent<T>(true); // Do not skip inactive parents.
+                var comp = root.GetComponentInParent(typeof(T), true); // Do not skip inactive parents.
 
                 // Reached top of hierarchy, break.
                 if (comp is null)
                     return null;
 
                 // Found valid component, break.
-                if (comp.enabled)
-                    return comp;
+                if (comp is Behaviour { enabled: true })
+                    return comp as T;
 
                 // Go up hierarchy.
                 root = comp.transform.parent;
