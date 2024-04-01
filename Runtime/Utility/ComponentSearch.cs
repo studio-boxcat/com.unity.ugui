@@ -1,11 +1,13 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 using UnityEngine.Assertions;
 
 namespace UnityEngine
 {
     public static class ComponentSearch
     {
+        [CanBeNull]
         public static T SearchEnabledParentOrSelfComponent<T>(Component root) where T : class
         {
             while (true)
