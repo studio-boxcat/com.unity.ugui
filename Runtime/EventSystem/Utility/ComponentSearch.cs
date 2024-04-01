@@ -10,7 +10,7 @@ namespace UnityEngine.EventSystems
         {
             while (true)
             {
-                var comp = root.GetComponentInParent<T>(false);
+                var comp = root.GetComponentInParent<T>(true); // Do not skip inactive parents.
 
                 // Reached top of hierarchy, break.
                 if (comp is null)
