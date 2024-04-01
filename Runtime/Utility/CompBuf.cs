@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 
-namespace UnityEngine.EventSystems
+namespace UnityEngine
 {
     public readonly struct CompBufScope : IDisposable
     {
