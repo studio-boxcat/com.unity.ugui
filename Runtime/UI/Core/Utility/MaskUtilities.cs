@@ -85,11 +85,11 @@ namespace UnityEngine.UI
             // Handle most common cases.
             {
                 // No mask at all.
-                var mask = t.GetComponentInParent<RectMask2D>(false);
+                var mask = t.GetComponentInParent<RectMask2D>(true); // Do not skip inactive.
                 if (mask is null) return null;
 
-                // There is a mask, and it's located on the same canvas with the graphic.
-                if (ReferenceEquals(mask.Canvas, clippable.canvas))
+                // There is a enabled mask, and it's located on the same canvas with the graphic.
+                if (mask.enabled && ReferenceEquals(mask.Canvas, clippable.canvas))
                     return mask;
             }
 
