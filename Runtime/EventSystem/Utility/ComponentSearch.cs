@@ -1,32 +1,10 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using UnityEngine.Assertions;
 
 namespace UnityEngine.EventSystems
 {
     public static class ComponentSearch
     {
-        public static T SearchEnabledParentOrSelfComponent<T>(Component root) where T : Behaviour
-        {
-            while (true)
-            {
-                var comp = root.GetComponentInParent<T>(false);
-
-                // Reached top of hierarchy, break.
-                if (comp is null)
-                    return null;
-
-                // Found valid component, break.
-                if (comp.enabled)
-                    return comp;
-
-                // Go up hierarchy.
-                root = comp.transform.parent;
-                if (root is null) // Reached top of hierarchy, break.
-                    return null;
-            }
-        }
-
         // Dedicated component buffer for ValidController().
         static readonly List<Component> _compBuf = new();
 
@@ -75,22 +53,6 @@ namespace UnityEngine.EventSystems
         public static bool AnyActiveAndEnabledComponent<T>(Transform target)
         {
             return AnyActiveAndEnabledComponent<T>(target.gameObject);
-        }
-
-        public static void GetEnabledComponents<T>(Component target, List<Component> components)
-        {
-            Assert.AreEqual(0, components.Count);
-
-            // Get all components.
-            target.GetComponents(typeof(T), components);
-
-            // Remove disabled components.
-            for (var i = components.Count - 1; i >= 0; i--)
-            {
-                var comp = components[i];
-                if (!((Behaviour) comp).isActiveAndEnabled)
-                    components.RemoveAt(i);
-            }
         }
     }
 }
