@@ -1,3 +1,5 @@
+using UnityEngine.EventSystems;
+
 namespace UnityEngine.UI
 {
     public static class CanvasGroupUtils
@@ -6,7 +8,7 @@ namespace UnityEngine.UI
         {
             while (t is not null)
             {
-                var canvasGroup = t.GetComponentInParent<CanvasGroup>(false);
+                var canvasGroup = ComponentSearch.SearchEnabledParentOrSelfComponent<CanvasGroup>(t);
                 if (canvasGroup is null)
                     return true;
 

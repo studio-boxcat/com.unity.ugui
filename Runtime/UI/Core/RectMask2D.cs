@@ -79,7 +79,7 @@ namespace UnityEngine.UI
         /// Returns a non-destroyed instance or a null reference.
         /// </remarks>
         [NonSerialized, CanBeNull] Canvas _canvas;
-        public Canvas Canvas => _canvas ??= GetComponentInParent<Canvas>(false);
+        public Canvas Canvas => _canvas ??= ComponentSearch.SearchEnabledParentOrSelfComponent<Canvas>(this);
 
         void OnEnable()
         {

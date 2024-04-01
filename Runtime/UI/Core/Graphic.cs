@@ -313,7 +313,7 @@ namespace UnityEngine.UI
 
         private void CacheCanvas()
         {
-            m_Canvas = GetComponentInParent<Canvas>(false);
+            m_Canvas = ComponentSearch.SearchEnabledParentOrSelfComponent<Canvas>(this);
         }
 
         /// <summary>
