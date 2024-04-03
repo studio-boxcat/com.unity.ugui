@@ -450,7 +450,7 @@ namespace UnityEngine.UI
                 return;
             }
 
-            var graphicRect = CanvasUtils.GetRectInCanvas(rectTransform, canvas);
+            var graphicRect = CanvasUtils.BoundingRect(rectTransform, canvas);
             var cull = !clipRect.Overlaps(graphicRect);
             UpdateCull(cull);
         }

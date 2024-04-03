@@ -126,7 +126,7 @@ namespace UnityEngine.UI
 
             // get the compound rects from
             // the clippers that are valid
-            var clipRect = CanvasUtils.GetRectInCanvas(
+            var clipRect = CanvasUtils.BoundingRect(
                 rectTransform, canvas, padding, out var validRect);
 
             if (clipRect != _lastClipRect)
