@@ -39,6 +39,9 @@ namespace UnityEngine.UI
 
         static Rect BoundingRect(Rect r, RectTransform rectTransform, Canvas canvas)
         {
+            // XXX: Graphic clipping & culling is done in root canvas space.
+            canvas = canvas.rootCanvas;
+
             // Local space corners.
             var l0 = new Vector2(r.xMin, r.yMin);
             var l1 = new Vector2(r.xMax, r.yMax);
