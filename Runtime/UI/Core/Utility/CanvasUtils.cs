@@ -47,10 +47,10 @@ namespace UnityEngine.UI
 
             // Convert to canvas space.
             var mat = canvas.transform.worldToLocalMatrix * rectTransform.localToWorldMatrix;
-            Vector2 w0 = mat.MultiplyPoint(l0); // Only need x and y.
-            Vector2 w1 = mat.MultiplyPoint(l1);
-            Vector2 w2 = mat.MultiplyPoint(l2);
-            Vector2 w3 = mat.MultiplyPoint(l3);
+            var w0 = mat.MultiplyPoint2D(l0); // Only need x and y.
+            var w1 = mat.MultiplyPoint2D(l1);
+            var w2 = mat.MultiplyPoint2D(l2);
+            var w3 = mat.MultiplyPoint2D(l3);
 
             // Get min and max.
             var minX = Min(w0.x, w1.x, w2.x, w3.x);
@@ -61,6 +61,17 @@ namespace UnityEngine.UI
 
             static float Min(float a, float b, float c, float d) => Mathf.Min(Mathf.Min(a, b), Mathf.Min(c, d));
             static float Max(float a, float b, float c, float d) => Mathf.Max(Mathf.Max(a, b), Mathf.Max(c, d));
+        }
+
+        static Vector2 MultiplyPoint2D(this Matrix4x4 mat, Vector2 point)
+        {
+            Vector2 v;
+            v.x = (float) (mat.m00 * (double) point.x + mat.m01 * (double) point.y) + mat.m03;
+            v.y = (float) (mat.m10 * (double) point.x + mat.m11 * (double) point.y) + mat.m13;
+            var num = 1f / ((float) (mat.m30 * (double) point.x + mat.m31 * (double) point.y) + mat.m33);
+            v.x *= num;
+            v.y *= num;
+            return v;
         }
     }
 }
