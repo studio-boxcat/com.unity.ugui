@@ -28,6 +28,13 @@ namespace UnityEngine.EventSystems
                 _raycasterBuffer.Add(RaycasterComparisonData.Rent(module, eventCamera));
             }
 
+            // If there's no raycaster, return false.
+            if (_raycasterBuffer.Count == 0)
+            {
+                raycastResult = default;
+                return false;
+            }
+
             try
             {
                 _raycasterBuffer.Sort(RaycasterComparer.Instance);
@@ -35,8 +42,16 @@ namespace UnityEngine.EventSystems
             catch (Exception e)
             {
                 _raycasterBuffer.Clear(); // XXX: _raycasterBuffer 가 오염되었기 때문에 _pool 로 반환하지 않음.
-                Debug.LogWarning(e.InnerException.Message);
+                L.W(e.InnerException?.Message);
                 raycastResult = default;
+                return false;
+            }
+
+            if (_raycasterBuffer[^1].RendererDepth is -1)
+            {
+                L.W("[QuickRaycast] Aborting raycast because there's a CanvasRenderer that is not initialized.");
+                raycastResult = default;
+                ClearBuffers();
                 return false;
             }
 
@@ -161,7 +176,8 @@ namespace UnityEngine.EventSystems
             int _sortingLayerValue = int.MaxValue;
             int _sortingOrder = int.MaxValue;
             Canvas _rootCanvas;
-            int _canvasRendererDepth = int.MaxValue;
+            int _rendererDepth = int.MaxValue;
+            public int RendererDepth => _rendererDepth != int.MaxValue ? _rendererDepth : Raycaster.GetComponent<CanvasRenderer>().absoluteDepth;
 
 
             public RaycasterComparisonData(BaseRaycaster raycaster, Camera eventCamera)
@@ -183,7 +199,7 @@ namespace UnityEngine.EventSystems
                 _sortingLayerValue = int.MaxValue;
                 _sortingOrder = int.MaxValue;
                 _rootCanvas = default;
-                _canvasRendererDepth = int.MaxValue;
+                _rendererDepth = int.MaxValue;
             }
 
             public override string ToString() => $"{Raycaster.name} ({Camera.name})";
@@ -287,19 +303,16 @@ namespace UnityEngine.EventSystems
                     return false;
                 }
 
-                if (_canvasRendererDepth == int.MaxValue)
-                    _canvasRendererDepth = Canvas.GetComponent<CanvasRenderer>().absoluteDepth;
-                if (other._canvasRendererDepth == int.MaxValue)
-                    other._canvasRendererDepth = other.Canvas.GetComponent<CanvasRenderer>().absoluteDepth;
-
-                if (_canvasRendererDepth != other._canvasRendererDepth)
+                var a = RendererDepth;
+                var b = other.RendererDepth;
+                if (a != b)
                 {
-                    compareResult = other._canvasRendererDepth.CompareTo(_canvasRendererDepth);
+                    compareResult = b.CompareTo(a);
                     return true;
                 }
                 else
                 {
-                    Assert.AreEqual(-1, _canvasRendererDepth, "CanvasRenderer is initialized but there's other renderer with the same depth.");
+                    Assert.AreEqual(-1, a, "CanvasRenderer is initialized but there's other renderer with the same depth.");
                     compareResult = default;
                     return false;
                 }
