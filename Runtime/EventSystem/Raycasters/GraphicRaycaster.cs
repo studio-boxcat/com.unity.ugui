@@ -91,7 +91,7 @@ namespace UnityEngine.EventSystems
                         && RaycastUtils.IsEligibleForRaycast(t, pointerPosition, eventCamera))
                     {
                         L.W("Aborting raycast since the blocking Graphic is not initialized yet.");
-                        result = graphic;
+                        result = default;
                         return false;
                     }
                 }
