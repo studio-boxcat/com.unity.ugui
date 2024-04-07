@@ -91,10 +91,12 @@ namespace UnityEngine.UI
 
         public void SetUp_Empty()
         {
+            // ReSharper disable MustUseReturnValue
             Poses.SetUp(0);
             UVs.SetUp(0);
             Colors.SetUp(0);
             Indices.SetUp(0);
+            // ReSharper restore MustUseReturnValue
         }
 
         [MustUseReturnValue]
