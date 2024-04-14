@@ -15,5 +15,10 @@ namespace UnityEngine.EventSystems
         {
             Debug.LogWarning(message, context);
         }
+
+        public static void E(string message, Object context = null)
+        {
+            Debug.LogError(message, context);
+        }
     }
 }

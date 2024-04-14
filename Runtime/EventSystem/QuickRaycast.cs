@@ -8,13 +8,16 @@ namespace UnityEngine.EventSystems
     public static class QuickRaycast
     {
         static readonly List<RaycasterComparisonData> _raycasterBuffer = new();
-        static readonly Dictionary<Camera, bool> _eligibleCameraCache = new(ReferenceEqualityComparer.Object);
 
         public static bool Raycast(Vector2 screenPosition, Camera targetCamera, out RaycastResult raycastResult)
         {
             // L.I($"Raycast: {screenPosition}, {targetCamera.name}");
 
-            EnsureBufferCleared();
+            if (_raycasterBuffer.Count is not 0)
+            {
+                L.E("[QuickRaycast] _raycasterBuffer is not empty.");
+                ClearBuffer();
+            }
 
             // Raycaster 모으기.
             var modules = RaycasterManager.GetRaycasters();
@@ -51,7 +54,7 @@ namespace UnityEngine.EventSystems
             {
                 L.W("[QuickRaycast] Aborting raycast because there's a CanvasRenderer that is not initialized.");
                 raycastResult = default;
-                ClearBuffers();
+                ClearBuffer();
                 return false;
             }
 
@@ -61,13 +64,13 @@ namespace UnityEngine.EventSystems
                 var raycaster = item.Raycaster;
                 if (Raycast(raycaster, item, screenPosition, out raycastResult))
                 {
-                    ClearBuffers();
+                    ClearBuffer();
                     return true;
                 }
             }
 
             raycastResult = default;
-            ClearBuffers();
+            ClearBuffer();
             return false;
 
             static bool Raycast(
@@ -90,27 +93,11 @@ namespace UnityEngine.EventSystems
             return Raycast(screenPosition, null, out raycastResult);
         }
 
-        private static void EnsureBufferCleared()
-        {
-            if (_raycasterBuffer.Count > 0)
-            {
-                Debug.LogError("_raycasterBuffer 가 비어있지 않습니다.");
-                ClearBuffers();
-            }
-
-            if (_eligibleCameraCache.Count > 0)
-            {
-                Debug.LogError("_eligibleCameraCache 가 비어있지 않습니다.");
-                ClearBuffers();
-            }
-        }
-
-        private static void ClearBuffers()
+        private static void ClearBuffer()
         {
             foreach (var item in _raycasterBuffer)
                 RaycasterComparisonData.Release(item);
             _raycasterBuffer.Clear();
-            _eligibleCameraCache.Clear();
         }
 
         private static bool RaycastToGraphicRaycaster(
@@ -119,14 +106,6 @@ namespace UnityEngine.EventSystems
         {
             Assert.AreNotEqual(RenderMode.ScreenSpaceOverlay, canvas.renderMode);
             if (GraphicRegistry.TryGetRaycastableGraphicsForCanvas(canvas, out var graphics) == false)
-            {
-                raycastResult = default;
-                return false;
-            }
-
-            if (_eligibleCameraCache.TryGetValue(camera, out var isCameraEligible) == false)
-                isCameraEligible = _eligibleCameraCache[camera] = RaycastUtils.IsInside(camera, screenPosition);
-            if (isCameraEligible == false)
             {
                 raycastResult = default;
                 return false;

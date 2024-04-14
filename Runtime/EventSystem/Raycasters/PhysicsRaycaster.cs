@@ -55,14 +55,6 @@ namespace UnityEngine.EventSystems
         protected bool ComputeRayAndDistance(Vector2 screenPosition, out Ray ray, out float distance)
         {
             var eventCamera = m_EventCamera;
-
-            if (RaycastUtils.IsInside(eventCamera, screenPosition) == false)
-            {
-                ray = default;
-                distance = default;
-                return default;
-            }
-
             ray = eventCamera.ScreenPointToRay(screenPosition);
             distance = eventCamera.farClipPlane - eventCamera.nearClipPlane;
             return true;

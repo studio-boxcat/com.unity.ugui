@@ -47,13 +47,9 @@ namespace UnityEngine.EventSystems
             Assert.IsNotNull(currentEventCamera);
             Assert.AreNotEqual(RenderMode.ScreenSpaceOverlay, canvas.renderMode);
 
-            if (RaycastUtils.IsInside(currentEventCamera, screenPosition) == false)
-                return default;
-
-            if (Raycast(currentEventCamera, screenPosition, canvasGraphics, out var hitGraphic) == false)
-                return default;
-
-            return new RaycastResult(hitGraphic, this, screenPosition);
+            return Raycast(currentEventCamera, screenPosition, canvasGraphics, out var hitGraphic)
+                ? new RaycastResult(hitGraphic, this, screenPosition)
+                : default;
         }
 
         public override Camera eventCamera => m_Canvas.worldCamera;
