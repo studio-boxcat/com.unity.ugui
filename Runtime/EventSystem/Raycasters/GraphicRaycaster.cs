@@ -13,9 +13,6 @@ namespace UnityEngine.EventSystems
     [RequireComponent(typeof(Canvas))]
     [RequireComponent(typeof(CanvasRenderer))]
     public class GraphicRaycaster : BaseRaycaster
-#if UNITY_EDITOR
-        , ISelfValidator
-#endif
     {
         [SerializeField, Required, ChildGameObjectsOnly, NotNull]
         Canvas m_Canvas;
@@ -123,15 +120,6 @@ namespace UnityEngine.EventSystems
 
 #if UNITY_EDITOR
         void Reset() => TryGetComponent(out m_Canvas);
-
-        void ISelfValidator.Validate(SelfValidationResult result)
-        {
-            if (m_Canvas == null)
-                return;
-
-            if (m_Canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-                result.AddError("RenderMode.ScreenSpaceOverlay is not supported by GraphicRaycaster.");
-        }
 #endif
     }
 }
