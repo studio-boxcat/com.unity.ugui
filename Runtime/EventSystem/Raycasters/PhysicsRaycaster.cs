@@ -45,20 +45,6 @@ namespace UnityEngine.EventSystems
             get { return m_EventMask; }
             set { m_EventMask = value; }
         }
-
-        /// <summary>
-        /// Returns a ray going from camera through the event position and the distance between the near and far clipping planes along that ray.
-        /// </summary>
-        /// <param name="ray">The ray to use.</param>
-        /// <param name="distanceToClipPlane">The distance between the near and far clipping planes along the ray.</param>
-        /// <returns>True if the operation was successful. false if it was not possible to compute, such as the eventPosition being outside of the view.</returns>
-        protected bool ComputeRayAndDistance(Vector2 screenPosition, out Ray ray, out float distance)
-        {
-            var eventCamera = m_EventCamera;
-            ray = eventCamera.ScreenPointToRay(screenPosition);
-            distance = eventCamera.farClipPlane - eventCamera.nearClipPlane;
-            return true;
-        }
     }
 }
 #endif

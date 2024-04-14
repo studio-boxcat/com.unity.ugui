@@ -6,18 +6,21 @@ using UnityEngine.UI.Collections;
 
 namespace UnityEngine.EventSystems
 {
-    [AddComponentMenu("Event/Graphic Raycaster")]
-    [RequireComponent(typeof(Canvas))]
-    [RequireComponent(typeof(CanvasRenderer))]
     /// <summary>
     /// A derived BaseRaycaster to raycast against Graphic elements.
     /// </summary>
+    [AddComponentMenu("Event/Graphic Raycaster")]
+    [RequireComponent(typeof(Canvas))]
+    [RequireComponent(typeof(CanvasRenderer))]
     public class GraphicRaycaster : BaseRaycaster
+#if UNITY_EDITOR
+        , ISelfValidator
+#endif
     {
         [SerializeField, Required, ChildGameObjectsOnly, NotNull]
         Canvas m_Canvas;
-
         public Canvas canvas => m_Canvas;
+        public override Camera eventCamera => m_Canvas.worldCamera;
 
         private void Awake()
         {
@@ -32,32 +35,32 @@ namespace UnityEngine.EventSystems
         /// <summary>
         /// Perform the raycast against the list of graphics associated with the Canvas.
         /// </summary>
-        public override bool Raycast(Vector2 screenPosition, out RaycastResult result)
+        public override RaycastResultType Raycast(Vector2 screenPosition, out RaycastResult result)
         {
-            result = Raycast(screenPosition);
-            return result.collider is not null;
-        }
+            if (GraphicRegistry.TryGetRaycastableGraphicsForCanvas(m_Canvas, out var canvasGraphics) is false)
+            {
+                result = default;
+                return RaycastResultType.Miss;
+            }
 
-        private RaycastResult Raycast(Vector2 screenPosition)
-        {
-            if (GraphicRegistry.TryGetRaycastableGraphicsForCanvas(canvas, out var canvasGraphics) == false)
-                return default;
+            var camera = eventCamera; // Property can call Camera.main, so cache the reference
+            Assert.IsNotNull(camera);
+            Assert.AreNotEqual(RenderMode.ScreenSpaceOverlay, m_Canvas.renderMode);
 
-            var currentEventCamera = eventCamera; // Property can call Camera.main, so cache the reference
-            Assert.IsNotNull(currentEventCamera);
-            Assert.AreNotEqual(RenderMode.ScreenSpaceOverlay, canvas.renderMode);
-
-            return Raycast(currentEventCamera, screenPosition, canvasGraphics, out var hitGraphic)
-                ? new RaycastResult(hitGraphic, this, screenPosition)
+            var resultType = Raycast(camera, screenPosition, canvasGraphics, out var hitGraphic);
+            result = resultType is RaycastResultType.Hit
+                ? new RaycastResult(hitGraphic, camera, screenPosition)
                 : default;
+            return resultType;
         }
-
-        public override Camera eventCamera => m_Canvas.worldCamera;
 
         /// <summary>
         /// Perform a raycast into the screen and collect all graphics underneath it.
         /// </summary>
-        public static bool Raycast([NotNull] Camera eventCamera, Vector2 pointerPosition, IndexedSet<Graphic> foundGraphics, out Graphic result)
+        /// <returns>
+        /// Whether the raycast hits any graphics. Null if there's a blocking graphic that hasn't been initialized yet.
+        /// </returns>
+        static RaycastResultType Raycast([NotNull] Camera eventCamera, Vector2 pointerPosition, IndexedSet<Graphic> foundGraphics, out Graphic result)
         {
             // Necessary for the event system
             Graphic maxDepthGraphic = null;
@@ -71,50 +74,63 @@ namespace UnityEngine.EventSystems
                 // https://console.firebase.google.com/project/nyan-tower-306804/crashlytics/app/android:com.grapetree.meowtower/issues/3ad89d02972c2c5e2ac0a43fbd494aca?time=last-seven-days&versions=2.3.0%20(265);2.3.0%20(264)&sessionEventKey=648893B4006900014ABB0CF4090C225C_1822653280777558743
                 if (graphic == null)
                 {
-                    Debug.LogError("GraphicRaycaster found a null Graphic in its list during a raycast.");
+                    L.E("[GraphicRaycaster] Found a null Graphic in its list during a raycast.");
                     continue;
                 }
 
-                var graphicDepth = graphic.depth;
+                var renderer = graphic.canvasRenderer;
+                if (renderer.cull)
+                    continue;
+
                 var t = graphic.rectTransform;
+                var depth = renderer.absoluteDepth;
 
                 // If there's hit graphic but not initialized,
                 // we should abort the raycast since it could be block the raycast if it's initialized later.
-                if (graphicDepth is -1)
+                if (depth is -1)
                 {
-                    L.W("Uninitialized Graphic found: " + graphic.name, graphic);
-                    if (RectTransformUtility.RectangleContainsScreenPoint(t, pointerPosition, eventCamera, graphic.raycastPadding)
-                        && RaycastUtils.IsEligibleForRaycast(t, pointerPosition, eventCamera))
+                    L.W("[GraphicRaycaster] Uninitialized Graphic found: " + graphic.name, graphic);
+                    if (Hit(t, graphic, eventCamera, pointerPosition))
                     {
-                        L.W("Aborting raycast since the blocking Graphic is not initialized yet.");
+                        L.W("[GraphicRaycaster] Aborting raycast since the blocking Graphic is not initialized yet.", graphic);
                         result = default;
-                        return false;
+                        return RaycastResultType.Abort;
                     }
                 }
 
-                if (graphicDepth <= maxDepth)
-                    continue;
-
-                if (graphic.canvasRenderer.cull)
+                if (depth <= maxDepth)
                     continue;
 
                 // Check hit & eligibility.
-                if (RectTransformUtility.RectangleContainsScreenPoint(t, pointerPosition, eventCamera, graphic.raycastPadding)
-                    && RaycastUtils.IsEligibleForRaycast(t, pointerPosition, eventCamera))
+                if (Hit(t, graphic, eventCamera, pointerPosition))
                 {
                     maxDepthGraphic = graphic;
-                    maxDepth = graphicDepth;
+                    maxDepth = depth;
                 }
             }
 
             result = maxDepthGraphic;
-            return result is not null;
+            return result is not null
+                ? RaycastResultType.Hit
+                : RaycastResultType.Miss;
+
+            static bool Hit(RectTransform rt, Graphic graphic, Camera eventCamera, Vector2 pointerPosition)
+            {
+                return RectTransformUtility.RectangleContainsScreenPoint(rt, pointerPosition, eventCamera, graphic.raycastPadding)
+                       && RaycastUtils.IsEligibleForRaycast(rt, pointerPosition, eventCamera);
+            }
         }
 
 #if UNITY_EDITOR
-        private void Reset()
+        void Reset() => TryGetComponent(out m_Canvas);
+
+        void ISelfValidator.Validate(SelfValidationResult result)
         {
-            TryGetComponent(out m_Canvas);
+            if (m_Canvas == null)
+                return;
+
+            if (m_Canvas.renderMode == RenderMode.ScreenSpaceOverlay)
+                result.AddError("RenderMode.ScreenSpaceOverlay is not supported by GraphicRaycaster.");
         }
 #endif
     }

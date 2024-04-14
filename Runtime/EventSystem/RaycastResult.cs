@@ -15,28 +15,29 @@ namespace UnityEngine.EventSystems
         /// <summary>
         /// BaseRaycaster that raised the hit.
         /// </summary>
-        public BaseRaycaster module;
+        public Camera camera;
 
         /// <summary>
         /// The screen position from which the raycast was generated.
         /// </summary>
         public Vector2 screenPosition;
 
-        public RaycastResult(Component collider, BaseRaycaster module, Vector2 screenPosition)
+
+        public RaycastResult(Component collider, Camera camera, Vector2 screenPosition)
         {
             this.gameObject = collider?.gameObject;
             this.collider = collider;
-            this.module = module;
+            this.camera = camera;
             this.screenPosition = screenPosition;
         }
 
         public override string ToString()
         {
-            if (module == null || collider == null)
+            if (gameObject == null || camera == null)
                 return "";
 
-            return "Name: " + collider.name + "\n" +
-                   "module: " + module + "\n" +
+            return "Name: " + gameObject.name + "\n" +
+                   "camera: " + camera + "\n" +
                    "screenPosition: " + screenPosition;
         }
     }

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine.Assertions;
-using UnityEngine.UI;
 
 namespace UnityEngine.EventSystems
 {
@@ -62,63 +61,33 @@ namespace UnityEngine.EventSystems
             foreach (var item in _raycasterBuffer)
             {
                 var raycaster = item.Raycaster;
-                if (Raycast(raycaster, item, screenPosition, out raycastResult))
-                {
-                    ClearBuffer();
-                    return true;
-                }
+                var resultType = raycaster.Raycast(screenPosition, out raycastResult);
+
+                // If there's no hit graphic, continue to the next raycaster.
+                if (resultType is RaycastResultType.Miss)
+                    continue;
+
+                // If one of raycaster have hit graphic, return the result.
+                // Otherwise, if the hit graphic is not initialized yet, abort the whole raycast.
+                ClearBuffer();
+                return resultType is RaycastResultType.Hit;
             }
 
             raycastResult = default;
             ClearBuffer();
             return false;
 
-            static bool Raycast(
-                BaseRaycaster raycaster, RaycasterComparisonData data, Vector2 screenPosition,
-                out RaycastResult raycastResult)
+            static void ClearBuffer()
             {
-                // For GraphicRaycaster, we will call optimized Raycast method.
-                if (raycaster is GraphicRaycaster)
-                {
-                    return RaycastToGraphicRaycaster(raycaster, data.Camera, data.Canvas, screenPosition,
-                        out raycastResult);
-                }
-
-                return raycaster.Raycast(screenPosition, out raycastResult);
+                foreach (var item in _raycasterBuffer)
+                    RaycasterComparisonData.Release(item);
+                _raycasterBuffer.Clear();
             }
         }
 
         public static bool RaycastAll(Vector2 screenPosition, out RaycastResult raycastResult)
         {
             return Raycast(screenPosition, null, out raycastResult);
-        }
-
-        private static void ClearBuffer()
-        {
-            foreach (var item in _raycasterBuffer)
-                RaycasterComparisonData.Release(item);
-            _raycasterBuffer.Clear();
-        }
-
-        private static bool RaycastToGraphicRaycaster(
-            BaseRaycaster raycaster, Camera camera, Canvas canvas, Vector2 screenPosition,
-            out RaycastResult raycastResult)
-        {
-            Assert.AreNotEqual(RenderMode.ScreenSpaceOverlay, canvas.renderMode);
-            if (GraphicRegistry.TryGetRaycastableGraphicsForCanvas(canvas, out var graphics) == false)
-            {
-                raycastResult = default;
-                return false;
-            }
-
-            if (GraphicRaycaster.Raycast(camera, screenPosition, graphics, out var hitGraphic))
-            {
-                raycastResult = new RaycastResult(hitGraphic, raycaster, screenPosition);
-                return true;
-            }
-
-            raycastResult = default;
-            return false;
         }
 
         class RaycasterComparisonData

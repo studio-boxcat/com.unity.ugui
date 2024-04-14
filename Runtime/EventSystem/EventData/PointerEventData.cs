@@ -180,18 +180,12 @@ namespace UnityEngine.EventSystems
         /// <summary>
         /// The camera associated with the last OnPointerEnter event.
         /// </summary>
-        public Camera enterEventCamera
-        {
-            get { return pointerCurrentRaycast.module == null ? null : pointerCurrentRaycast.module.eventCamera; }
-        }
+        public Camera enterEventCamera => pointerCurrentRaycast.camera;
 
         /// <summary>
         /// The camera associated with the last OnPointerPress event.
         /// </summary>
-        public Camera pressEventCamera
-        {
-            get { return pointerPressRaycast.module == null ? null : pointerPressRaycast.module.eventCamera; }
-        }
+        public Camera pressEventCamera => pointerPressRaycast.camera;
 
         public override string ToString()
         {

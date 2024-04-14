@@ -265,24 +265,6 @@ namespace UnityEngine.UI
         }
 
         /// <summary>
-        /// Absolute depth of the graphic, used by rendering and events -- lowest to highest.
-        /// </summary>
-        /// <example>
-        /// The depth is relative to the first root canvas.
-        ///
-        /// Canvas
-        ///  Graphic - 1
-        ///  Graphic - 2
-        ///  Nested Canvas
-        ///     Graphic - 3
-        ///     Graphic - 4
-        ///  Graphic - 5
-        ///
-        /// This value is used to determine draw and event ordering.
-        /// </example>
-        public int depth => canvasRenderer.absoluteDepth;
-
-        /// <summary>
         /// The RectTransform component used by the Graphic. Cached for speed.
         /// </summary>
         public RectTransform rectTransform

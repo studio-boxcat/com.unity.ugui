@@ -1,5 +1,12 @@
 namespace UnityEngine.EventSystems
 {
+    public enum RaycastResultType : byte
+    {
+        Hit,
+        Miss,
+        Abort,
+    }
+
     /// <summary>
     /// Base class for any RayCaster.
     /// </summary>
@@ -12,7 +19,7 @@ namespace UnityEngine.EventSystems
         /// <summary>
         /// Raycast against the scene.
         /// </summary>
-        public abstract bool Raycast(Vector2 screenPosition, out RaycastResult result);
+        public abstract RaycastResultType Raycast(Vector2 screenPosition, out RaycastResult result);
 
         /// <summary>
         /// The camera that will generate rays for this raycaster.
