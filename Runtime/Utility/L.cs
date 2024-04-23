@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace UnityEngine.EventSystems
+namespace UnityEngine
 {
     static class L
     {
