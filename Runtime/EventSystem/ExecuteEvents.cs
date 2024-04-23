@@ -1,4 +1,5 @@
 using System;
+using JetBrains.Annotations;
 
 namespace UnityEngine.EventSystems
 {
@@ -41,8 +42,9 @@ namespace UnityEngine.EventSystems
                 executed = true;
 
 #if DEBUG
-                if (ReferenceEquals(functor, pointerClickHandler))
-                    Debug.Log("[UGUI] Click: " + target.name, target);
+                var actionName = GetActionName(functor);
+                if (actionName != null)
+                    L.I($"[UGUI] Pointer {actionName}: {target.name}", target);
 #endif
 
                 try
@@ -56,6 +58,20 @@ namespace UnityEngine.EventSystems
             }
 
             return executed;
+
+#if DEBUG
+            [CanBeNull]
+            static string GetActionName(PointerEventFunc<T> functor)
+            {
+                if (ReferenceEquals(functor, pointerClickHandler)) return "Click";
+                if (ReferenceEquals(functor, pointerDownHandler)) return "Down";
+                if (ReferenceEquals(functor, pointerUpHandler)) return "Up";
+                if (ReferenceEquals(functor, initializePotentialDrag)) return "Initialize Drag";
+                if (ReferenceEquals(functor, beginDragHandler)) return "Begin Drag";
+                if (ReferenceEquals(functor, endDragHandler)) return "End Drag";
+                return null;
+            }
+#endif
         }
 
         public static bool Execute<T>(GameObject target, BaseEventData eventData, BaseEventFunc<T> functor) where T : class, IEventSystemHandler
