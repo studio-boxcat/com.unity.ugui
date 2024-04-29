@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace UnityEngine.UI
 {
     /// <summary>
@@ -14,5 +16,20 @@ namespace UnityEngine.UI
         /// <param name="baseMaterial">The material that is to be modified</param>
         /// <returns>The modified material.</returns>
         Material GetModifiedMaterial(Material baseMaterial);
+    }
+
+    public static class MaterialModifierUtils
+    {
+        static readonly List<IMaterialModifier> _materialModifierBuf = new();
+
+        public static Material ResolveMaterialForRendering(Component comp, Material baseMaterial)
+        {
+            var currentMat = baseMaterial;
+            comp.GetComponents(_materialModifierBuf);
+            var count = _materialModifierBuf.Count;
+            for (var i = 0; i < count; i++)
+                currentMat = _materialModifierBuf[i].GetModifiedMaterial(currentMat);
+            return currentMat;
+        }
     }
 }

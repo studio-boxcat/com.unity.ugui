@@ -323,26 +323,13 @@ namespace UnityEngine.UI
             }
         }
 
-        static readonly List<IMaterialModifier> _materialModifierBuf = new();
-
         /// <summary>
         /// The material that will be sent for Rendering (Read only).
         /// </summary>
         /// <remarks>
         /// This is the material that actually gets sent to the CanvasRenderer. By default it's the same as [[Graphic.material]]. When extending Graphic you can override this to send a different material to the CanvasRenderer than the one set by Graphic.material. This is useful if you want to modify the user set material in a non destructive manner.
         /// </remarks>
-        public virtual Material materialForRendering
-        {
-            get
-            {
-                var currentMat = material;
-                GetComponents(_materialModifierBuf);
-                var count = _materialModifierBuf.Count;
-                for (var i = 0; i < count; i++)
-                    currentMat = _materialModifierBuf[i].GetModifiedMaterial(currentMat);
-                return currentMat;
-            }
-        }
+        public virtual Material materialForRendering => MaterialModifierUtils.ResolveMaterialForRendering(this, material);
 
         /// <summary>
         /// The graphic's texture. (Read Only).
