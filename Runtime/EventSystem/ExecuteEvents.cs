@@ -124,26 +124,25 @@ namespace UnityEngine.EventSystems
         /// <summary>
         /// Bubble the specified event on the game object, figuring out which object will actually receive the event.
         /// </summary>
+        [MustUseReturnValue, CanBeNull]
         public static GameObject GetEventHandler<T>(GameObject root) where T : class, IEventSystemHandler
         {
             if (root == null)
+                return null;
+
+            if (root.activeInHierarchy is false)
                 return null;
 
             var t = root.transform;
             do
             {
                 var go = t.gameObject;
-                if (CanHandleEvent(go))
+                if (ComponentSearch.AnyEnabledComponent<T>(go))
                     return go;
                 t = t.parent;
             } while (t is not null);
 
             return null;
-
-            static bool CanHandleEvent(GameObject go)
-            {
-                return go.activeInHierarchy && ComponentSearch.AnyActiveAndEnabledComponent<T>(go);
-            }
         }
     }
 }

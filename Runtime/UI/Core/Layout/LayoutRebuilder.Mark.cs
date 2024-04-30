@@ -20,6 +20,7 @@ namespace UnityEngine.UI
             rebuilder.Initialize(rebuildTarget);
             if (!CanvasUpdateRegistry.TryRegisterCanvasElementForLayoutRebuild(rebuilder))
                 LayoutBuildProxy.Release(rebuilder);
+            return;
 
             static RectTransform ResolveRebuildTarget(RectTransform rect)
             {
@@ -29,7 +30,7 @@ namespace UnityEngine.UI
                     return layoutRoot;
 
                 // If there is no layout root, we need to check if the rect itself is a ILayoutController.
-                if (ComponentSearch.AnyActiveAndEnabledComponent<ILayoutController>(rect))
+                if (ComponentSearch.AnyEnabledComponent<ILayoutController>(rect))
                     return rect;
 
                 return null;
@@ -44,7 +45,7 @@ namespace UnityEngine.UI
                 var parent = rect.parent as RectTransform;
                 while (parent is not null)
                 {
-                    if (ComponentSearch.AnyActiveAndEnabledComponent<ILayoutGroup>(parent) == false)
+                    if (ComponentSearch.AnyEnabledComponent<ILayoutGroup>(parent) == false)
                         return layoutRoot;
 
                     layoutRoot = parent;
