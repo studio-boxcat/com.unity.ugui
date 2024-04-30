@@ -38,11 +38,11 @@ namespace UnityEngine.UI
         [SerializeField, OnValueChanged(nameof(SetDirty))]
         FitMode m_VerticalFit = FitMode.Unconstrained;
 
-        [System.NonSerialized] private RectTransform m_Rect;
-        private RectTransform rectTransform => m_Rect ??= (RectTransform) transform;
+        [System.NonSerialized] RectTransform m_Rect;
+        RectTransform rectTransform => m_Rect ??= (RectTransform) transform;
 
         // field is never assigned warning
-        private DrivenRectTransformTracker m_Tracker;
+        DrivenRectTransformTracker m_Tracker;
 
         void OnEnable() => SetDirty();
 
@@ -57,7 +57,7 @@ namespace UnityEngine.UI
             SetDirty();
         }
 
-        private void HandleSelfFittingAlongAxis(int axis)
+        void HandleSelfFittingAlongAxis(int axis)
         {
             var fitting = axis == 0 ? m_HorizontalFit : m_VerticalFit;
             if (fitting == FitMode.Unconstrained)
@@ -96,7 +96,7 @@ namespace UnityEngine.UI
             HandleSelfFittingAlongAxis(1);
         }
 
-        protected void SetDirty()
+        void SetDirty()
         {
             if (!IsActive())
                 return;
