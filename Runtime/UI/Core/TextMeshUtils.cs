@@ -8,7 +8,7 @@ namespace UnityEngine.UI
     {
         static readonly List<UIVertex> _vertBuf = new();
 
-        public static void Translate(TextGenerator textGen, float pixelsPerUnit, MeshBuilder toFill)
+        public static void Translate(TextGenerator textGen, float pixelsPerUnit, float yOffset, MeshBuilder toFill)
         {
             // Vertex order:
             // 0 1
@@ -38,6 +38,7 @@ namespace UnityEngine.UI
             {
                 var v = _vertBuf[i];
                 var pos = v.position;
+                pos.y += yOffset;
                 pos.x *= unitsPerPixel;
                 pos.y *= unitsPerPixel;
                 poses[i] = pos;

@@ -12,7 +12,7 @@ namespace UnityEngine.UI
     {
         [SerializeField] private FontData m_FontData;
 
-        [TextArea(3, 10)][SerializeField] protected string m_Text = String.Empty;
+        [TextArea(3, 10)] [SerializeField] protected string m_Text = String.Empty;
 
         private TextGenerator m_TextCache;
         private TextGenerator m_TextCacheForLayout;
@@ -371,7 +371,7 @@ namespace UnityEngine.UI
                 // For non-dynamic fonts, calculate pixels per unit based on specified font size relative to font object's own font size.
                 if (m_FontData.fontSize <= 0 || font.fontSize <= 0)
                     return 1;
-                return font.fontSize / (float)m_FontData.fontSize;
+                return font.fontSize / (float) m_FontData.fontSize;
             }
         }
 
@@ -463,7 +463,7 @@ namespace UnityEngine.UI
             cachedTextGenerator.PopulateWithErrors(text, settings, gameObject);
             m_DisableFontTextureRebuiltCallback = false;
 
-            TextMeshUtils.Translate(cachedTextGenerator, pixelsPerUnit, toFill);
+            TextMeshUtils.Translate(cachedTextGenerator, pixelsPerUnit, 0, toFill);
         }
 
         public void ForcePopulateMesh(MeshBuilder toFill) => OnPopulateMesh(toFill);
