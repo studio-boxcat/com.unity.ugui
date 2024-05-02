@@ -540,7 +540,7 @@ namespace UnityEngine.UI
             canvasRenderer.SetMesh(mesh);
         }
 
-        public void ForceUpdateGeometry() => UpdateGeometry();
+        public virtual void ForceUpdateGeometry() => UpdateGeometry();
 
         protected static Mesh workerMesh
         {
