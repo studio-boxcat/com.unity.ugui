@@ -24,7 +24,7 @@ namespace UnityEngine.UI
         // m_IncludeForMasking is whether we actually consider this graphic for masking or not - this is an implementation detail.
         // m_IncludeForMasking should only be true if m_Maskable is true AND a parent of the graphic has an IMask component.
         // Things would still work correctly if m_IncludeForMasking was always true when m_Maskable is, but performance would suffer.
-        [SerializeField]
+        [SerializeField, FoldoutGroup("Advanced"), PropertyOrder(1)]
         [ShowIf("@CanShow(GraphicPropertyFlag.Maskable)")]
         private bool m_Maskable;
 

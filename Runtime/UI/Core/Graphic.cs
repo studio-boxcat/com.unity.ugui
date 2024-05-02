@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
@@ -21,70 +20,22 @@ namespace UnityEngine.UI
         : UIBehaviour,
             ICanvasElement
     {
-        protected static Material s_DefaultUI = null;
+        static Material s_DefaultUI = null;
         protected static Texture2D s_WhiteTexture = null;
-
-        /// <summary>
-        /// Default material used to draw UI elements if no explicit material was specified.
-        /// </summary>
         public static Material defaultGraphicMaterial => s_DefaultUI ??= Canvas.GetDefaultCanvasMaterial();
 
         // Cached and saved values
         [FormerlySerializedAs("m_Mat")]
         [ShowIf("@CanShow(GraphicPropertyFlag.Material)")]
+        [FoldoutGroup("Advanced", order: 600)]
         [SerializeField] protected Material m_Material;
 
-        [ShowIf("@CanShow(GraphicPropertyFlag.Color)")]
-        [SerializeField] private Color m_Color = Color.white;
+        [ShowIf("@CanShow(GraphicPropertyFlag.Color)"), PropertyOrder(500)]
+        [SerializeField] Color m_Color = Color.white;
 
         [NonSerialized] protected bool m_SkipLayoutUpdate;
         [NonSerialized] protected bool m_SkipMaterialUpdate;
 
-        /// <summary>
-        /// Base color of the Graphic.
-        /// </summary>
-        /// <remarks>
-        /// The builtin UI Components use this as their vertex color. Use this to fetch or change the Color of visual UI elements, such as an Image.
-        /// </remarks>
-        /// <example>
-        /// <code>
-        /// <![CDATA[
-        /// //Place this script on a GameObject with a Graphic component attached e.g. a visual UI element (Image).
-        ///
-        /// using UnityEngine;
-        /// using UnityEngine.UI;
-        ///
-        /// public class Example : MonoBehaviour
-        /// {
-        ///     Graphic m_Graphic;
-        ///     Color m_MyColor;
-        ///
-        ///     void Start()
-        ///     {
-        ///         //Fetch the Graphic from the GameObject
-        ///         m_Graphic = GetComponent<Graphic>();
-        ///         //Create a new Color that starts as red
-        ///         m_MyColor = Color.red;
-        ///         //Change the Graphic Color to the new Color
-        ///         m_Graphic.color = m_MyColor;
-        ///     }
-        ///
-        ///     // Update is called once per frame
-        ///     void Update()
-        ///     {
-        ///         //When the mouse button is clicked, change the Graphic Color
-        ///         if (Input.GetKey(KeyCode.Mouse0))
-        ///         {
-        ///             //Change the Color over time between blue and red while the mouse button is pressed
-        ///             m_MyColor = Color.Lerp(Color.red, Color.blue, Mathf.PingPong(Time.time, 1));
-        ///         }
-        ///         //Change the Graphic Color to the new Color
-        ///         m_Graphic.color = m_MyColor;
-        ///     }
-        /// }
-        /// ]]>
-        ///</code>
-        /// </example>
         public virtual Color color
         {
             get => m_Color;
@@ -95,8 +46,8 @@ namespace UnityEngine.UI
         }
 
         [SerializeField, ShowIf("@CanShow(GraphicPropertyFlag.Raycast)")]
-        [HorizontalGroup("RaycastTarget", DisableAutomaticLabelWidth = true)]
-        private bool m_RaycastTarget = false;
+        [FoldoutGroup("Advanced"), HorizontalGroup("Advanced/RaycastTarget", DisableAutomaticLabelWidth = true)]
+        bool m_RaycastTarget = false;
 
         protected RaycastRegisterLink m_RaycastRegisterLink;
 
@@ -121,9 +72,9 @@ namespace UnityEngine.UI
             }
         }
 
-        [SerializeField, ShowIf("@CanShow(GraphicPropertyFlag.Raycast) && m_RaycastTarget")]
-        [HorizontalGroup("RaycastTarget"), HideLabel]
-        private Vector4 m_RaycastPadding = new Vector4();
+        [SerializeField, HideLabel, ShowIf("@CanShow(GraphicPropertyFlag.Raycast) && m_RaycastTarget")]
+        [FoldoutGroup("Advanced"), HorizontalGroup("Advanced/RaycastTarget", DisableAutomaticLabelWidth = true)]
+        Vector4 m_RaycastPadding;
 
         /// <summary>
         /// Padding to be applied to the masking
@@ -138,12 +89,12 @@ namespace UnityEngine.UI
             set => m_RaycastPadding = value;
         }
 
-        [NonSerialized] private RectTransform m_RectTransform;
-        [NonSerialized] private CanvasRenderer m_CanvasRenderer;
-        [NonSerialized] private Canvas m_Canvas;
+        [NonSerialized] RectTransform m_RectTransform;
+        [NonSerialized] CanvasRenderer m_CanvasRenderer;
+        [NonSerialized] Canvas m_Canvas;
 
-        [NonSerialized] private bool m_VertsDirty;
-        [NonSerialized] private bool m_MaterialDirty;
+        [NonSerialized] bool m_VertsDirty;
+        [NonSerialized] bool m_MaterialDirty;
 
         [NonSerialized] protected static Mesh s_Mesh;
 
@@ -293,7 +244,7 @@ namespace UnityEngine.UI
             }
         }
 
-        private void CacheCanvas()
+        void CacheCanvas()
         {
             m_Canvas = ComponentSearch.SearchEnabledParentOrSelfComponent<Canvas>(this);
         }
@@ -517,7 +468,7 @@ namespace UnityEngine.UI
             }
 #endif
 
-            var mesh = workerMesh;
+            var mesh = _workerMesh;
             mesh.Clear();
 
 #if DEBUG
@@ -542,7 +493,7 @@ namespace UnityEngine.UI
 
         public virtual void ForceUpdateGeometry() => UpdateGeometry();
 
-        protected static Mesh workerMesh
+        static Mesh _workerMesh
         {
             get
             {
@@ -590,7 +541,6 @@ namespace UnityEngine.UI
         {
             SetAllDirty();
         }
-
 #endif
 
         // Call from unity if animation properties have changed
@@ -606,11 +556,7 @@ namespace UnityEngine.UI
         public virtual void SetNativeSize() { }
 
 #if UNITY_EDITOR
-        protected virtual void OnValidate()
-        {
-            SetAllDirty();
-        }
-
+        protected virtual void OnValidate() => SetAllDirty();
 #endif
 
         ///<summary>
