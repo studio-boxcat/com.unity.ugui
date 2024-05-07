@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace UnityEngine.UI
 {
-    static class SetPropertyUtility
+    public static class SetPropertyUtility
     {
         public static bool SetValue(ref bool currentValue, bool newValue)
         {

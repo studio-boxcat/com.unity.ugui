@@ -602,7 +602,7 @@ namespace UnityEngine.UI
                     {
                         return material.mainTexture;
                     }
-                    return s_WhiteTexture;
+                    return whiteTexture;
                 }
 
                 return activeSprite.texture;

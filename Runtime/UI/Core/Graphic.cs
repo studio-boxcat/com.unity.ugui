@@ -21,13 +21,13 @@ namespace UnityEngine.UI
             ICanvasElement
     {
         static Material s_DefaultUI = null;
-        protected static Texture2D s_WhiteTexture = null;
         public static Material defaultGraphicMaterial => s_DefaultUI ??= Canvas.GetDefaultCanvasMaterial();
+        static Texture2D s_WhiteTexture = null;
+        protected static Texture2D whiteTexture => s_WhiteTexture ??= Texture2D.whiteTexture;
 
         // Cached and saved values
         [FormerlySerializedAs("m_Mat")]
-        [ShowIf("@CanShow(GraphicPropertyFlag.Material)")]
-        [FoldoutGroup("Advanced", order: 600)]
+        [ShowIf("@CanShow(GraphicPropertyFlag.Material)"), PropertyOrder(501)]
         [SerializeField] protected Material m_Material;
 
         [ShowIf("@CanShow(GraphicPropertyFlag.Color)"), PropertyOrder(500)]
@@ -46,7 +46,8 @@ namespace UnityEngine.UI
         }
 
         [SerializeField, ShowIf("@CanShow(GraphicPropertyFlag.Raycast)")]
-        [FoldoutGroup("Advanced"), HorizontalGroup("Advanced/RaycastTarget", DisableAutomaticLabelWidth = true)]
+        [FoldoutGroup("Advanced", order: 600)]
+        [HorizontalGroup("Advanced/RaycastTarget", DisableAutomaticLabelWidth = true)]
         bool m_RaycastTarget = false;
 
         protected RaycastRegisterLink m_RaycastRegisterLink;
@@ -260,10 +261,7 @@ namespace UnityEngine.UI
         /// </summary>
         public virtual Material material
         {
-            get
-            {
-                return (m_Material != null) ? m_Material : defaultGraphicMaterial;
-            }
+            get => m_Material != null ? m_Material : defaultGraphicMaterial;
             set
             {
                 if (ReferenceEquals(m_Material, value))
@@ -513,7 +511,31 @@ namespace UnityEngine.UI
         /// </remarks>
         protected virtual void OnPopulateMesh(MeshBuilder mb) { }
 
+        // Call from unity if animation properties have changed
+
+        protected virtual void OnDidApplyAnimationProperties()
+        {
+            SetAllDirty();
+        }
+
+        /// <summary>
+        /// Make the Graphic have the native size of its content.
+        /// </summary>
+        public virtual void SetNativeSize() { }
+
+        /// <summary>
+        /// Returns a pixel perfect Rect closest to the Graphic RectTransform.
+        /// </summary>
+        /// <remarks>
+        /// Note: This is only accurate if the Graphic root Canvas is in Screen Space.
+        /// </remarks>
+        /// <returns>A Pixel perfect Rect.</returns>
+        protected Rect GetPixelAdjustedRect() => rectTransform.rect;
+
 #if UNITY_EDITOR
+        protected virtual void OnValidate() => SetAllDirty();
+        protected virtual void Reset() => SetAllDirty();
+
         /// <summary>
         /// Editor-only callback that is issued by Unity if a rebuild of the Graphic is required.
         /// Currently sent when an asset is reimported.
@@ -537,62 +559,6 @@ namespace UnityEngine.UI
             m_SkipLayoutUpdate = false;
         }
 
-        protected virtual void Reset()
-        {
-            SetAllDirty();
-        }
-#endif
-
-        // Call from unity if animation properties have changed
-
-        protected virtual void OnDidApplyAnimationProperties()
-        {
-            SetAllDirty();
-        }
-
-        /// <summary>
-        /// Make the Graphic have the native size of its content.
-        /// </summary>
-        public virtual void SetNativeSize() { }
-
-#if UNITY_EDITOR
-        protected virtual void OnValidate() => SetAllDirty();
-#endif
-
-        ///<summary>
-        ///Adjusts the given pixel to be pixel perfect.
-        ///</summary>
-        ///<param name="point">Local space point.</param>
-        ///<returns>Pixel perfect adjusted point.</returns>
-        ///<remarks>
-        ///Note: This is only accurate if the Graphic root Canvas is in Screen Space.
-        ///</remarks>
-        public Vector2 PixelAdjustPoint(Vector2 point)
-        {
-            if (!canvas || canvas.renderMode == RenderMode.WorldSpace || canvas.scaleFactor == 0.0f || !canvas.pixelPerfect)
-                return point;
-            else
-            {
-                return RectTransformUtility.PixelAdjustPoint(point, transform, canvas);
-            }
-        }
-
-        /// <summary>
-        /// Returns a pixel perfect Rect closest to the Graphic RectTransform.
-        /// </summary>
-        /// <remarks>
-        /// Note: This is only accurate if the Graphic root Canvas is in Screen Space.
-        /// </remarks>
-        /// <returns>A Pixel perfect Rect.</returns>
-        public Rect GetPixelAdjustedRect()
-        {
-            if (!canvas || canvas.renderMode == RenderMode.WorldSpace || canvas.scaleFactor == 0.0f || !canvas.pixelPerfect)
-                return rectTransform.rect;
-            else
-                return RectTransformUtility.PixelAdjustRect(rectTransform, canvas);
-        }
-
-#if UNITY_EDITOR
         [UsedImplicitly]
         bool CanShow(GraphicPropertyFlag flag) => GraphicPropertyVisible.IsVisible(GetType(), flag);
 #endif

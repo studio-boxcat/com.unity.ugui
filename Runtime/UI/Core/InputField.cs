@@ -2738,7 +2738,7 @@ namespace UnityEngine.UI
 
             using (MeshBuilderPool.Rent(out var helper))
             {
-                var roundingOffset = m_TextComponent.PixelAdjustPoint(Vector2.zero);
+                var roundingOffset = Vector2.zero;
 
                 if (!hasSelection)
                 {
