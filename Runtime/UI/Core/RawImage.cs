@@ -1,3 +1,4 @@
+using Sirenix.OdinInspector;
 using UnityEngine.Serialization;
 
 namespace UnityEngine.UI
@@ -15,32 +16,17 @@ namespace UnityEngine.UI
     public class RawImage : MaskableGraphic
     {
         [FormerlySerializedAs("m_Tex")]
-        [SerializeField] Texture m_Texture;
+        [SerializeField, Required] Texture m_Texture;
         [SerializeField] Rect m_UVRect = new Rect(0f, 0f, 1f, 1f);
 
-        public override Texture mainTexture
-        {
-            get
-            {
-                if (m_Texture == null)
-                {
-                    if (material != null && material.mainTexture != null)
-                    {
-                        return material.mainTexture;
-                    }
-                    return whiteTexture;
-                }
-
-                return m_Texture;
-            }
-        }
+        public override Texture mainTexture => m_Texture;
 
         public Texture texture
         {
             get => m_Texture;
             set
             {
-                if (m_Texture == value)
+                if (ReferenceEquals(m_Texture, value))
                     return;
 
                 m_Texture = value;
@@ -64,7 +50,7 @@ namespace UnityEngine.UI
         public override void SetNativeSize()
         {
             var tex = mainTexture;
-            if (tex == null) return;
+            if (tex is null) return;
 
             var w = Mathf.RoundToInt(tex.width * uvRect.width);
             var h = Mathf.RoundToInt(tex.height * uvRect.height);
@@ -75,8 +61,7 @@ namespace UnityEngine.UI
         protected override void OnPopulateMesh(MeshBuilder mb)
         {
             var tex = mainTexture;
-            if (tex == null)
-                return;
+            if (tex is null) return;
 
             var r = GetPixelAdjustedRect();
             var pos1 = r.min;
