@@ -294,12 +294,8 @@ namespace UnityEngine.UI
             if (m_ContainerRect == null)
                 return;
 
-            Vector2 position = Vector2.zero;
-            if (!MultipleDisplayUtilities.GetRelativeMousePositionForDrag(eventData, ref position))
-                return;
-
-            Vector2 localCursor;
-            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(m_ContainerRect, position, eventData.pressEventCamera, out localCursor))
+            var position = eventData.position;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(m_ContainerRect, position, eventData.pressEventCamera, out var localCursor))
                 return;
 
             Vector2 handleCenterRelativeToContainerCorner = localCursor - m_Offset - m_ContainerRect.rect.position;

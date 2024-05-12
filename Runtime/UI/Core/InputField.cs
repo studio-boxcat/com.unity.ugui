@@ -1626,12 +1626,8 @@ namespace UnityEngine.UI
             if (!MayDrag(eventData))
                 return;
 
-            Vector2 position = Vector2.zero;
-            if (!MultipleDisplayUtilities.GetRelativeMousePositionForDrag(eventData, ref position))
-                return;
-
-            Vector2 localMousePos;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(textComponent.rectTransform, position, eventData.pressEventCamera, out localMousePos);
+            var position = eventData.position;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(textComponent.rectTransform, position, eventData.pressEventCamera, out var localMousePos);
             caretSelectPositionInternal = GetCharacterIndexFromPosition(localMousePos) + m_DrawStart;
 
             MarkGeometryAsDirty();
@@ -1648,12 +1644,8 @@ namespace UnityEngine.UI
         {
             while (m_UpdateDrag && m_DragPositionOutOfBounds)
             {
-                Vector2 position = Vector2.zero;
-                if (!MultipleDisplayUtilities.GetRelativeMousePositionForDrag(eventData, ref position))
-                    break;
-
-                Vector2 localMousePos;
-                RectTransformUtility.ScreenPointToLocalPointInRectangle(textComponent.rectTransform, position, eventData.pressEventCamera, out localMousePos);
+                var position = eventData.position;
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(textComponent.rectTransform, position, eventData.pressEventCamera, out var localMousePos);
 
                 Rect rect = textComponent.rectTransform.rect;
 

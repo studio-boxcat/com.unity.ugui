@@ -590,15 +590,11 @@ namespace UnityEngine.UI
         // Update the slider's position based on the mouse.
         void UpdateDrag(PointerEventData eventData, Camera cam)
         {
-            RectTransform clickRect = m_HandleContainerRect ?? m_FillContainerRect;
+            var clickRect = m_HandleContainerRect ?? m_FillContainerRect;
             if (clickRect != null && clickRect.rect.size[(int)axis] > 0)
             {
-                Vector2 position = Vector2.zero;
-                if (!MultipleDisplayUtilities.GetRelativeMousePositionForDrag(eventData, ref position))
-                    return;
-
-                Vector2 localCursor;
-                if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(clickRect, position, cam, out localCursor))
+                var position = eventData.position;
+                if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(clickRect, position, cam, out var localCursor))
                     return;
                 localCursor -= clickRect.rect.position;
 
