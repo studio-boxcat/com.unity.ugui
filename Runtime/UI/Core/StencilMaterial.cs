@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Diagnostics;
 using UnityEngine.Bindings;
 using UnityEngine.Rendering;
 
@@ -116,7 +115,7 @@ namespace UnityEngine.UI
 
             m_List.Add(newEnt);
 
-            LogInfo("Stencil material created: " + newMat.name, baseMat);
+            L.I($"[UGUI] Stencil material created: {newMat.name}", baseMat);
             return newMat;
         }
 
@@ -143,7 +142,7 @@ namespace UnityEngine.UI
                 // Keep some instances in the list to reduce allocations.
                 if (noRef && count > 4)
                 {
-                    LogInfo("Stencil material destroyed: " + ent.customMat.name, ent.baseMat);
+                    L.I($"[UGUI] Stencil material destroyed: {ent.customMat.name}", ent.baseMat);
                     Misc.DestroyImmediate(ent.customMat);
                     ent.baseMat = null;
                     m_List.RemoveAt(i);
@@ -151,17 +150,11 @@ namespace UnityEngine.UI
             }
         }
 
-        [Conditional("DEBUG")]
-        static void LogInfo(string message, Object context)
-        {
-            Debug.Log("[UGUI] " + message, context);
-        }
-
 #if DEBUG
         static void CheckPropertyExists(Material mat, int id)
         {
             if (mat.HasProperty(id)) return;
-            Debug.LogWarning("[UGUI] Material " + mat.name + " doesn't have " + id + " property", mat);
+            L.W("[UGUI] Material " + mat.name + " doesn't have " + id + " property", mat);
         }
 #endif
     }

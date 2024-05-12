@@ -48,7 +48,7 @@ namespace UnityEngine.UI
         /// <returns>What the proper stencil buffer index should be.</returns>
         public static int GetStencilDepth(Transform transform)
         {
-            if (ShouldStop(transform))
+            if (ShouldStopSearchingMask(transform))
                 return 0;
 
             var t = transform.parent;
@@ -58,19 +58,38 @@ namespace UnityEngine.UI
             {
                 if (t.TryGetComponent<Mask>(out var mask) && mask.enabled && mask.graphic.enabled)
                     ++depth;
-                if (ShouldStop(t))
+                if (ShouldStopSearchingMask(t))
                     break;
                 t = t.parent;
             }
 
             return depth;
+        }
 
-            static bool ShouldStop(Component c)
+        public static bool HasEligibleMask(Transform transform)
+        {
+            if (ShouldStopSearchingMask(transform))
+                return false;
+
+            var t = transform.parent;
+
+            while (t is not null)
             {
-                // Stop if we find a canvas with override sorting or root canvas.
-                return c.TryGetComponent(out Canvas canvas)
-                       && ((canvas.enabled && canvas.overrideSorting) || canvas.isRootCanvas);
+                if (t.TryGetComponent<Mask>(out var mask) && mask.enabled && mask.graphic.enabled)
+                    return true;
+                if (ShouldStopSearchingMask(t))
+                    break;
+                t = t.parent;
             }
+
+            return false;
+        }
+
+        static bool ShouldStopSearchingMask(Component c)
+        {
+            // Stop if we find a canvas with override sorting or root canvas.
+            return c.TryGetComponent(out Canvas canvas)
+                   && ((canvas.enabled && canvas.overrideSorting) || canvas.isRootCanvas);
         }
 
         /// <summary>
