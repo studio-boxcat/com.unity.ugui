@@ -9,24 +9,23 @@ namespace UnityEngine.UI
     {
         [SerializeField, Required, ChildGameObjectsOnly]
         Graphic _graphic;
-        [SerializeField]
-        bool _canNestMask;
 
         [NonSerialized, ShowInInspector, ReadOnly, FoldoutGroup("Advanced")]
         Material _maskMaterial;
         [NonSerialized, ShowInInspector, ReadOnly, FoldoutGroup("Advanced")]
-        int _stencilValue;
-        [NonSerialized] bool _shouldRecalculateStencil = true;
+        Mask _mask;
+        [NonSerialized]
+        bool _maskDirty = true;
 
         void OnEnable()
         {
-            _shouldRecalculateStencil = true;
+            _maskDirty = true;
             _graphic.SetMaterialDirty();
         }
 
         void OnDisable()
         {
-            _shouldRecalculateStencil = true;
+            _maskDirty = true;
             _graphic.SetMaterialDirty();
         }
 
@@ -41,27 +40,24 @@ namespace UnityEngine.UI
 
 #if UNITY_EDITOR
         void Reset() => _graphic = GetComponent<Graphic>();
-        void OnValidate() => _shouldRecalculateStencil = true;
+        void OnValidate() => _maskDirty = true;
 #endif
 
         void OnTransformParentChanged()
         {
-            _shouldRecalculateStencil = true;
+            _maskDirty = true;
             _graphic.SetMaterialDirty();
         }
 
         void OnCanvasHierarchyChanged()
         {
-            _shouldRecalculateStencil = true;
+            _maskDirty = true;
             _graphic.SetMaterialDirty();
         }
 
-        /// <summary>
-        /// See IMaskable.RecalculateMasking
-        /// </summary>
         void IMaskable.RecalculateMasking()
         {
-            _shouldRecalculateStencil = true;
+            _maskDirty = true;
             _graphic.SetMaterialDirty();
         }
 
@@ -70,16 +66,13 @@ namespace UnityEngine.UI
             if (enabled is false)
                 return baseMaterial;
 
-            if (_shouldRecalculateStencil)
+            if (_maskDirty)
             {
-                _stencilValue = GetStencilDepth();
-                _shouldRecalculateStencil = false;
+                _mask = MaskUtilities.GetEligibleMask(transform);
+                _maskDirty = false;
             }
 
-            // if we have a enabled Mask component then it will
-            // generate the mask material. This is an optimization
-            // it adds some coupling between components though :(
-            if (_stencilValue is 0)
+            if (_mask is null)
                 return baseMaterial;
 
             // Invalidate cached mask material.
@@ -89,18 +82,10 @@ namespace UnityEngine.UI
                 _maskMaterial = null;
             }
 
-            var readMask = (1 << _stencilValue) - 1;
             return _maskMaterial = StencilMaterial.Add(
-                baseMaterial, stencilID: readMask,
+                baseMaterial, stencilID: 1,
                 StencilOp.Keep, CompareFunction.Equal, ColorWriteMask.All,
-                readMask, 0);
-
-            int GetStencilDepth()
-            {
-                if (_canNestMask)
-                    return MaskUtilities.GetStencilDepth(transform);
-                return MaskUtilities.HasEligibleMask(transform) ? 1 : 0;
-            }
+                readMask: 1, writeMask: 0);
         }
     }
 }

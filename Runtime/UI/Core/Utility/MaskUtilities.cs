@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using UnityEngine.Pool;
 
 namespace UnityEngine.UI
@@ -66,23 +67,24 @@ namespace UnityEngine.UI
             return depth;
         }
 
-        public static bool HasEligibleMask(Transform transform)
+        [CanBeNull]
+        public static Mask GetEligibleMask(Transform transform)
         {
             if (ShouldStopSearchingMask(transform))
-                return false;
+                return null;
 
             var t = transform.parent;
 
             while (t is not null)
             {
                 if (t.TryGetComponent<Mask>(out var mask) && mask.enabled && mask.graphic.enabled)
-                    return true;
+                    return mask;
                 if (ShouldStopSearchingMask(t))
                     break;
                 t = t.parent;
             }
 
-            return false;
+            return null;
         }
 
         static bool ShouldStopSearchingMask(Component c)
