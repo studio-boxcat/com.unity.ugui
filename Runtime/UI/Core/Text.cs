@@ -1,18 +1,18 @@
 using System;
+using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
     [RequireComponent(typeof(CanvasRenderer))]
-    [AddComponentMenu("UI/Legacy/Text", 100)]
-    /// <summary>
-    /// The default Graphic to draw font data to screen.
-    /// </summary>
+    [GraphicPropertyHide(GraphicPropertyFlag.Raycast | GraphicPropertyFlag.Material)]
     public class Text : MaskableGraphic, ILayoutElement, IFontUpdateListener
     {
-        [SerializeField] private FontData m_FontData;
+        [SerializeField, InlineProperty, HideLabel, PropertyOrder(500)]
+        private FontData m_FontData;
 
-        [TextArea(3, 10)] [SerializeField] protected string m_Text = String.Empty;
+        [SerializeField, PropertyOrder(-1)]
+        protected string m_Text = string.Empty;
 
         private TextGenerator m_TextCache;
         private TextGenerator m_TextCacheForLayout;

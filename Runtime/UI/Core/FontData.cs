@@ -1,79 +1,57 @@
 using System;
+using Sirenix.OdinInspector;
 using UnityEngine.Serialization;
 
 namespace UnityEngine.UI
 {
     [Serializable]
-    /// <summary>
-    /// Struct for storing Text generation settings.
-    /// </summary>
     public class FontData
+#if UNITY_EDITOR
+        : ISelfValidator
+#endif
     {
         [SerializeField]
         [FormerlySerializedAs("font")]
         private Font m_Font;
 
-        [SerializeField]
+        [SerializeField, HideIf("@m_BestFit"), Range(0, 100)]
         [FormerlySerializedAs("fontSize")]
         private int m_FontSize;
 
-        [SerializeField]
+        [SerializeField, HideInInspector]
         [FormerlySerializedAs("fontStyle")]
         private FontStyle m_FontStyle;
 
-        [SerializeField]
+        [SerializeField, HorizontalGroup("Toggles", order: 100), ToggleLeft]
         private bool m_BestFit;
 
-        [SerializeField]
+        [SerializeField, HorizontalGroup("BestFit", Width = 0.7f, DisableAutomaticLabelWidth = true), LabelText("Font Size")]
+        [ShowIf("@m_BestFit")]
         private int m_MinSize;
 
-        [SerializeField]
+        [SerializeField, HorizontalGroup("BestFit", Width = 0.3f), HideLabel]
+        [ShowIf("@m_BestFit")]
         private int m_MaxSize;
 
         [SerializeField]
         [FormerlySerializedAs("alignment")]
         private TextAnchor m_Alignment;
 
-        [SerializeField]
+        [SerializeField, HorizontalGroup("Toggles"), ToggleLeft]
         private bool m_AlignByGeometry;
 
-        [SerializeField]
+        [SerializeField, HorizontalGroup("Toggles"), ToggleLeft]
         [FormerlySerializedAs("richText")]
         private bool m_RichText;
 
-        [SerializeField]
+        [SerializeField, HorizontalGroup("WrapMode", DisableAutomaticLabelWidth = true), LabelText("WrapMode (H/V)")]
         private HorizontalWrapMode m_HorizontalOverflow;
 
-        [SerializeField]
+        [SerializeField, HorizontalGroup("WrapMode", Width = 0.3f), HideLabel]
         private VerticalWrapMode m_VerticalOverflow;
 
-        [SerializeField]
+        [SerializeField, Range(0, 2)]
         private float m_LineSpacing;
-
-        /// <summary>
-        /// Get a font data with sensible defaults.
-        /// </summary>
-        public static FontData defaultFontData
-        {
-            get
-            {
-                var fontData = new FontData
-                {
-                    m_FontSize  = 14,
-                    m_LineSpacing = 1f,
-                    m_FontStyle = FontStyle.Normal,
-                    m_BestFit = false,
-                    m_MinSize = 10,
-                    m_MaxSize = 40,
-                    m_Alignment = TextAnchor.UpperLeft,
-                    m_HorizontalOverflow = HorizontalWrapMode.Wrap,
-                    m_VerticalOverflow = VerticalWrapMode.Truncate,
-                    m_RichText  = true,
-                    m_AlignByGeometry = false
-                };
-                return fontData;
-            }
-        }
 
         /// <summary>
         /// The Font to use for this generated Text object.
@@ -147,7 +125,7 @@ namespace UnityEngine.UI
         public bool alignByGeometry
         {
             get { return m_AlignByGeometry; }
-            set { m_AlignByGeometry = value;  }
+            set { m_AlignByGeometry = value; }
         }
 
         /// <summary>
@@ -185,5 +163,15 @@ namespace UnityEngine.UI
             get { return m_LineSpacing; }
             set { m_LineSpacing = value; }
         }
+
+#if UNITY_EDITOR
+        void ISelfValidator.Validate(SelfValidationResult result)
+        {
+            if (m_MinSize != 0)
+                result.AddError("Min Size is not supported anymore. Please use the new Min Size property in the Text component.");
+            if (m_FontStyle != FontStyle.Normal)
+                result.AddError("Font Style is not supported anymore. Please use the new Font Style property in the Text component.");
+        }
+#endif
     }
 }
