@@ -168,9 +168,9 @@ namespace UnityEngine.UI
         void ISelfValidator.Validate(SelfValidationResult result)
         {
             if (m_MinSize != 0)
-                result.AddError("Min Size is not supported anymore. Please use the new Min Size property in the Text component.");
+                result.AddError("Min Size is not supported anymore.");
             if (m_FontStyle != FontStyle.Normal)
-                result.AddError("Font Style is not supported anymore. Please use the new Font Style property in the Text component.");
+                result.AddError("Font Style is not supported anymore.");
         }
 #endif
     }
