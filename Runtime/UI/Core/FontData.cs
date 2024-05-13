@@ -14,7 +14,7 @@ namespace UnityEngine.UI
         [FormerlySerializedAs("font")]
         private Font m_Font;
 
-        [SerializeField, HideIf("@m_BestFit"), Range(0, 200)]
+        [SerializeField, HideIf("@m_BestFit")]
         [FormerlySerializedAs("fontSize")]
         private int m_FontSize;
 
