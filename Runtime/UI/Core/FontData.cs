@@ -18,7 +18,7 @@ namespace UnityEngine.UI
         [FormerlySerializedAs("fontSize")]
         private int m_FontSize;
 
-        [SerializeField, HideInInspector]
+        [SerializeField]
         [FormerlySerializedAs("fontStyle")]
         private FontStyle m_FontStyle;
 
@@ -169,8 +169,6 @@ namespace UnityEngine.UI
         {
             if (m_MinSize != 0)
                 result.AddError("Min Size is not supported anymore.");
-            if (m_FontStyle != FontStyle.Normal)
-                result.AddError("Font Style is not supported anymore.");
         }
 #endif
     }
