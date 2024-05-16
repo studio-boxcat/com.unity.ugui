@@ -88,11 +88,6 @@ namespace UnityEngine.UI
         /// </summary>
         float ILayoutElement.flexibleHeight => GetTotalFlexibleSize(1);
 
-        /// <summary>
-        /// See LayoutElement.layoutPriority
-        /// </summary>
-        int ILayoutElement.layoutPriority => 0;
-
         // ILayoutController Interface
 
         public abstract void SetLayoutHorizontal();

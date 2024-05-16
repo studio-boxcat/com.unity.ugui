@@ -11,7 +11,7 @@ namespace UnityEngine.UI
     /// </summary>
 
     [AddComponentMenu("UI/Legacy/Input Field", 103)]
-    public class InputField
+    public sealed class InputField
         : Selectable,
         IUpdateSelectedHandler,
         IBeginDragHandler,
@@ -402,8 +402,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// Should the inputfield be automatically activated upon selection.
         /// </summary>
-
-        public virtual bool shouldActivateOnSelect
+        public bool shouldActivateOnSelect
         {
             set
             {
@@ -1369,7 +1368,7 @@ namespace UnityEngine.UI
         /// Update the text based on input.
         /// </summary>
         // TODO: Make LateUpdate a coroutine instead. Allows us to control the update to only be when the field is active.
-        protected virtual void LateUpdate()
+        protected void LateUpdate()
         {
             // Only activate if we are not already activated.
             if (m_ShouldActivateNextUpdate)
@@ -1609,7 +1608,7 @@ namespace UnityEngine.UI
         /// Capture the OnBeginDrag callback from the EventSystem and ensure we should listen to the drag events to follow.
         /// </summary>
         /// <param name="eventData">The data passed by the EventSystem</param>
-        public virtual void OnBeginDrag(PointerEventData eventData)
+        public void OnBeginDrag(PointerEventData eventData)
         {
             if (!MayDrag(eventData))
                 return;
@@ -1621,7 +1620,7 @@ namespace UnityEngine.UI
         /// If we are able to drag, try and select the character range underneath the bounding rect.
         /// </summary>
         /// <param name="eventData"></param>
-        public virtual void OnDrag(PointerEventData eventData)
+        public void OnDrag(PointerEventData eventData)
         {
             if (!MayDrag(eventData))
                 return;
@@ -1678,7 +1677,7 @@ namespace UnityEngine.UI
         /// Capture the OnEndDrag callback from the EventSystem and cancel the listening of drag events.
         /// </summary>
         /// <param name="eventData">The eventData sent by the EventSystem.</param>
-        public virtual void OnEndDrag(PointerEventData eventData)
+        public void OnEndDrag(PointerEventData eventData)
         {
             if (!MayDrag(eventData))
                 return;
@@ -1944,7 +1943,7 @@ namespace UnityEngine.UI
         /// What to do when the event system sends a Update selected Event.
         /// </summary>
         /// <param name="eventData">The data on which to process.</param>
-        public virtual void OnUpdateSelected(BaseEventData eventData)
+        public void OnUpdateSelected(BaseEventData eventData)
         {
             if (!isFocused)
                 return;
@@ -2334,7 +2333,7 @@ namespace UnityEngine.UI
         /// Append the specified text to the end of the current text string. Appends character by character testing validation criteria.
         /// </summary>
         /// <param name="input">The String to append.</param>
-        protected virtual void Append(string input)
+        protected void Append(string input)
         {
             if (m_ReadOnly)
                 return;
@@ -2360,7 +2359,7 @@ namespace UnityEngine.UI
         /// Append a character to the input field, taking into account the validation of each character.
         /// </summary>
         /// <param name="input">Character to append.</param>
-        protected virtual void Append(char input)
+        protected void Append(char input)
         {
             // We do not currently support surrogate pairs
             if (char.IsSurrogate(input))
@@ -2652,7 +2651,7 @@ namespace UnityEngine.UI
         /// Rebuild the input fields geometry. (caret and highlight).
         /// </summary>
         /// <param name="update">Which update loop we are in.</param>
-        public virtual void Rebuild(CanvasUpdate update)
+        public void Rebuild(CanvasUpdate update)
         {
             switch (update)
             {
@@ -3071,7 +3070,7 @@ namespace UnityEngine.UI
         /// What to do when the event system sends a pointer click Event
         /// </summary>
         /// <param name="eventData">The data on which to process</param>
-        public virtual void OnPointerClick(PointerEventData eventData)
+        public void OnPointerClick(PointerEventData eventData)
         {
             if (eventData.button != PointerEventData.InputButton.Left)
                 return;
@@ -3145,7 +3144,7 @@ namespace UnityEngine.UI
             base.OnDeselect(eventData);
         }
 
-        public virtual void OnSubmit(BaseEventData eventData)
+        public void OnSubmit(BaseEventData eventData)
         {
             if (!IsActive() || !IsInteractable())
                 return;
@@ -3282,12 +3281,12 @@ namespace UnityEngine.UI
         /// <summary>
         /// See ILayoutElement.minWidth.
         /// </summary>
-        public virtual float minWidth { get { return 5; } }
+        public float minWidth => 5;
 
         /// <summary>
         /// Get the displayed with of all input characters.
         /// </summary>
-        public virtual float preferredWidth
+        public float preferredWidth
         {
             get
             {
@@ -3299,19 +3298,9 @@ namespace UnityEngine.UI
         }
 
         /// <summary>
-        /// See ILayoutElement.flexibleWidth.
-        /// </summary>
-        public virtual float flexibleWidth { get { return -1; } }
-
-        /// <summary>
-        /// See ILayoutElement.minHeight.
-        /// </summary>
-        public virtual float minHeight { get { return 0; } }
-
-        /// <summary>
         /// Get the height of all the text if constrained to the height of the RectTransform.
         /// </summary>
-        public virtual float preferredHeight
+        public float preferredHeight
         {
             get
             {
@@ -3323,13 +3312,8 @@ namespace UnityEngine.UI
         }
 
         /// <summary>
-        /// See ILayoutElement.flexibleHeight.
-        /// </summary>
-        public virtual float flexibleHeight { get { return -1; } }
-
-        /// <summary>
         /// See ILayoutElement.layoutPriority.
         /// </summary>
-        public virtual int layoutPriority { get { return 1; } }
+        public int layoutPriority => 1;
     }
 }

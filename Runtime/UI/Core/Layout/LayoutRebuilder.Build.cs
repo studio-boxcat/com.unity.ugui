@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using UnityEngine.EventSystems;
 using UnityEngine.Pool;
 
 namespace UnityEngine.UI

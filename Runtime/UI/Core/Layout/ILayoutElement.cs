@@ -26,107 +26,13 @@ namespace UnityEngine.UI
         /// </summary>
         void CalculateLayoutInputVertical() { }
 
-        /// <summary>
-        /// The minimum width this layout element may be allocated.
-        /// </summary>
-        float minWidth { get; }
-
-        /// <summary>
-        /// The preferred width this layout element should be allocated if there is sufficient space.
-        /// </summary>
-        /// <remarks>
-        /// PreferredWidth can be set to -1 to remove the size.
-        /// </remarks>
-        float preferredWidth { get; }
-
-        /// <summary>
-        /// The extra relative width this layout element should be allocated if there is additional available space.
-        /// </summary>
-        /// <remarks>
-        /// Setting preferredWidth to -1 removed the preferredWidth.
-        /// </remarks>
-        /// <example>
-        ///<code>
-        ///<![CDATA[
-        ///using UnityEngine;
-        ///using System.Collections;
-        ///using UnityEngine.UI; // Required when using UI elements.
-        ///
-        ///public class ExampleClass : MonoBehaviour
-        ///{
-        ///    public Transform MyContentPanel;
-        ///
-        ///    //Sets the flexible height on on all children in the content panel.
-        ///    public void Start()
-        ///    {
-        ///        //Assign all the children of the content panel to an array.
-        ///        LayoutElement[] myLayoutElements = MyContentPanel.GetComponentsInChildren<LayoutElement>();
-        ///
-        ///        //For each child in the array change its LayoutElement's flexible width to 200.
-        ///        foreach (LayoutElement element in myLayoutElements)
-        ///        {
-        ///            element.flexibleWidth = 200f;
-        ///        }
-        ///    }
-        ///}
-        ///]]>
-        ///</code>
-        ///</example>
-
-        float flexibleWidth { get; }
-
-        /// <summary>
-        /// The minimum height this layout element may be allocated.
-        /// </summary>
-        float minHeight { get; }
-
-        /// <summary>
-        /// The preferred height this layout element should be allocated if there is sufficient space.
-        /// </summary>
-        /// <remarks>
-        /// PreferredHeight can be set to -1 to remove the size.
-        /// </remarks>
-        float preferredHeight { get; }
-
-        /// <summary>
-        /// The extra relative height this layout element should be allocated if there is additional available space.
-        /// </summary>
-        ///<example>
-        ///<code>
-        ///<![CDATA[
-        ///using UnityEngine;
-        ///using System.Collections;
-        ///using UnityEngine.UI; // Required when using UI elements.
-        ///
-        ///public class ExampleClass : MonoBehaviour
-        ///{
-        ///    public Transform MyContentPanel;
-        ///
-        ///    //Sets the flexible height on on all children in the content panel.
-        ///    public void Start()
-        ///    {
-        ///        //Assign all the children of the content panel to an array.
-        ///        LayoutElement[] myLayoutElements = MyContentPanel.GetComponentsInChildren<LayoutElement>();
-        ///
-        ///        //For each child in the array change its LayoutElement's flexible height to 100.
-        ///        foreach (LayoutElement element in myLayoutElements)
-        ///        {
-        ///            element.flexibleHeight = 100f;
-        ///        }
-        ///    }
-        ///}
-        ///]]>
-        ///</code>
-        ///</example>
-        float flexibleHeight { get; }
-
-        /// <summary>
-        /// The layout priority of this component.
-        /// </summary>
-        /// <remarks>
-        /// If multiple components on the same GameObject implement the ILayoutElement interface, the values provided by components that return a higher priority value are given priority. However, values less than zero are ignored. This way a component can override only select properties by leaving the remaning values to be -1 or other values less than zero.
-        /// </remarks>
-        int layoutPriority { get; }
+        float minWidth => -1;
+        float preferredWidth => -1;
+        float flexibleWidth => -1;
+        float minHeight => -1;
+        float preferredHeight => -1;
+        float flexibleHeight => -1;
+        int layoutPriority => 0;
     }
 
     /// <summary>

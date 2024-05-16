@@ -468,12 +468,6 @@ namespace UnityEngine.UI
 
         public void ForcePopulateMesh(MeshBuilder toFill) => OnPopulateMesh(toFill);
 
-        float ILayoutElement.minWidth => 0;
-        float ILayoutElement.minHeight => 0;
-        float ILayoutElement.flexibleWidth => -1;
-        float ILayoutElement.flexibleHeight => -1;
-        int ILayoutElement.layoutPriority => 0;
-
         public float preferredWidth
         {
             get

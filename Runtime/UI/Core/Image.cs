@@ -1317,11 +1317,6 @@ namespace UnityEngine.UI
         }
 
         /// <summary>
-        /// See ILayoutElement.minWidth.
-        /// </summary>
-        public virtual float minWidth { get { return 0; } }
-
-        /// <summary>
         /// If there is a sprite being rendered returns the size of that sprite.
         /// In the case of a slided or tiled sprite will return the calculated minimum size possible
         /// </summary>
@@ -1338,16 +1333,6 @@ namespace UnityEngine.UI
         }
 
         /// <summary>
-        /// See ILayoutElement.flexibleWidth.
-        /// </summary>
-        public virtual float flexibleWidth { get { return -1; } }
-
-        /// <summary>
-        /// See ILayoutElement.minHeight.
-        /// </summary>
-        public virtual float minHeight { get { return 0; } }
-
-        /// <summary>
         /// If there is a sprite being rendered returns the size of that sprite.
         /// In the case of a slided or tiled sprite will return the calculated minimum size possible
         /// </summary>
@@ -1362,16 +1347,6 @@ namespace UnityEngine.UI
                 return activeSprite.rect.size.y / pixelsPerUnit;
             }
         }
-
-        /// <summary>
-        /// See ILayoutElement.flexibleHeight.
-        /// </summary>
-        public virtual float flexibleHeight { get { return -1; } }
-
-        /// <summary>
-        /// See ILayoutElement.layoutPriority.
-        /// </summary>
-        public virtual int layoutPriority { get { return 0; } }
 
         // To track textureless images, which will be rebuild if sprite atlas manager registered a Sprite Atlas that will give this image new texture
         static List<Image> m_TrackedTexturelessImages = new List<Image>();

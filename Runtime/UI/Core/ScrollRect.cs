@@ -975,12 +975,6 @@ namespace UnityEngine.UI
         private bool hScrollingNeeded => m_ContentBounds.size.x > m_ViewBounds.size.x + 0.01f;
         private bool vScrollingNeeded => m_ContentBounds.size.y > m_ViewBounds.size.y + 0.01f;
 
-        float ILayoutElement.minWidth => -1;
-        float ILayoutElement.preferredWidth => -1;
-        float ILayoutElement.flexibleWidth => -1;
-        float ILayoutElement.minHeight => -1;
-        float ILayoutElement.preferredHeight => -1;
-        float ILayoutElement.flexibleHeight => -1;
         int ILayoutElement.layoutPriority => -1;
 
         /// <summary>
