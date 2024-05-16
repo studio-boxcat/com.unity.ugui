@@ -16,6 +16,7 @@ namespace UnityEngine.UI
 
         protected MeshChannel(int capacity)
         {
+            Count = MeshBuilder.Invalid;
             _buf = new T[capacity];
         }
 
