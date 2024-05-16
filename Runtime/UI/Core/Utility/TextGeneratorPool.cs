@@ -8,17 +8,18 @@ namespace UnityEngine.UI
 
         public static TextGenerator Rent()
         {
-            return _pool.TryPop(out var instance)
-                ? instance : new TextGenerator();
+            if (_pool.TryPop(out var instance))
+                return instance;
+
+            L.I("[TextGeneratorPool] Created a new instance.");
+            return new TextGenerator();
         }
 
         public static void Return(TextGenerator instance)
         {
             if (_pool.Count > 100)
             {
-#if DEBUG
-                Debug.LogWarning("TextGeneratorPool is too big. Something is wrong.");
-#endif
+                L.W("[TextGeneratorPool] Pool is too large. There might be a leak.");
                 return;
             }
 
