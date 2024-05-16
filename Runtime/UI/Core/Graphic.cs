@@ -453,13 +453,45 @@ namespace UnityEngine.UI
 #endif
             {
                 OnPopulateMesh(mb);
-                Assert.IsTrue(mb.CheckPrepared());
+
+                var posCount = mb.Poses.Count;
+                if (posCount is MeshBuilder.Invalid)
+                {
+                    // L.I("[Graphic] MeshBuilder is unused.");
+                    // mb.Invalidate(); // No need to invalidate here.
+                    canvasRenderer.Clear();
+                    return;
+                }
+                if (posCount is 0)
+                {
+                    // L.I("[Graphic] MeshBuilder is empty.");
+                    mb.Invalidate();
+                    canvasRenderer.Clear();
+                    return;
+                }
+
+                mb.AssertPrepared();
+            }
+#if DEBUG
+            catch (Exception e)
+            {
+                L.E(e, this);
+                mb.Invalidate();
+                canvasRenderer.Clear();
+                return;
+            }
+#endif
+
+#if DEBUG
+            try
+#endif
+            {
                 MeshModifierUtils.GetComponentsAndModifyMesh(this, mb);
             }
 #if DEBUG
             catch (Exception e)
             {
-                Debug.LogException(e, this);
+                L.E(e, this);
                 mb.Invalidate();
                 canvasRenderer.Clear();
                 return;
@@ -478,7 +510,7 @@ namespace UnityEngine.UI
 #if DEBUG
             catch (Exception e)
             {
-                Debug.LogException(e, this);
+                L.E(e, this);
                 mb.Invalidate();
                 canvasRenderer.Clear();
                 return;

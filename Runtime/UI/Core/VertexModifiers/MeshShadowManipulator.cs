@@ -22,7 +22,7 @@ namespace UnityEngine.UI
 
         public void Populate(MeshBuilder mb, int copy)
         {
-            Assert.IsTrue(mb.CheckPrepared());
+            mb.AssertPrepared();
             Assert.IsTrue(copy > 0);
 
             _orgVertCount = mb.Poses.Count;

@@ -32,6 +32,7 @@ namespace UnityEngine.UI
         [MustUseReturnValue]
         public T[] SetUp(int count)
         {
+            Assert.AreEqual(MeshBuilder.Invalid, Count, "MeshChannel is not properly invalidated.");
             Assert.IsNull(Data, "MeshChannel.SetUp() must be called only once.");
             Assert.IsTrue(count >= 0);
 
@@ -44,6 +45,7 @@ namespace UnityEngine.UI
 
         public void SetUp(T[] data)
         {
+            Assert.AreEqual(MeshBuilder.Invalid, Count, "MeshChannel is not properly invalidated.");
             Assert.IsNull(Data, "MeshChannel.SetUp() must be called only once.");
 
             Data = data;
@@ -52,6 +54,7 @@ namespace UnityEngine.UI
 
         public void SetUp(T[] data, int count)
         {
+            Assert.AreEqual(MeshBuilder.Invalid, Count, "MeshChannel is not properly invalidated.");
             Assert.IsNull(Data, "MeshChannel.SetUp() must be called only once.");
             Assert.IsTrue(count >= 0 && count <= data.Length);
 
@@ -132,7 +135,7 @@ namespace UnityEngine.UI
         public void Invalidate()
         {
             Data = null;
-            Count = 0;
+            Count = MeshBuilder.Invalid;
         }
 
         protected abstract void Internal_FillMesh(Mesh mesh);

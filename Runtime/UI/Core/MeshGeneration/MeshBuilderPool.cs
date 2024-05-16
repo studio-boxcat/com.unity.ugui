@@ -18,6 +18,7 @@ namespace UnityEngine.UI
                 return result;
             }
 
+            L.I("[UGUI] Creating new MeshBuilder.");
             return new MeshBuilder();
         }
 
@@ -29,7 +30,10 @@ namespace UnityEngine.UI
 
         public static void Return(MeshBuilder mb)
         {
-            Assert.AreEqual(0, mb.Poses.Count, "MeshBuilder must be invalidated before returning to the pool.");
+            Assert.AreEqual(MeshBuilder.Invalid, mb.Poses.Count,
+                "MeshBuilder must be invalidated before returning to the pool.");
+            Assert.AreEqual(MeshBuilder.Invalid, mb.Indices.Count,
+                "MeshBuilder must be invalidated before returning to the pool.");
             _pool.Add(mb);
         }
 

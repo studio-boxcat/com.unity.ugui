@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using JetBrains.Annotations;
 using UnityEngine.Assertions;
 
@@ -71,22 +72,24 @@ namespace UnityEngine.UI
 
     public class MeshBuilder
     {
+        public const int Invalid = -1;
+
         public readonly MeshPosChannel Poses = new(64);
         public readonly MeshUVChannel UVs = new(64);
         public readonly MeshColorChannel Colors = new(64);
         public readonly MeshIndexChannel Indices = new(96);
 
-        public bool CheckPrepared()
+        [Conditional("DEBUG")]
+        public void AssertPrepared()
         {
             var posCount = Poses.Count;
             var uvCount = UVs.Count;
             var colorCount = Colors.Count;
             var indexCount = Indices.Count;
-
-            return posCount != -1
-                   && posCount == uvCount
-                   && uvCount == colorCount
-                   && indexCount >= posCount;
+            Assert.AreNotEqual(Invalid, posCount, "Poses is not prepared");
+            Assert.AreEqual(posCount, uvCount, "UVs is not prepared");
+            Assert.AreEqual(posCount, colorCount, "Colors is not prepared");
+            Assert.AreNotEqual(Invalid, indexCount, "Indices is not prepared");
         }
 
         public void SetUp_Empty()
@@ -141,7 +144,7 @@ namespace UnityEngine.UI
 
         public void TrimAfter(int trimVert, int trimIndex)
         {
-            Assert.IsTrue(CheckPrepared());
+            AssertPrepared();
 
             Poses.TrimAfter(trimVert);
             UVs.TrimAfter(trimVert);
@@ -151,7 +154,7 @@ namespace UnityEngine.UI
 
         public void FillMesh(Mesh mesh)
         {
-            Assert.IsTrue(CheckPrepared(), "Mesh is not prepared");
+            AssertPrepared();
             Assert.AreEqual(0, mesh.vertexCount, "Mesh is not empty");
             Assert.AreEqual(0, mesh.GetIndexCount(0), "Mesh is not empty");
 
