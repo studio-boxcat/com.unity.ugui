@@ -11,7 +11,10 @@ namespace UnityEngine.UI
             if (_pool.TryPop(out var instance))
                 return instance;
 
-            L.I("[TextGeneratorPool] Created a new instance.");
+#if DEBUG
+            _debugCreationCount++;
+            L.I("[TextGeneratorPool] Created a new instance: " + _debugCreationCount);
+#endif
             return new TextGenerator();
         }
 
@@ -32,11 +35,19 @@ namespace UnityEngine.UI
             _pool.Push(instance);
         }
 
+#if DEBUG
+        static int _debugCreationCount = 0;
+#endif
+
 #if UNITY_EDITOR
         static TextGeneratorPool()
         {
             // Clear the pool when the play mode changes.
-            UnityEditor.EditorApplication.playModeStateChanged += _ => _pool.Clear();
+            UnityEditor.EditorApplication.playModeStateChanged += _ =>
+            {
+                _debugCreationCount = 0;
+                _pool.Clear();
+            };
         }
 #endif
     }
