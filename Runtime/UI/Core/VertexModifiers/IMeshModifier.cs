@@ -1,5 +1,3 @@
-using UnityEngine.EventSystems;
-
 namespace UnityEngine.UI
 {
     /// <summary>
@@ -23,7 +21,7 @@ namespace UnityEngine.UI
 
             foreach (IMeshModifier meshModifier in meshModifiers)
             {
-                if (meshModifier is Behaviour {isActiveAndEnabled: false})
+                if (meshModifier is Behaviour { isActiveAndEnabled: false })
                     continue;
                 meshModifier.ModifyMesh(mb);
             }

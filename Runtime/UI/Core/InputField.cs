@@ -2740,8 +2740,7 @@ namespace UnityEngine.UI
                     GenerateHighlight(helper, roundingOffset);
                 }
 
-                helper.FillMesh(vbo);
-                helper.Invalidate();
+                helper.FillMeshAndInvalidate(vbo);
             }
         }
 

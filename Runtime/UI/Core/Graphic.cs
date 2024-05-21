@@ -448,77 +448,26 @@ namespace UnityEngine.UI
         {
             using var _ = MeshBuilderPool.Rent(out var mb);
 
-#if DEBUG
-            try
-#endif
-            {
-                OnPopulateMesh(mb);
+            OnPopulateMesh(mb);
 
-                var posCount = mb.Poses.Count;
-                if (posCount is MeshBuilder.Invalid)
-                {
-                    // L.I("[Graphic] MeshBuilder is unused.");
-                    // mb.Invalidate(); // No need to invalidate here.
-                    canvasRenderer.Clear();
-                    return;
-                }
-                if (posCount is 0)
-                {
-                    // L.I("[Graphic] MeshBuilder is empty.");
-                    mb.Invalidate();
-                    canvasRenderer.Clear();
-                    return;
-                }
-
-                mb.AssertPrepared();
-            }
-#if DEBUG
-            catch (Exception e)
+            // When no vertices are generated, SetMesh with an empty mesh.
+            // If we call canvasRenderer.Clear() to clear the mesh,
+            // somehow it will prevent further graphic rendering.
+            var posCount = mb.Poses.Count;
+            if (posCount is MeshBuilder.Invalid)
             {
-                L.E(e, this);
-                mb.Invalidate();
-                canvasRenderer.Clear();
+                _workerMesh.Clear();
+                canvasRenderer.SetMesh(_workerMesh);
                 return;
             }
-#endif
 
-#if DEBUG
-            try
-#endif
-            {
-                MeshModifierUtils.GetComponentsAndModifyMesh(this, mb);
-            }
-#if DEBUG
-            catch (Exception e)
-            {
-                L.E(e, this);
-                mb.Invalidate();
-                canvasRenderer.Clear();
-                return;
-            }
-#endif
+            mb.AssertPrepared();
 
-            var mesh = _workerMesh;
-            mesh.Clear();
+            MeshModifierUtils.GetComponentsAndModifyMesh(this, mb);
 
-#if DEBUG
-            try
-#endif
-            {
-                mb.FillMesh(mesh);
-            }
-#if DEBUG
-            catch (Exception e)
-            {
-                L.E(e, this);
-                mb.Invalidate();
-                canvasRenderer.Clear();
-                return;
-            }
-#endif
-
-            mb.Invalidate();
-            canvasRenderer.SetMesh(mesh);
+            _workerMesh.Clear();
+            mb.FillMeshAndInvalidate(_workerMesh);
+            canvasRenderer.SetMesh(_workerMesh);
         }
 
         public virtual void ForceUpdateGeometry() => UpdateGeometry();

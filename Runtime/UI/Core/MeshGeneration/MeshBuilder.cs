@@ -188,5 +188,11 @@ namespace UnityEngine.UI
             Colors.Invalidate();
             Indices.Invalidate();
         }
+
+        public void FillMeshAndInvalidate(Mesh mesh)
+        {
+            FillMesh(mesh);
+            Invalidate();
+        }
     }
 }
