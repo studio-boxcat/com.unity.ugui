@@ -11,18 +11,6 @@ namespace UnityEngine.UI
     [ExecuteAlways]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform))]
-    /// <summary>
-    /// A 2D rectangular mask that allows for clipping / masking of areas outside the mask.
-    /// </summary>
-    /// <remarks>
-    /// The RectMask2D behaves in a similar way to a standard Mask component. It differs though in some of the restrictions that it has.
-    /// A RectMask2D:
-    /// *Only works in the 2D plane
-    /// *Requires elements on the mask to be coplanar.
-    /// *Does not require stencil buffer / extra draw calls
-    /// *Requires fewer draw calls
-    /// *Culls elements that are outside the mask area.
-    /// </remarks>
     public sealed class RectMask2D : UIBehaviour, ICanvasRaycastFilter
 #if UNITY_EDITOR
         , ISelfValidator
@@ -199,6 +187,33 @@ namespace UnityEngine.UI
 
 
 #if UNITY_EDITOR
+        void OnDrawGizmos()
+        {
+            if (UnityEditor.Selection.activeGameObject != gameObject)
+                return;
+
+            var orgColor = Gizmos.color;
+            Gizmos.color = Color.yellow;
+
+            var t = rectTransform;
+            var rect = t.rect;
+            var x0 = rect.xMin + m_Padding.x;
+            var y0 = rect.yMin + m_Padding.y;
+            var x1 = rect.xMax - m_Padding.z;
+            var y1 = rect.yMax - m_Padding.w;
+
+            var p0 = t.TransformPoint(new Vector2(x0, y0));
+            var p1 = t.TransformPoint(new Vector2(x0, y1));
+            var p2 = t.TransformPoint(new Vector2(x1, y1));
+            var p3 = t.TransformPoint(new Vector2(x1, y0));
+            Gizmos.DrawLine(p0, p1);
+            Gizmos.DrawLine(p1, p2);
+            Gizmos.DrawLine(p2, p3);
+            Gizmos.DrawLine(p3, p0);
+
+            Gizmos.color = orgColor;
+        }
+
         void ISelfValidator.Validate(SelfValidationResult result)
         {
             // ReSharper disable once Unity.NoNullPropagation
