@@ -1,7 +1,6 @@
 using System;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
-using UnityEngine.Assertions;
 #if UNITY_EDITOR
 using System.Reflection;
 #endif
