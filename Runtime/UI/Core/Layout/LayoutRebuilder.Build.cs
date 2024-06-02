@@ -45,19 +45,20 @@ namespace UnityEngine.UI
             // If there are no controllers on this rect we can skip this entire sub-tree
             // We don't need to consider controllers on children deeper in the sub-tree either,
             // since they will be their own roots.
-            if (components.Count == 0)
+            var count = components.Count;
+            if (count is 0)
                 return;
 
             // Layout control needs to executed top down with parents being done before their children,
             // because the children rely on the sizes of the parents.
 
             // First call layout controllers that may change their own RectTransform
-            for (var i = 0; i < components.Count; i++)
+            for (var i = 0; i < count; i++)
                 if (components[i] is ILayoutSelfController selfController)
                     result.Add(selfController);
 
             // Then call the remaining, such as layout groups that change their children, taking their own RectTransform size into account.
-            for (var i = 0; i < components.Count; i++)
+            for (var i = 0; i < count; i++)
             {
                 var comp = components[i];
                 if (comp is ILayoutSelfController)
@@ -97,6 +98,7 @@ namespace UnityEngine.UI
             // since they will be their own roots.
             using (CompBuf.GetEnabledComponents(rect, typeof(ILayoutElement), out var layoutElements))
             {
+                // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
                 foreach (ILayoutElement layoutElement in layoutElements)
                     result.Add(layoutElement);
             }
