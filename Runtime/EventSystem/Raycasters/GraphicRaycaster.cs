@@ -85,10 +85,10 @@ namespace UnityEngine.EventSystems
                 // we should abort the raycast since it could be block the raycast if it's initialized later.
                 if (depth is -1)
                 {
-                    L.W("[GraphicRaycaster] Uninitialized Graphic found: " + graphic.name, graphic);
+                    L.I("[GraphicRaycaster] Uninitialized Graphic found: " + graphic.name, graphic);
                     if (Hit(t, graphic, eventCamera, pointerPosition))
                     {
-                        L.W("[GraphicRaycaster] Aborting raycast since the blocking Graphic is not initialized yet.", graphic);
+                        L.I("[GraphicRaycaster] Aborting raycast since the blocking Graphic is not initialized yet.", graphic);
                         result = default;
                         return RaycastResultType.Abort;
                     }

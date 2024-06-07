@@ -51,7 +51,7 @@ namespace UnityEngine.EventSystems
 
             if (_raycasterBuffer[^1].RendererDepth is -1)
             {
-                L.W("[QuickRaycast] Aborting raycast because there's a CanvasRenderer that is not initialized.");
+                L.I("[QuickRaycast] Aborting raycast because there's a CanvasRenderer that is not initialized.");
                 raycastResult = default;
                 ClearBuffer();
                 return false;
