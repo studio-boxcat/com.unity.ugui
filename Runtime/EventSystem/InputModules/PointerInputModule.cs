@@ -13,12 +13,7 @@ namespace UnityEngine.EventSystems
         /// </summary>
         public const int kMouseLeftId = -1;
 
-        /// <summary>
-        /// Touch id for when simulating touches on a non touch device.
-        /// </summary>
-        public const int kFakeTouchesId = -4;
-
-        protected Dictionary<int, PointerEventData> m_PointerData = new Dictionary<int, PointerEventData>();
+        protected Dictionary<int, PointerEventData> m_PointerData = new();
 
         /// <summary>
         /// Search the cache for currently active pointers, return true if found.
@@ -100,8 +95,8 @@ namespace UnityEngine.EventSystems
         /// <param name="buttonId">Mouse button ID</param>
         protected PointerEventData.FramePressState StateForMouseButton(int buttonId)
         {
-            var pressed = input.GetMouseButtonDown(buttonId);
-            var released = input.GetMouseButtonUp(buttonId);
+            var pressed = UIInput.GetMouseButtonDown(buttonId);
+            var released = UIInput.GetMouseButtonUp(buttonId);
             if (pressed && released)
                 return PointerEventData.FramePressState.PressedAndReleased;
             if (pressed)
@@ -231,9 +226,9 @@ namespace UnityEngine.EventSystems
             leftData.Reset();
 
             if (created)
-                leftData.position = input.mousePosition;
+                leftData.position = UIInput.mousePosition;
 
-            Vector2 pos = input.mousePosition;
+            Vector2 pos = UIInput.mousePosition;
             if (Cursor.lockState == CursorLockMode.Locked)
             {
                 // We don't want to do ANY cursor-based interaction when the mouse is locked
@@ -245,7 +240,7 @@ namespace UnityEngine.EventSystems
                 leftData.delta = pos - leftData.position;
                 leftData.position = pos;
             }
-            leftData.scrollDelta = input.mouseScrollDelta;
+            leftData.scrollDelta = UIInput.mouseScrollDelta;
             leftData.button = PointerEventData.InputButton.Left;
             leftData.pointerCurrentRaycast = QuickRaycast.RaycastAll(leftData.position, out var raycastResult)
                 ? raycastResult : default;

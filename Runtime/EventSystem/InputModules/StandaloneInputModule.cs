@@ -1,60 +1,35 @@
-using UnityEngine.Serialization;
-
 namespace UnityEngine.EventSystems
 {
     [AddComponentMenu("Event/Standalone Input Module")]
-    /// <summary>
-    /// A BaseInputModule designed for mouse / keyboard / controller input.
-    /// </summary>
-    /// <remarks>
-    /// Input module for working with, mouse, keyboard, or controller.
-    /// </remarks>
-    public class StandaloneInputModule : PointerInputModule
+    public sealed class StandaloneInputModule : PointerInputModule
     {
-        private Vector2 m_LastMousePosition;
-        private Vector2 m_MousePosition;
+        PointerEventData m_InputPointerEvent;
 
-        private GameObject m_CurrentFocusedGameObject;
-
-        private PointerEventData m_InputPointerEvent;
-
-        protected StandaloneInputModule()
+        void OnEnable()
         {
+            if (!eventSystem.isFocused && ShouldIgnoreEventsOnNoFocus())
+                return;
+
+            var toSelect = eventSystem.currentSelectedGameObject;
+            eventSystem.SetSelectedGameObject(toSelect, GetBaseEventData());
         }
 
-        [SerializeField]
-        [FormerlySerializedAs("m_AllowActivationOnMobileDevice")]
-        [HideInInspector]
-        private bool m_ForceModuleActive;
-
-        private bool ShouldIgnoreEventsOnNoFocus()
-        {
-#if UNITY_EDITOR
-            return !UnityEditor.EditorApplication.isRemoteConnected;
-#else
-            return true;
-#endif
-        }
+        /// <summary>
+        /// See BaseInputModule.
+        /// </summary>
+        void OnDisable() => ClearSelection();
 
         public override void UpdateModule()
         {
-            if (!eventSystem.isFocused && ShouldIgnoreEventsOnNoFocus())
-            {
-                if (m_InputPointerEvent != null && m_InputPointerEvent.pointerDrag != null && m_InputPointerEvent.dragging)
-                {
-                    ReleaseMouse(m_InputPointerEvent, m_InputPointerEvent.pointerCurrentRaycast.gameObject);
-                }
+            if (eventSystem.isFocused || !ShouldIgnoreEventsOnNoFocus()) return;
 
-                m_InputPointerEvent = null;
+            if (m_InputPointerEvent != null && m_InputPointerEvent.pointerDrag != null && m_InputPointerEvent.dragging)
+                ReleaseMouse(m_InputPointerEvent, m_InputPointerEvent.pointerCurrentRaycast.gameObject);
 
-                return;
-            }
-
-            m_LastMousePosition = m_MousePosition;
-            m_MousePosition = input.mousePosition;
+            m_InputPointerEvent = null;
         }
 
-        private void ReleaseMouse(PointerEventData pointerEvent, GameObject currentOverGo)
+        void ReleaseMouse(PointerEventData pointerEvent, GameObject currentOverGo)
         {
             ExecuteEvents.Execute(pointerEvent.pointerPress, pointerEvent, ExecuteEvents.pointerUpHandler);
 
@@ -93,46 +68,6 @@ namespace UnityEngine.EventSystems
             m_InputPointerEvent = pointerEvent;
         }
 
-        public override bool ShouldActivateModule()
-        {
-            if (!base.ShouldActivateModule())
-                return false;
-
-            var shouldActivate = m_ForceModuleActive;
-            shouldActivate |= (m_MousePosition - m_LastMousePosition).sqrMagnitude > 0.0f;
-            shouldActivate |= input.GetMouseButtonDown(0);
-
-            if (input.touchCount > 0)
-                shouldActivate = true;
-
-            return shouldActivate;
-        }
-
-        /// <summary>
-        /// See BaseInputModule.
-        /// </summary>
-        public override void ActivateModule()
-        {
-            if (!eventSystem.isFocused && ShouldIgnoreEventsOnNoFocus())
-                return;
-
-            base.ActivateModule();
-            m_MousePosition = input.mousePosition;
-            m_LastMousePosition = input.mousePosition;
-
-            var toSelect = eventSystem.currentSelectedGameObject;
-            eventSystem.SetSelectedGameObject(toSelect, GetBaseEventData());
-        }
-
-        /// <summary>
-        /// See BaseInputModule.
-        /// </summary>
-        public override void DeactivateModule()
-        {
-            base.DeactivateModule();
-            ClearSelection();
-        }
-
         public override void Process()
         {
             if (!eventSystem.isFocused && ShouldIgnoreEventsOnNoFocus())
@@ -141,23 +76,19 @@ namespace UnityEngine.EventSystems
             SendUpdateEventToSelectedObject();
 
             // touch needs to take precedence because of the mouse emulation layer
-            if (!ProcessTouchEvents() && input.mousePresent)
+            if (!ProcessTouchEvents() && UIInput.mousePresent)
                 ProcessMouseEvent();
         }
 
-        private bool ProcessTouchEvents()
+        bool ProcessTouchEvents()
         {
-            for (int i = 0; i < input.touchCount; ++i)
+            for (var i = 0; i < UIInput.touchCount; ++i)
             {
-                Touch touch = input.GetTouch(i);
-
+                var touch = UIInput.GetTouch(i);
                 if (touch.type == TouchType.Indirect)
                     continue;
 
-                bool released;
-                bool pressed;
-                var pointer = GetTouchPointerEventData(touch, out pressed, out released);
-
+                var pointer = GetTouchPointerEventData(touch, out var pressed, out var released);
                 ProcessTouchPress(pointer, pressed, released);
 
                 if (!released)
@@ -168,7 +99,7 @@ namespace UnityEngine.EventSystems
                 else
                     RemovePointerData(pointer);
             }
-            return input.touchCount > 0;
+            return UIInput.touchCount > 0;
         }
 
         /// <summary>
@@ -180,7 +111,7 @@ namespace UnityEngine.EventSystems
         /// <remarks>
         /// This method can be overridden in derived classes to change how touch press events are handled.
         /// </remarks>
-        protected void ProcessTouchPress(PointerEventData pointerEvent, bool pressed, bool released)
+        void ProcessTouchPress(PointerEventData pointerEvent, bool pressed, bool released)
         {
             var currentOverGo = pointerEvent.pointerCurrentRaycast.gameObject;
 
@@ -266,20 +197,13 @@ namespace UnityEngine.EventSystems
             m_InputPointerEvent = pointerEvent;
         }
 
-        protected void ProcessMouseEvent()
-        {
-            ProcessMouseEvent(0);
-        }
-
         /// <summary>
         /// Process all mouse events.
         /// </summary>
-        protected void ProcessMouseEvent(int id)
+        void ProcessMouseEvent(int id)
         {
             var mouseData = GetMousePointerEventData(id);
             var leftButtonData = mouseData.GetButtonState(PointerEventData.InputButton.Left).eventData;
-
-            m_CurrentFocusedGameObject = leftButtonData.buttonData.pointerCurrentRaycast.gameObject;
 
             // Process the first mouse button fully
             ProcessMousePress(leftButtonData);
@@ -293,7 +217,9 @@ namespace UnityEngine.EventSystems
             }
         }
 
-        protected bool SendUpdateEventToSelectedObject()
+        void ProcessMouseEvent() => ProcessMouseEvent(0);
+
+        bool SendUpdateEventToSelectedObject()
         {
             if (eventSystem.currentSelectedGameObject == null)
                 return false;
@@ -306,7 +232,7 @@ namespace UnityEngine.EventSystems
         /// <summary>
         /// Calculate and process any mouse button state changes.
         /// </summary>
-        protected void ProcessMousePress(MouseButtonEventData data)
+        void ProcessMousePress(MouseButtonEventData data)
         {
             var pointerEvent = data.buttonData;
             var currentOverGo = pointerEvent.pointerCurrentRaycast.gameObject;
@@ -354,9 +280,13 @@ namespace UnityEngine.EventSystems
             }
         }
 
-        protected GameObject GetCurrentFocusedGameObject()
+        static bool ShouldIgnoreEventsOnNoFocus()
         {
-            return m_CurrentFocusedGameObject;
+#if UNITY_EDITOR
+            return !UnityEditor.EditorApplication.isRemoteConnected;
+#else
+            return true;
+#endif
         }
     }
 }

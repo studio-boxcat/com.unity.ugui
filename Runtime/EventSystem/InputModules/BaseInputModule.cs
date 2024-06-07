@@ -1,112 +1,19 @@
-using System;
-using System.Collections.Generic;
+using Sirenix.OdinInspector;
 
 namespace UnityEngine.EventSystems
 {
     [RequireComponent(typeof(EventSystem))]
-    /// <summary>
-    /// A base module that raises events and sends them to GameObjects.
-    /// </summary>
-    /// <remarks>
-    /// An Input Module is a component of the EventSystem that is responsible for raising events and sending them to GameObjects for handling. The BaseInputModule is a class that all Input Modules in the EventSystem inherit from. Examples of provided modules are TouchInputModule and StandaloneInputModule, if these are inadequate for your project you can create your own by extending from the BaseInputModule.
-    /// </remarks>
-    /// <example>
-    /// <code>
-    /// <![CDATA[
-    /// using UnityEngine;
-    /// using UnityEngine.EventSystems;
-    ///
-    /// /**
-    ///  * Create a module that every tick sends a 'Move' event to
-    ///  * the target object
-    ///  */
-    /// public class MyInputModule : BaseInputModule
-    /// {
-    ///     public GameObject m_TargetObject;
-    ///
-    ///     public override void Process()
-    ///     {
-    ///         if (m_TargetObject == null)
-    ///             return;
-    ///         ExecuteEvents.Execute (m_TargetObject, new BaseEventData (eventSystem), ExecuteEvents.moveHandler);
-    ///     }
-    /// }
-    /// ]]>
-    ///</code>
-    /// </example>
     public abstract class BaseInputModule : UIBehaviour
     {
+        [SerializeField, Required, ChildGameObjectsOnly]
+        EventSystem _eventSystem;
         /// <summary>
         /// True if pointer hover events will be sent to the parent
         /// </summary>
-        [SerializeField] private bool m_SendPointerHoverToParent = true;
-        //This is needed for testing
-        internal bool sendPointerHoverToParent { get { return m_SendPointerHoverToParent; } set { m_SendPointerHoverToParent = value; } }
+        [SerializeField]
+        bool m_SendPointerHoverToParent = true;
 
-        private EventSystem m_EventSystem;
-        private BaseEventData m_BaseEventData;
-
-        protected BaseInput m_InputOverride;
-        private BaseInput m_DefaultInput;
-
-        /// <summary>
-        /// The current BaseInput being used by the input module.
-        /// </summary>
-        public BaseInput input
-        {
-            get
-            {
-                if (m_InputOverride != null)
-                    return m_InputOverride;
-
-                if (m_DefaultInput == null)
-                {
-                    var inputs = GetComponents<BaseInput>();
-                    foreach (var baseInput in inputs)
-                    {
-                        // We dont want to use any classes that derrive from BaseInput for default.
-                        if (baseInput != null && baseInput.GetType() == typeof(BaseInput))
-                        {
-                            m_DefaultInput = baseInput;
-                            break;
-                        }
-                    }
-
-                    if (m_DefaultInput == null)
-                        m_DefaultInput = gameObject.AddComponent<BaseInput>();
-                }
-
-                return m_DefaultInput;
-            }
-        }
-
-        /// <summary>
-        /// Used to override the default BaseInput for the input module.
-        /// </summary>
-        /// <remarks>
-        /// With this it is possible to bypass the Input system with your own but still use the same InputModule. For example this can be used to feed fake input into the UI or interface with a different input system.
-        /// </remarks>
-        public BaseInput inputOverride
-        {
-            get { return m_InputOverride; }
-            set { m_InputOverride = value; }
-        }
-
-        protected EventSystem eventSystem
-        {
-            get { return m_EventSystem; }
-        }
-
-        protected virtual void OnEnable()
-        {
-            m_EventSystem = GetComponent<EventSystem>();
-            m_EventSystem.UpdateModules();
-        }
-
-        protected virtual void OnDisable()
-        {
-            m_EventSystem.UpdateModules();
-        }
+        protected EventSystem eventSystem => _eventSystem;
 
         /// <summary>
         /// Process the current tick for the module.
@@ -119,7 +26,7 @@ namespace UnityEngine.EventSystems
         /// <param name="g1">GameObject to compare</param>
         /// <param name="g2">GameObject to compare</param>
         /// <returns></returns>
-        protected static GameObject FindCommonRoot(GameObject g1, GameObject g2)
+        static GameObject FindCommonRoot(GameObject g1, GameObject g2)
         {
             if (g1 == null || g2 == null)
                 return null;
@@ -247,66 +154,17 @@ namespace UnityEngine.EventSystems
         }
 
         /// <summary>
-        /// Generate a BaseEventData that can be used by the EventSystem.
-        /// </summary>
-        protected virtual BaseEventData GetBaseEventData()
-        {
-            if (m_BaseEventData == null)
-                m_BaseEventData = new BaseEventData();
-
-            m_BaseEventData.Reset();
-            return m_BaseEventData;
-        }
-
-        /// <summary>
-        /// Should the module be activated.
-        /// </summary>
-        public virtual bool ShouldActivateModule()
-        {
-            return enabled && gameObject.activeInHierarchy;
-        }
-
-        /// <summary>
-        /// Called when the module is deactivated. Override this if you want custom code to execute when you deactivate your module.
-        /// </summary>
-        public virtual void DeactivateModule()
-        {}
-
-        /// <summary>
-        /// Called when the module is activated. Override this if you want custom code to execute when you activate your module.
-        /// </summary>
-        public virtual void ActivateModule()
-        {}
-
-        /// <summary>
         /// Update the internal state of the Module.
         /// </summary>
-        public virtual void UpdateModule()
-        {}
+        public virtual void UpdateModule() {}
 
-        /// <summary>
-        /// Check to see if the module is supported. Override this if you have a platform specific module (eg. TouchInputModule that you do not want to activate on standalone.)
-        /// </summary>
-        /// <returns>Is the module supported.</returns>
-        public virtual bool IsModuleSupported()
-        {
-            return true;
-        }
 
-        /// <summary>
-        /// Returns Id of the pointer following <see cref="UnityEngine.UIElements.PointerId"/> convention.
-        /// </summary>
-        /// <param name="sourcePointerData">PointerEventData whose pointerId will be converted to UI Toolkit pointer convention.</param>
-        /// <seealso cref="UnityEngine.UIElements.IPointerEvent" />
-        public virtual int ConvertUIToolkitPointerId(PointerEventData sourcePointerData)
+        static BaseEventData m_BaseEventData;
+        protected static BaseEventData GetBaseEventData()
         {
-#if PACKAGE_UITOOLKIT
-            return sourcePointerData.pointerId < 0 ?
-                UIElements.PointerId.mousePointerId :
-                UIElements.PointerId.touchPointerIdBase + sourcePointerData.pointerId;
-#else
-            return -1;
-#endif
+            m_BaseEventData ??= new BaseEventData();
+            m_BaseEventData.Reset();
+            return m_BaseEventData;
         }
     }
 }

@@ -312,20 +312,7 @@ namespace UnityEngine.UI
         private bool m_TouchKeyboardAllowsInPlaceEditing = false;
         private bool m_IsCompositionActive = false;
 
-        private BaseInput input
-        {
-            get
-            {
-                if (EventSystem.current && EventSystem.current.currentInputModule)
-                    return EventSystem.current.currentInputModule.input;
-                return null;
-            }
-        }
-
-        private string compositionString
-        {
-            get { return input != null ? input.compositionString : Input.compositionString; }
-        }
+        private string compositionString => UIInput.compositionString;
 
         // Doesn't include dot and @ on purpose! See usage for details.
         const string kEmailSpecialCharacters = "!#$%&'*+-/=?^_`{|}~";
@@ -2800,8 +2787,7 @@ namespace UnityEngine.UI
             Vector2 screenPosition = RectTransformUtility.WorldToScreenPoint(cameraRef, cursorPosition);
             screenPosition.y = screenHeight - screenPosition.y;
 
-            if (input != null)
-                input.compositionCursorPos = screenPosition;
+            UIInput.compositionCursorPos = screenPosition;
         }
 
         private void GenerateHighlight(MeshBuilder vbo, Vector2 roundingOffset)
@@ -3023,7 +3009,7 @@ namespace UnityEngine.UI
 
             if (TouchScreenKeyboardShouldBeUsed())
             {
-                if (input != null && input.touchSupported)
+                if (UIInput.touchSupported)
                 {
                     TouchScreenKeyboard.hideInput = shouldHideMobileInput;
                 }
@@ -3042,8 +3028,7 @@ namespace UnityEngine.UI
             // Perform normal OnFocus routine if platform supports it
             if (!TouchScreenKeyboard.isSupported || m_TouchKeyboardAllowsInPlaceEditing)
             {
-                if (input != null)
-                    input.imeCompositionMode = IMECompositionMode.On;
+                UIInput.imeCompositionMode = IMECompositionMode.On;
                 OnFocus();
             }
             m_AllowInput = true;
@@ -3126,8 +3111,7 @@ namespace UnityEngine.UI
                 }
 
                 m_CaretPosition = m_CaretSelectPosition = 0;
-                if (input != null)
-                    input.imeCompositionMode = IMECompositionMode.Auto;
+                UIInput.imeCompositionMode = IMECompositionMode.Auto;
             }
 
             MarkGeometryAsDirty();
