@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
-using UnityEngine.UI.Collections;
 
 namespace UnityEngine.UI
 {

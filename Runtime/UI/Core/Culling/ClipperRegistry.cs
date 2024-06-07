@@ -8,7 +8,7 @@ namespace UnityEngine.UI
     /// <remarks>
     /// This is used during the CanvasUpdate loop to cull clippable elements. The clipping is called after layout, but before Graphic update.
     /// </remarks>
-    public static class ClipperRegistry
+    static class ClipperRegistry
     {
         static readonly HashSet<RectMask2D> _clippers = new(ReferenceEqualityComparer.Object);
 

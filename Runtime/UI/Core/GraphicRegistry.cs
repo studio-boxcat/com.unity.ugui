@@ -1,14 +1,13 @@
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using UnityEngine.Assertions;
-using UnityEngine.UI.Collections;
 
 namespace UnityEngine.UI
 {
     /// <summary>
     ///   Registry which maps a Graphic to the canvas it belongs to.
     /// </summary>
-    public class GraphicRegistry
+    class GraphicRegistry
     {
         static GraphicRegistry s_Instance;
         public static GraphicRegistry instance => s_Instance ??= new GraphicRegistry();

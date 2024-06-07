@@ -1,9 +1,8 @@
-using System;
 using System.Collections.Generic;
 
-namespace UnityEngine.UI.Collections
+namespace UnityEngine
 {
-    public class IndexedSet<T> where T : class
+    class IndexedSet<T> where T : class
     {
         //This is a container that gives:
         //  - Unique items
@@ -40,13 +39,6 @@ namespace UnityEngine.UI.Collections
             return true;
         }
 
-        public void Remove(T item)
-        {
-            var removed = TryRemove(item);
-            if (removed == false)
-                throw new ArgumentException("Item doesn't exist in the IndexedSet");
-        }
-
         public bool TryRemove(T item)
         {
             var hashCode = item.GetHashCode();
@@ -76,17 +68,6 @@ namespace UnityEngine.UI.Collections
             return true;
         }
 
-        public void Clear()
-        {
-            m_List.Clear();
-            m_IndexMap.Clear();
-        }
-
-        public bool Contains(T item)
-        {
-            return m_IndexMap.ContainsKey(item.GetHashCode());
-        }
-
         public int Count => m_List.Count;
 
         public List<T>.Enumerator GetEnumerator() => m_List.GetEnumerator();
@@ -94,7 +75,8 @@ namespace UnityEngine.UI.Collections
         public void Flush(List<T> list)
         {
             list.AddRange(m_List);
-            Clear();
+            m_List.Clear();
+            m_IndexMap.Clear();
         }
     }
 }

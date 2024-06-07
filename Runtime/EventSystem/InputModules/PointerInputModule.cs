@@ -8,12 +8,7 @@ namespace UnityEngine.EventSystems
     /// </summary>
     public abstract class PointerInputModule : BaseInputModule
     {
-        /// <summary>
-        /// Id of the cached left mouse pointer event.
-        /// </summary>
-        public const int kMouseLeftId = -1;
-
-        protected Dictionary<int, PointerEventData> m_PointerData = new();
+        readonly Dictionary<int, PointerEventData> m_PointerData = new();
 
         /// <summary>
         /// Search the cache for currently active pointers, return true if found.
@@ -22,14 +17,11 @@ namespace UnityEngine.EventSystems
         /// <param name="data">Found data</param>
         /// <param name="create">If not found should it be created</param>
         /// <returns>True if pointer is found.</returns>
-        protected bool GetPointerData(int id, out PointerEventData data, bool create)
+        bool GetPointerData(int id, out PointerEventData data, bool create)
         {
             if (!m_PointerData.TryGetValue(id, out data) && create)
             {
-                data = new PointerEventData()
-                {
-                    pointerId = id,
-                };
+                data = new PointerEventData { pointerId = id };
                 m_PointerData.Add(id, data);
                 return true;
             }
@@ -53,8 +45,7 @@ namespace UnityEngine.EventSystems
         /// <returns></returns>
         protected PointerEventData GetTouchPointerEventData(Touch input, out bool pressed, out bool released)
         {
-            PointerEventData pointerData;
-            var created = GetPointerData(input.fingerId, out pointerData, true);
+            var created = GetPointerData(input.fingerId, out var pointerData, true);
 
             pointerData.Reset();
 
@@ -93,7 +84,7 @@ namespace UnityEngine.EventSystems
         /// Given a mouse button return the current state for the frame.
         /// </summary>
         /// <param name="buttonId">Mouse button ID</param>
-        protected PointerEventData.FramePressState StateForMouseButton(int buttonId)
+        static PointerEventData.FramePressState StateForMouseButton(int buttonId)
         {
             var pressed = UIInput.GetMouseButtonDown(buttonId);
             var released = UIInput.GetMouseButtonUp(buttonId);
@@ -108,48 +99,13 @@ namespace UnityEngine.EventSystems
 
         protected class ButtonState
         {
-            private PointerEventData.InputButton m_Button = PointerEventData.InputButton.Left;
-
-            public MouseButtonEventData eventData
-            {
-                get { return m_EventData; }
-                set { m_EventData = value; }
-            }
-
-            public PointerEventData.InputButton button
-            {
-                get { return m_Button; }
-                set { m_Button = value; }
-            }
-
-            private MouseButtonEventData m_EventData;
+            public MouseButtonEventData eventData { get; set; }
+            public PointerEventData.InputButton button { get; set; } = PointerEventData.InputButton.Left;
         }
 
         protected class MouseState
         {
-            private List<ButtonState> m_TrackedButtons = new List<ButtonState>();
-
-            public bool AnyPressesThisFrame()
-            {
-                var trackedButtonsCount = m_TrackedButtons.Count;
-                for (int i = 0; i < trackedButtonsCount; i++)
-                {
-                    if (m_TrackedButtons[i].eventData.PressedThisFrame())
-                        return true;
-                }
-                return false;
-            }
-
-            public bool AnyReleasesThisFrame()
-            {
-                var trackedButtonsCount = m_TrackedButtons.Count;
-                for (int i = 0; i < trackedButtonsCount; i++)
-                {
-                    if (m_TrackedButtons[i].eventData.ReleasedThisFrame())
-                        return true;
-                }
-                return false;
-            }
+            readonly List<ButtonState> m_TrackedButtons = new();
 
             public ButtonState GetButtonState(PointerEventData.InputButton button)
             {
@@ -183,7 +139,7 @@ namespace UnityEngine.EventSystems
         /// <summary>
         /// Information about a mouse button event.
         /// </summary>
-        public class MouseButtonEventData
+        protected class MouseButtonEventData
         {
             /// <summary>
             /// The state of the button this frame.
@@ -200,7 +156,7 @@ namespace UnityEngine.EventSystems
             /// </summary>
             public bool PressedThisFrame()
             {
-                return buttonState == PointerEventData.FramePressState.Pressed || buttonState == PointerEventData.FramePressState.PressedAndReleased;
+                return buttonState is PointerEventData.FramePressState.Pressed or PointerEventData.FramePressState.PressedAndReleased;
             }
 
             /// <summary>
@@ -208,27 +164,27 @@ namespace UnityEngine.EventSystems
             /// </summary>
             public bool ReleasedThisFrame()
             {
-                return buttonState == PointerEventData.FramePressState.Released || buttonState == PointerEventData.FramePressState.PressedAndReleased;
+                return buttonState is PointerEventData.FramePressState.Released or PointerEventData.FramePressState.PressedAndReleased;
             }
         }
 
-        private readonly MouseState m_MouseState = new MouseState();
+        readonly MouseState m_MouseState = new();
 
         /// <summary>
         /// Return the current MouseState.
         /// </summary>
-        protected virtual MouseState GetMousePointerEventData(int id)
+        protected MouseState GetMousePointerEventData(int id)
         {
             // Populate the left button...
-            PointerEventData leftData;
-            var created = GetPointerData(kMouseLeftId, out leftData, true);
+            const int kMouseLeftId = -1;
+            var created = GetPointerData(kMouseLeftId, out var leftData, true);
 
             leftData.Reset();
 
             if (created)
                 leftData.position = UIInput.mousePosition;
 
-            Vector2 pos = UIInput.mousePosition;
+            var pos = UIInput.mousePosition;
             if (Cursor.lockState == CursorLockMode.Locked)
             {
                 // We don't want to do ANY cursor-based interaction when the mouse is locked
@@ -250,17 +206,7 @@ namespace UnityEngine.EventSystems
             return m_MouseState;
         }
 
-        /// <summary>
-        /// Return the last PointerEventData for the given touch / mouse id.
-        /// </summary>
-        protected PointerEventData GetLastPointerEventData(int id)
-        {
-            PointerEventData data;
-            GetPointerData(id, out data, false);
-            return data;
-        }
-
-        private static bool ShouldStartDrag(Vector2 pressPos, Vector2 currentPos, float threshold, bool useDragThreshold)
+        static bool ShouldStartDrag(Vector2 pressPos, Vector2 currentPos, float threshold, bool useDragThreshold)
         {
             if (!useDragThreshold)
                 return true;
@@ -271,7 +217,7 @@ namespace UnityEngine.EventSystems
         /// <summary>
         /// Process movement for the current frame with the given pointer event.
         /// </summary>
-        protected virtual void ProcessMove(PointerEventData pointerEvent)
+        protected void ProcessMove(PointerEventData pointerEvent)
         {
             var targetGO = (Cursor.lockState == CursorLockMode.Locked ? null : pointerEvent.pointerCurrentRaycast.gameObject);
             HandlePointerExitAndEnter(pointerEvent, targetGO);
@@ -280,7 +226,7 @@ namespace UnityEngine.EventSystems
         /// <summary>
         /// Process the drag for the current frame with the given pointer event.
         /// </summary>
-        protected virtual void ProcessDrag(PointerEventData pointerEvent)
+        protected void ProcessDrag(PointerEventData pointerEvent)
         {
             if (!pointerEvent.IsPointerMoving() ||
                 Cursor.lockState == CursorLockMode.Locked ||

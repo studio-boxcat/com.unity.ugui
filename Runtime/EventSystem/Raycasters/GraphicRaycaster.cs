@@ -2,7 +2,6 @@ using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
 using UnityEngine.UI;
-using UnityEngine.UI.Collections;
 
 namespace UnityEngine.EventSystems
 {

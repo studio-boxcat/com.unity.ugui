@@ -1,10 +1,8 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.Pool;
-using UnityEngine.UI.CoroutineTween;
 
 namespace UnityEngine.UI
 {
@@ -330,18 +328,9 @@ namespace UnityEngine.UI
         /// </example>
         public DropdownEvent onValueChanged { get { return m_OnValueChanged; } set { m_OnValueChanged = value; } }
 
-        [SerializeField]
-        private float m_AlphaFadeSpeed = 0.15f;
-
-        /// <summary>
-        /// The time interval at which a drop down will appear and disappear
-        /// </summary>
-        public float alphaFadeSpeed  { get { return m_AlphaFadeSpeed; } set { m_AlphaFadeSpeed = value; } }
-
         private GameObject m_Dropdown;
         private GameObject m_Blocker;
         private List<DropdownItem> m_Items = new List<DropdownItem>();
-        private TweenRunner<FloatTween> m_AlphaTweenRunner;
         private bool validTemplate = false;
         private const int kHighSortingLayer = 30000;
 
@@ -446,9 +435,6 @@ namespace UnityEngine.UI
 
         protected virtual void Start()
         {
-            m_AlphaTweenRunner = new TweenRunner<FloatTween>();
-            m_AlphaTweenRunner.Init(this);
-
             RefreshShownValue();
         }
 
@@ -858,9 +844,6 @@ namespace UnityEngine.UI
                 itemRect.sizeDelta = new Vector2(itemRect.sizeDelta.x, itemSize.y);
             }
 
-            // Fade in the popup
-            AlphaFadeList(m_AlphaFadeSpeed, 0f, 1f);
-
             // Make drop-down template and item template inactive
             m_Template.gameObject.SetActive(false);
             itemTemplate.gameObject.SetActive(false);
@@ -1032,31 +1015,6 @@ namespace UnityEngine.UI
             return item;
         }
 
-        private void AlphaFadeList(float duration, float alpha)
-        {
-            CanvasGroup group = m_Dropdown.GetComponent<CanvasGroup>();
-            AlphaFadeList(duration, group.alpha, alpha);
-        }
-
-        private void AlphaFadeList(float duration, float start, float end)
-        {
-            if (end.Equals(start))
-                return;
-
-            FloatTween tween = new FloatTween {duration = duration, startValue = start, targetValue = end};
-            tween.AddOnChangedCallback(SetAlpha);
-            tween.ignoreTimeScale = true;
-            m_AlphaTweenRunner.StartTween(tween);
-        }
-
-        private void SetAlpha(float alpha)
-        {
-            if (!m_Dropdown)
-                return;
-            CanvasGroup group = m_Dropdown.GetComponent<CanvasGroup>();
-            group.alpha = alpha;
-        }
-
         /// <summary>
         /// Hide the dropdown list. I.e. close it.
         /// </summary>
@@ -1064,22 +1022,14 @@ namespace UnityEngine.UI
         {
             if (m_Dropdown != null)
             {
-                AlphaFadeList(m_AlphaFadeSpeed, 0f);
-
                 // User could have disabled the dropdown during the OnValueChanged call.
                 if (IsActive())
-                    StartCoroutine(DelayedDestroyDropdownList(m_AlphaFadeSpeed));
+                    ImmediateDestroyDropdownList();
             }
             if (m_Blocker != null)
                 DestroyBlocker(m_Blocker);
             m_Blocker = null;
             Select();
-        }
-
-        private IEnumerator DelayedDestroyDropdownList(float delay)
-        {
-            yield return new WaitForSecondsRealtime(delay);
-            ImmediateDestroyDropdownList();
         }
 
         private void ImmediateDestroyDropdownList()
