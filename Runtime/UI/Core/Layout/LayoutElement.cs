@@ -1,3 +1,5 @@
+using Sirenix.OdinInspector;
+
 namespace UnityEngine.UI
 {
     [AddComponentMenu("Layout/Layout Element", 140)]
@@ -5,11 +7,14 @@ namespace UnityEngine.UI
     [ExecuteAlways]
     public sealed class LayoutElement : UIBehaviour, ILayoutElement
     {
-        [SerializeField] float m_MinWidth = -1;
-        [SerializeField] float m_MinHeight = -1;
-        [SerializeField] float m_PreferredWidth = -1;
-        [SerializeField] float m_PreferredHeight = -1;
-        [SerializeField] int m_LayoutPriority = 1;
+        [SerializeField, HorizontalGroup("Min")]
+        float m_MinWidth = -1;
+        [SerializeField, HorizontalGroup("Min")]
+        float m_MinHeight = -1;
+        [SerializeField, HorizontalGroup("Preferred")]
+        float m_PreferredWidth = -1;
+        [SerializeField, HorizontalGroup("Preferred")]
+        float m_PreferredHeight = -1;
 
         public float minWidth => m_MinWidth;
         public float minHeight => m_MinHeight;
@@ -23,7 +28,7 @@ namespace UnityEngine.UI
             get => m_PreferredHeight;
             set => SetProperty(ref m_PreferredHeight, value);
         }
-        public int layoutPriority => m_LayoutPriority;
+        public int layoutPriority => 1;
 
         void OnEnable() => SetDirty();
         void OnDisable() => SetDirty();
