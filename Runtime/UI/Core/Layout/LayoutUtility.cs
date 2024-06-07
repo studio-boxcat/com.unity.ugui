@@ -1,6 +1,4 @@
 using JetBrains.Annotations;
-using UnityEngine.EventSystems;
-using UnityEngine.Pool;
 
 namespace UnityEngine.UI
 {

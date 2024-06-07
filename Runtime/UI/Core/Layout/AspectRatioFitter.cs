@@ -1,5 +1,3 @@
-using UnityEngine.EventSystems;
-
 namespace UnityEngine.UI
 {
     [AddComponentMenu("Layout/Aspect Ratio Fitter", 142)]

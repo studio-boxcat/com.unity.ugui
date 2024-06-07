@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
-using UnityEngine.EventSystems;
 
 namespace UnityEngine.UI
 {
