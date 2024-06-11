@@ -23,15 +23,27 @@ namespace UnityEngine.UI
 
             // Horizontal layout first.
             foreach (var layoutElement in layoutElements)
+            {
+                // L.I("[LayoutRebuilder] CalculateLayoutInputHorizontal: " + layoutElement, (Object) layoutElement);
                 layoutElement.CalculateLayoutInputHorizontal();
+            }
             foreach (var layoutController in layoutControllers)
+            {
+                // L.I("[LayoutRebuilder] SetLayoutHorizontal: " + layoutController, (Object) layoutController);
                 layoutController.SetLayoutHorizontal();
+            }
 
             // Then vertical layout.
             foreach (var layoutElement in layoutElements)
+            {
+                // L.I("[LayoutRebuilder] CalculateLayoutInputVertical: " + layoutElement, (Object) layoutElement);
                 layoutElement.CalculateLayoutInputVertical();
+            }
             foreach (var layoutController in layoutControllers)
+            {
+                // L.I("[LayoutRebuilder] SetLayoutVertical: " + layoutController, (Object) layoutController);
                 layoutController.SetLayoutVertical();
+            }
 
             ListPool<ILayoutElement>.Release(layoutElements);
             ListPool<ILayoutController>.Release(layoutControllers);
