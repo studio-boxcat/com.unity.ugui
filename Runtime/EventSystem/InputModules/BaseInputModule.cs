@@ -60,7 +60,6 @@ namespace UnityEngine.EventSystems
                 var hoveredCount = currentPointerData.hovered.Count;
                 for (var i = 0; i < hoveredCount; ++i)
                 {
-                    ExecuteEvents.Execute(currentPointerData.hovered[i], currentPointerData, ExecuteEvents.pointerMoveHandler);
                     ExecuteEvents.Execute(currentPointerData.hovered[i], currentPointerData, ExecuteEvents.pointerExitHandler);
                 }
 
@@ -75,15 +74,7 @@ namespace UnityEngine.EventSystems
 
             // if we have not changed hover target
             if (currentPointerData.pointerEnter == newEnterTarget && newEnterTarget)
-            {
-                if (currentPointerData.IsPointerMoving())
-                {
-                    var hoveredCount = currentPointerData.hovered.Count;
-                    for (var i = 0; i < hoveredCount; ++i)
-                        ExecuteEvents.Execute(currentPointerData.hovered[i], currentPointerData, ExecuteEvents.pointerMoveHandler);
-                }
                 return;
-            }
 
             GameObject commonRoot = FindCommonRoot(currentPointerData.pointerEnter, newEnterTarget);
             GameObject pointerParent = ((Component)newEnterTarget.GetComponentInParent<IPointerExitHandler>())?.gameObject;
@@ -106,7 +97,6 @@ namespace UnityEngine.EventSystems
                     if (!m_SendPointerHoverToParent && pointerParent == t.gameObject)
                         break;
 
-                    ExecuteEvents.Execute(t.gameObject, currentPointerData, ExecuteEvents.pointerMoveHandler);
                     ExecuteEvents.Execute(t.gameObject, currentPointerData, ExecuteEvents.pointerExitHandler);
                     currentPointerData.hovered.Remove(t.gameObject);
 
@@ -135,7 +125,6 @@ namespace UnityEngine.EventSystems
                         break;
 
                     ExecuteEvents.Execute(t.gameObject, currentPointerData, ExecuteEvents.pointerEnterHandler);
-                    ExecuteEvents.Execute(t.gameObject, currentPointerData, ExecuteEvents.pointerMoveHandler);
                     currentPointerData.hovered.Add(t.gameObject);
 
                     // stop when encountering an object with the pointerEnterHandler

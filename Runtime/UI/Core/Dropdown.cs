@@ -8,17 +8,9 @@ namespace UnityEngine.UI
 {
     [AddComponentMenu("UI/Legacy/Dropdown", 102)]
     [RequireComponent(typeof(RectTransform))]
-    /// <summary>
-    ///   A standard dropdown that presents a list of options when clicked, of which one can be chosen.
-    /// </summary>
-    /// <remarks>
-    /// The dropdown component is a Selectable. When an option is chosen, the label and/or image of the control changes to show the chosen option.
-    ///
-    /// When a dropdown event occurs a callback is sent to any registered listeners of onValueChanged.
-    /// </remarks>
-    public class Dropdown : Selectable, IPointerClickHandler, ISubmitHandler, ICancelHandler
+    public sealed class Dropdown : Selectable, IPointerClickHandler
     {
-        protected internal class DropdownItem : MonoBehaviour, IPointerEnterHandler, ICancelHandler
+        protected internal class DropdownItem : MonoBehaviour, IPointerEnterHandler
         {
             [SerializeField]
             private Text m_Text;
@@ -433,7 +425,7 @@ namespace UnityEngine.UI
                 m_Template.gameObject.SetActive(false);
         }
 
-        protected virtual void Start()
+        void Start()
         {
             RefreshShownValue();
         }
@@ -683,16 +675,7 @@ namespace UnityEngine.UI
         /// Handling for when the dropdown is initially 'clicked'. Typically shows the dropdown
         /// </summary>
         /// <param name="eventData">The asocciated event data.</param>
-        public virtual void OnPointerClick(PointerEventData eventData)
-        {
-            Show();
-        }
-
-        /// <summary>
-        /// Handling for when the dropdown is selected and a submit event is processed. Typically shows the dropdown
-        /// </summary>
-        /// <param name="eventData">The asocciated event data.</param>
-        public virtual void OnSubmit(BaseEventData eventData)
+        public void OnPointerClick(PointerEventData eventData)
         {
             Show();
         }
@@ -704,7 +687,7 @@ namespace UnityEngine.UI
         /// Called by a BaseInputModule when a Cancel event occurs.
         /// </remarks>
         /// <param name="eventData">The asocciated event data.</param>
-        public virtual void OnCancel(BaseEventData eventData)
+        public void OnCancel(BaseEventData eventData)
         {
             Hide();
         }
@@ -859,7 +842,7 @@ namespace UnityEngine.UI
         /// </remarks>
         /// <param name="rootCanvas">The root canvas the dropdown is under.</param>
         /// <returns>The created blocker object</returns>
-        protected virtual GameObject CreateBlocker(Canvas rootCanvas)
+        protected GameObject CreateBlocker(Canvas rootCanvas)
         {
             // Create blocker GameObject.
             GameObject blocker = new GameObject("Blocker");
@@ -932,7 +915,7 @@ namespace UnityEngine.UI
         /// Override this method to implement a different way to dispose of a blocker GameObject that blocks clicks to other controls while the dropdown list is open.
         /// </remarks>
         /// <param name="blocker">The blocker object to destroy.</param>
-        protected virtual void DestroyBlocker(GameObject blocker)
+        protected void DestroyBlocker(GameObject blocker)
         {
             Destroy(blocker);
         }
@@ -945,7 +928,7 @@ namespace UnityEngine.UI
         /// </remarks>
         /// <param name="template">The template to create the dropdown list from.</param>
         /// <returns>The created drop down list gameobject.</returns>
-        protected virtual GameObject CreateDropdownList(GameObject template)
+        protected GameObject CreateDropdownList(GameObject template)
         {
             return (GameObject)Instantiate(template);
         }
@@ -957,7 +940,7 @@ namespace UnityEngine.UI
         /// Override this method to implement a different way to dispose of a dropdown list GameObject.
         /// </remarks>
         /// <param name="dropdownList">The dropdown list GameObject to destroy</param>
-        protected virtual void DestroyDropdownList(GameObject dropdownList)
+        protected void DestroyDropdownList(GameObject dropdownList)
         {
             Destroy(dropdownList);
         }
@@ -971,7 +954,7 @@ namespace UnityEngine.UI
         /// </remarks>
         /// <param name="itemTemplate">e template to create the option item from.</param>
         /// <returns>The created dropdown item component</returns>
-        protected virtual DropdownItem CreateItem(DropdownItem itemTemplate)
+        protected DropdownItem CreateItem(DropdownItem itemTemplate)
         {
             return (DropdownItem)Instantiate(itemTemplate);
         }
@@ -984,7 +967,7 @@ namespace UnityEngine.UI
         /// Likely no action needed since destroying the dropdown list destroys all contained items as well.
         /// </remarks>
         /// <param name="item">The Item to destroy.</param>
-        protected virtual void DestroyItem(DropdownItem item)
+        protected void DestroyItem(DropdownItem item)
         {}
 
         // Add a new drop-down list item with the specified values.

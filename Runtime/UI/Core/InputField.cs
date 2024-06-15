@@ -18,7 +18,6 @@ namespace UnityEngine.UI
         IDragHandler,
         IEndDragHandler,
         IPointerClickHandler,
-        ISubmitHandler,
         ICanvasElement,
         ILayoutElement
     {

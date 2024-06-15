@@ -13,35 +13,11 @@ namespace UnityEngine.UI
     /// </remarks>
     [AddComponentMenu("UI/Toggle", 30)]
     [RequireComponent(typeof(RectTransform))]
-    public class Toggle : Selectable, IPointerClickHandler, ISubmitHandler, ICanvasElement
+    public class Toggle : Selectable, IPointerClickHandler, ICanvasElement
     {
-        /// <summary>
-        /// Display settings for when a toggle is activated or deactivated.
-        /// </summary>
-        public enum ToggleTransition
-        {
-            /// <summary>
-            /// Show / hide the toggle instantly
-            /// </summary>
-            None,
-
-            /// <summary>
-            /// Fade the toggle in / out smoothly.
-            /// </summary>
-            Fade
-        }
-
         [Serializable]
-        /// <summary>
-        /// UnityEvent callback for when a toggle is toggled.
-        /// </summary>
         public class ToggleEvent : UnityEvent<bool>
         {}
-
-        /// <summary>
-        /// Transition mode for the toggle.
-        /// </summary>
-        public ToggleTransition toggleTransition = ToggleTransition.Fade;
 
         /// <summary>
         /// Graphic the toggle should be working with.
@@ -319,11 +295,6 @@ namespace UnityEngine.UI
             if (eventData.button != PointerEventData.InputButton.Left)
                 return;
 
-            InternalToggle();
-        }
-
-        public virtual void OnSubmit(BaseEventData eventData)
-        {
             InternalToggle();
         }
     }
