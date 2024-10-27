@@ -53,21 +53,14 @@ namespace UnityEngine.UI
         /// <summary>
         /// Should this graphic be considered a target for raycasting?
         /// </summary>
-        public virtual bool raycastTarget
+        public bool raycastTarget
         {
             get => m_RaycastTarget;
             set
             {
                 m_RaycastTarget = value;
-
-                if (value)
-                {
-                    m_RaycastRegisterLink.Reset(canvas, this);
-                }
-                else
-                {
-                    m_RaycastRegisterLink.TryUnlink(this);
-                }
+                if (value) m_RaycastRegisterLink.Reset(canvas, this);
+                else m_RaycastRegisterLink.TryUnlink(this);
             }
         }
 
