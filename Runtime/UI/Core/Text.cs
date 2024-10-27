@@ -4,7 +4,6 @@ using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
-    [RequireComponent(typeof(CanvasRenderer))]
     [GraphicPropertyHide(GraphicPropertyFlag.Raycast | GraphicPropertyFlag.Material)]
     public class Text : MaskableGraphic, ILayoutElement, IFontUpdateListener
     {

@@ -4,7 +4,6 @@ using Sirenix.OdinInspector;
 #if UNITY_EDITOR
 using System.Reflection;
 #endif
-using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
 
 namespace UnityEngine.UI
@@ -12,9 +11,9 @@ namespace UnityEngine.UI
     /// <summary>
     /// Base class for all UI components that should be derived from when creating new Graphic types.
     /// </summary>
-    [DisallowMultipleComponent]
-    [RequireComponent(typeof(RectTransform))]
     [ExecuteAlways]
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(RectTransform), typeof(CanvasRenderer))]
     public abstract class Graphic
         : UIBehaviour,
             ICanvasElement
