@@ -467,11 +467,16 @@ namespace UnityEngine.UI
         {
             get
             {
-                return s_Mesh ??= new Mesh
+                if (s_Mesh is not null)
+                    return s_Mesh;
+
+                s_Mesh = new Mesh
                 {
                     name = "Shared UI Mesh",
                     hideFlags = HideFlags.HideAndDontSave // XXX: To prevent destroying the mesh after exiting play mode.
                 };
+                s_Mesh.MarkDynamic(); // Optimize for frequent updates.
+                return s_Mesh;
             }
         }
 
