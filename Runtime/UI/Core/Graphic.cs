@@ -88,8 +88,6 @@ namespace UnityEngine.UI
         [NonSerialized] bool m_VertsDirty;
         [NonSerialized] bool m_MaterialDirty;
 
-        [NonSerialized] protected static Mesh s_Mesh;
-
         /// <summary>
         /// Set all properties of the Graphic dirty and needing rebuilt.
         /// Dirties Layout, Vertices, and Materials.
@@ -447,8 +445,7 @@ namespace UnityEngine.UI
             var posCount = mb.Poses.Count;
             if (posCount is MeshBuilder.Invalid)
             {
-                _workerMesh.Clear();
-                canvasRenderer.SetMesh(_workerMesh);
+                canvasRenderer.SetMesh(SharedMesh.Empty);
                 return;
             }
 
@@ -456,29 +453,14 @@ namespace UnityEngine.UI
 
             MeshModifierUtils.GetComponentsAndModifyMesh(this, mb);
 
-            _workerMesh.Clear();
-            mb.FillMeshAndInvalidate(_workerMesh);
-            canvasRenderer.SetMesh(_workerMesh);
+            var mesh = SharedMesh.Claim();
+            mesh.Clear();
+            mb.FillMeshAndInvalidate(mesh);
+            canvasRenderer.SetMesh(mesh);
+            SharedMesh.Release(mesh);
         }
 
         public virtual void ForceUpdateGeometry() => UpdateGeometry();
-
-        static Mesh _workerMesh
-        {
-            get
-            {
-                if (s_Mesh is not null)
-                    return s_Mesh;
-
-                s_Mesh = new Mesh
-                {
-                    name = "Shared UI Mesh",
-                    hideFlags = HideFlags.HideAndDontSave // XXX: To prevent destroying the mesh after exiting play mode.
-                };
-                s_Mesh.MarkDynamic(); // Optimize for frequent updates.
-                return s_Mesh;
-            }
-        }
 
         /// <summary>
         /// Callback function when a UI element needs to generate vertices. Fills the vertex buffer data.
