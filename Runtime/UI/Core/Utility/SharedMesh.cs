@@ -9,6 +9,7 @@ namespace UnityEngine.UI
         static Mesh _empty;
         static bool _claimed;
 
+        // Mesh must be cleared on the calling site.
         public static Mesh Claim()
         {
             if (_claimed) // rare-case
