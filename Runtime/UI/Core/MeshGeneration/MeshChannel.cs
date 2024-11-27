@@ -144,9 +144,7 @@ namespace UnityEngine.UI
 
     public class MeshPosChannel : MeshChannel<Vector3>
     {
-        public MeshPosChannel(int capacity) : base(capacity)
-        {
-        }
+        public MeshPosChannel(int capacity) : base(capacity) { }
 
         public void SetUp(Vector2[] src)
         {
@@ -191,9 +189,7 @@ namespace UnityEngine.UI
 
     public class MeshUVChannel : MeshChannel<Vector2>
     {
-        public MeshUVChannel(int capacity) : base(capacity)
-        {
-        }
+        public MeshUVChannel(int capacity) : base(capacity) { }
 
         public void SetUp(Vector2 uv, int count)
         {
@@ -222,9 +218,7 @@ namespace UnityEngine.UI
 
     public class MeshColorChannel : MeshChannel<Color32>
     {
-        public MeshColorChannel(int capacity) : base(capacity)
-        {
-        }
+        public MeshColorChannel(int capacity) : base(capacity) { }
 
         public void SetUp(Color32 color, int count)
         {
@@ -256,9 +250,7 @@ namespace UnityEngine.UI
 
     public class MeshIndexChannel : MeshChannel<ushort>
     {
-        public MeshIndexChannel(int capacity) : base(capacity)
-        {
-        }
+        public MeshIndexChannel(int capacity) : base(capacity) { }
 
         public void SetUp_Quad(int quadCount)
         {
