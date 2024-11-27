@@ -17,5 +17,20 @@ namespace UnityEngine.UI
 
             return dst;
         }
+
+        public static void CombineMesh(Mesh mesh, Mesh m1, Matrix4x4 t1)
+        {
+            var combine = Get(1);
+            combine[0] = new CombineInstance { mesh = m1, transform = t1 };
+            mesh.CombineMeshes(combine, true, true);
+        }
+
+        public static void CombineMesh(Mesh mesh, Mesh m1, Matrix4x4 t1, Mesh m2, Matrix4x4 t2)
+        {
+            var combine = Get(2);
+            combine[0] = new CombineInstance { mesh = m1, transform = t1 };
+            combine[1] = new CombineInstance { mesh = m2, transform = t2 };
+            mesh.CombineMeshes(combine, true, true);
+        }
     }
 }
