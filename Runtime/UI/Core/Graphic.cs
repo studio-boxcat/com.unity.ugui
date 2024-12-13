@@ -44,7 +44,7 @@ namespace UnityEngine.UI
         }
 
         [SerializeField, ShowIf("@CanShow(GraphicPropertyFlag.Raycast)")]
-        [FoldoutGroup("Advanced", order: 600)]
+        [FoldoutGroup("Advanced", order: 2000)]
         [HorizontalGroup("Advanced/RaycastTarget", DisableAutomaticLabelWidth = true)]
         bool m_RaycastTarget = false;
 
