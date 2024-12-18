@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace UnityEngine
 {
-    public static class ExtensionMethods
+    public static class ListExtensions
     {
         public static int IndexOfRef<T>(this List<T> list, T obj) where T : class
         {
