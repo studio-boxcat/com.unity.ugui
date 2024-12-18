@@ -8,9 +8,8 @@ namespace UnityEngine.EventSystems
 
         internal static void AddRaycaster(BaseRaycaster baseRaycaster)
         {
-            if (s_Raycasters.Contains(baseRaycaster))
+            if (s_Raycasters.ContainsRef(baseRaycaster))
                 return;
-
             s_Raycasters.Add(baseRaycaster);
         }
 
@@ -24,9 +23,7 @@ namespace UnityEngine.EventSystems
 
         internal static void RemoveRaycasters(BaseRaycaster baseRaycaster)
         {
-            if (!s_Raycasters.Contains(baseRaycaster))
-                return;
-            s_Raycasters.Remove(baseRaycaster);
+            s_Raycasters.RemoveSingleRef(baseRaycaster);
         }
     }
 }
