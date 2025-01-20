@@ -8,7 +8,7 @@ namespace UnityEngine.EventSystems
     {
         static readonly List<RaycasterComparisonData> _raycasterBuffer = new();
 
-        public static bool Raycast(Vector2 screenPosition, Camera targetCamera, out RaycastResult raycastResult)
+        public static RaycastResultType Raycast(Vector2 screenPosition, Camera targetCamera, out RaycastResult raycastResult)
         {
             // L.I($"Raycast: {screenPosition}, {targetCamera.name}");
 
@@ -34,7 +34,7 @@ namespace UnityEngine.EventSystems
             if (_raycasterBuffer.Count == 0)
             {
                 raycastResult = default;
-                return false;
+                return RaycastResultType.Miss;
             }
 
             try
@@ -46,7 +46,7 @@ namespace UnityEngine.EventSystems
                 _raycasterBuffer.Clear(); // XXX: _raycasterBuffer 가 오염되었기 때문에 _pool 로 반환하지 않음.
                 L.W(e.InnerException?.Message);
                 raycastResult = default;
-                return false;
+                return RaycastResultType.Abort;
             }
 
             if (_raycasterBuffer[^1].RendererDepth is -1)
@@ -54,7 +54,7 @@ namespace UnityEngine.EventSystems
                 L.I("[QuickRaycast] Aborting raycast because there's a CanvasRenderer that is not initialized.");
                 raycastResult = default;
                 ClearBuffer();
-                return false;
+                return RaycastResultType.Abort;
             }
 
             // Raycaster 를 하나씩 돌면서 Raycast.
@@ -70,12 +70,12 @@ namespace UnityEngine.EventSystems
                 // If one of raycaster have hit graphic, return the result.
                 // Otherwise, if the hit graphic is not initialized yet, abort the whole raycast.
                 ClearBuffer();
-                return resultType is RaycastResultType.Hit;
+                return resultType;
             }
 
             raycastResult = default;
             ClearBuffer();
-            return false;
+            return RaycastResultType.Miss;
 
             static void ClearBuffer()
             {
@@ -87,7 +87,7 @@ namespace UnityEngine.EventSystems
 
         public static bool RaycastAll(Vector2 screenPosition, out RaycastResult raycastResult)
         {
-            return Raycast(screenPosition, null, out raycastResult);
+            return Raycast(screenPosition, null, out raycastResult) is RaycastResultType.Hit;
         }
 
         class RaycasterComparisonData

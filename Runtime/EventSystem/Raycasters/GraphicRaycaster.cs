@@ -88,7 +88,7 @@ namespace UnityEngine.EventSystems
                     L.I("[GraphicRaycaster] Uninitialized Graphic found: " + graphic.name, graphic);
                     if (Hit(t, graphic, eventCamera, pointerPosition))
                     {
-                        L.I("[GraphicRaycaster] Aborting raycast since the blocking Graphic is not initialized yet.", graphic);
+                        L.W("[GraphicRaycaster] Aborting raycast since the blocking Graphic is not initialized yet: " + graphic.name, graphic);
                         result = default;
                         return RaycastResultType.Abort;
                     }
