@@ -1,9 +1,9 @@
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
-using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
-namespace UnityEngine.EventSystems
+namespace UnityEngine.UI
 {
     /// <summary>
     /// A derived BaseRaycaster to raycast against Graphic elements.
