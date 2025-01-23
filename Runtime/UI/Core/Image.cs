@@ -949,6 +949,10 @@ namespace UnityEngine.UI
                 if (!m_FillCenter && x == 1 && y == 1)
                     continue;
 
+                // Check for zero or negative dimensions to prevent invalid quads (UUM-71372)
+                if ((s_VertScratch[x + 1].x - s_VertScratch[x].x <= 0) || (s_VertScratch[y + 1].y - s_VertScratch[y].y <= 0))
+                    continue;
+
                 qb.Add(
                     new Vector2(s_VertScratch[x].x, s_VertScratch[y].y),
                     new Vector2(s_VertScratch[x + 1].x, s_VertScratch[y + 1].y),
