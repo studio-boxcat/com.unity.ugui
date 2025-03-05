@@ -20,7 +20,7 @@ namespace UnityEngine.UI
 
     public static class MaterialModifierUtils
     {
-        static readonly List<IMaterialModifier> _materialModifierBuf = new();
+        private static readonly List<IMaterialModifier> _materialModifierBuf = new();
 
         public static Material ResolveMaterialForRendering(Component comp, Material baseMaterial)
         {
