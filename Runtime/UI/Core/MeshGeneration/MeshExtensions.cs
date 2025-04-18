@@ -29,20 +29,5 @@ namespace UnityEngine.UI
             mesh.SetColors(colors, 0, count,
                 MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontResetBoneBounds | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontRecalculateBounds);
         }
-
-        public static void CombineMeshes(this Mesh mesh, Mesh m1, Matrix4x4 t1)
-        {
-            var cis = CombineInstancePool.Get(1);
-            cis[0] = new CombineInstance { mesh = m1, transform = t1 };
-            mesh.CombineMeshes(cis, true, true);
-        }
-
-        public static void CombineMeshes(this Mesh mesh, Mesh m1, Matrix4x4 t1, Mesh m2, Matrix4x4 t2)
-        {
-            var cis = CombineInstancePool.Get(2);
-            cis[0] = new CombineInstance { mesh = m1, transform = t1 };
-            cis[1] = new CombineInstance { mesh = m2, transform = t2 };
-            mesh.CombineMeshes(cis, true, true);
-        }
     }
 }
