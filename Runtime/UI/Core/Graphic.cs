@@ -28,7 +28,7 @@ namespace UnityEngine.UI
         [ShowIf("@CanShow(GraphicPropertyFlag.Material)"), PropertyOrder(501)]
         [SerializeField] protected Material m_Material;
 
-        [ShowIf("@CanShow(GraphicPropertyFlag.Color)"), PropertyOrder(500)]
+        [ShowIf("@CanShow(GraphicPropertyFlag.Color)"), PropertyOrder(500), DontValidate]
         [SerializeField] Color m_Color = Color.white;
 
         [NonSerialized] protected bool m_SkipLayoutUpdate;
