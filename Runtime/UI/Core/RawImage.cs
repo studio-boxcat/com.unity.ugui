@@ -16,7 +16,7 @@ namespace UnityEngine.UI
     {
         [FormerlySerializedAs("m_Tex")]
         [SerializeField, Required] Texture m_Texture;
-        [SerializeField] Rect m_UVRect = new Rect(0f, 0f, 1f, 1f);
+        [SerializeField, PropertyOrder(600)] Rect m_UVRect = new Rect(0f, 0f, 1f, 1f);
 
         public override Texture mainTexture => m_Texture;
 
