@@ -54,12 +54,12 @@ namespace UnityEngine.UI
         /// <summary>
         /// Callback invoked by the auto layout system which handles horizontal aspects of the layout.
         /// </summary>
-        void SetLayoutHorizontal();
+        void SetLayoutHorizontal() { }
 
         /// <summary>
         /// Callback invoked by the auto layout system which handles vertical aspects of the layout.
         /// </summary>
-        void SetLayoutVertical();
+        void SetLayoutVertical() { }
     }
 
     /// <summary>
