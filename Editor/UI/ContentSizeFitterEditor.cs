@@ -40,15 +40,15 @@ namespace UnityEditor.UI
             serializedObject.ApplyModifiedProperties();
 
             base.OnInspectorGUI();
+            return;
 
             // Replace EnumToggleButton to accept separate label and button rects
             static void EnumToggleButton(Rect labelRect, Rect buttonRect, SerializedProperty prop, string label, string tooltip)
             {
                 EditorGUI.LabelField(labelRect, new GUIContent(label, tooltip));
                 var current = (ContentSizeFitter.FitMode) prop.enumValueIndex;
-                var newValue = (int) current;
                 string[] labels = { "-", "M", "P" };
-                newValue = GUI.Toolbar(buttonRect, (int) current, labels);
+                var newValue = GUI.Toolbar(buttonRect, (int) current, labels);
                 if (newValue != (int) current)
                     prop.enumValueIndex = newValue;
             }
