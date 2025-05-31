@@ -492,7 +492,13 @@ namespace UnityEngine.UI
         protected Rect GetPixelAdjustedRect() => rectTransform.rect;
 
 #if UNITY_EDITOR
-        protected virtual void OnValidate() => SetAllDirty();
+        protected virtual void OnValidate()
+        {
+            SetAllDirty();
+            if (TryGetComponent(out CanvasRenderer r))
+                r.hideFlags = HideFlags.HideInInspector;
+        }
+
         protected virtual void Reset() => SetAllDirty();
 
         /// <summary>
