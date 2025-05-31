@@ -16,7 +16,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// The size fit modes avaliable to use.
         /// </summary>
-        enum FitMode
+        internal enum FitMode
         {
             /// <summary>
             /// Don't perform any resizing.
