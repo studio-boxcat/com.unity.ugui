@@ -22,10 +22,18 @@ namespace UnityEditor.UI
 
         public override void OnInspectorGUI()
         {
+            var labelWidth = EditorGUIUtility.labelWidth;
+            EditorGUIUtility.labelWidth = 20; // Set a smaller label width for compactness
+
             serializedObject.Update();
-            EditorGUILayout.PropertyField(m_HorizontalFit, true);
-            EditorGUILayout.PropertyField(m_VerticalFit, true);
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.PropertyField(m_HorizontalFit, GUIContent.Temp("H"), true);
+            EditorGUILayout.Space(4, false);
+            EditorGUILayout.PropertyField(m_VerticalFit, GUIContent.Temp("V"), true);
+            EditorGUILayout.EndHorizontal();
             serializedObject.ApplyModifiedProperties();
+
+            EditorGUIUtility.labelWidth = labelWidth; // Restore original label width
 
             base.OnInspectorGUI();
         }
