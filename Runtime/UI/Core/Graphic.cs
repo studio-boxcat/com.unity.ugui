@@ -525,7 +525,7 @@ namespace UnityEngine.UI
         }
 
         [UsedImplicitly]
-        bool CanShow(GraphicPropertyFlag flag) => GraphicPropertyVisible.IsVisible(GetType(), flag);
+        private bool CanShow(GraphicPropertyFlag flag) => GraphicPropertyVisible.IsVisible(GetType(), flag);
 #endif
     }
 }
