@@ -1,5 +1,4 @@
 using Sirenix.OdinInspector.Editor.Validation;
-using UnityEngine.EventSystems;
 
 [assembly: RegisterValidator(typeof(UnityEngine.UI.GraphicRaycasterValidator))]
 
