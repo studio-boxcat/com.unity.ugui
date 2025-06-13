@@ -26,7 +26,7 @@ namespace UnityEngine.UI
         {
             var currentMat = baseMaterial;
             comp.GetComponents(_materialModifierBuf);
-            var count = _materialModifierBuf.Count;
+            var count = _materialModifierBuf.Count; // mostly 0.
             for (var i = 0; i < count; i++)
                 currentMat = _materialModifierBuf[i].GetModifiedMaterial(currentMat);
             return currentMat;
