@@ -16,42 +16,43 @@ namespace UnityEngine.UI
                 {
                     if (transform.TryGetComponent(out Graphic graphic) == false)
                         continue;
-                    if (EditorGUIUtility.IsGizmosAllowedForObject(graphic) == false)
-                        continue;
                     if (graphic.raycastTarget == false)
                         continue;
-
-                    DrawRaycastRect(graphic.rectTransform, graphic.raycastPadding);
+                    if (EditorGUIUtility.IsGizmosAllowedForObject(graphic) == false)
+                        continue;
+                    DrawRaycastRect(graphic);
                 }
             };
         }
 
-        static void DrawRaycastRect(RectTransform transform, Vector4 raycastPadding)
+        private static void DrawRaycastRect(Graphic graphic)
         {
-            var rect = transform.rect;
-            var z = transform.position.z;
+            var t = graphic.rectTransform;
+            var raycastPadding = graphic.raycastPadding;
+
+            var rect = t.rect;
 
             var xMin = rect.x + raycastPadding.x;
             var xMax = rect.xMax - raycastPadding.z;
             var yMin = rect.y + raycastPadding.y;
             var yMax = rect.yMax - raycastPadding.w;
 
-            var p0 = new Vector3(xMin, yMin, z);
-            var p1 = new Vector3(xMin, yMax, z);
-            var p2 = new Vector3(xMax, yMax, z);
-            var p3 = new Vector3(xMax, yMin, z);
+            var p0 = new Vector2(xMin, yMin);
+            var p1 = new Vector2(xMin, yMax);
+            var p2 = new Vector2(xMax, yMax);
+            var p3 = new Vector2(xMax, yMin);
 
-            var mat = transform.localToWorldMatrix;
-            p0 = mat.MultiplyPoint(p0);
-            p1 = mat.MultiplyPoint(p1);
-            p2 = mat.MultiplyPoint(p2);
-            p3 = mat.MultiplyPoint(p3);
+            var mat = t.localToWorldMatrix;
+            p0 = mat.MultiplyPoint2D(p0);
+            p1 = mat.MultiplyPoint2D(p1);
+            p2 = mat.MultiplyPoint2D(p2);
+            p3 = mat.MultiplyPoint2D(p3);
 
-            Handles.color = Handles.UIColliderHandleColor;
-            Handles.DrawLine(p0, p1);
-            Handles.DrawLine(p1, p2);
-            Handles.DrawLine(p2, p3);
-            Handles.DrawLine(p3, p0);
+            var z = t.position.z;
+            Handles.DrawSolidRectangleWithOutline(
+                new[] { p0.To3(z), p1.To3(z), p2.To3(z), p3.To3(z) },
+                Handles.UIColliderHandleColor.WithAlpha(0.15f),
+                Handles.UIColliderHandleColor);
         }
     }
 }
