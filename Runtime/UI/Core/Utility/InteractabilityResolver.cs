@@ -16,9 +16,31 @@ namespace UnityEngine.UI
 
         public bool Reevaluate(Component component)
         {
-            _interactable = CanvasGroupUtils.IsInteractionAllowed(component.transform);
+            _interactable = IsInteractionAllowed(component.transform);
             _valid = true;
             return _interactable;
+        }
+
+        private static bool IsInteractionAllowed(Transform t)
+        {
+            while (t is not null)
+            {
+                var canvasGroup = ComponentSearch.SearchEnabledParentOrSelfComponent<CanvasGroup>(t);
+                if (canvasGroup is null)
+                    return true;
+
+                // Interaction is not allowed if the group is not interactable.
+                if (canvasGroup.interactable == false)
+                    return false;
+
+                // If ignoreParentGroups is true, we should not consider the parent groups.
+                if (canvasGroup.ignoreParentGroups)
+                    return true;
+
+                t = t.parent;
+            }
+
+            return true;
         }
     }
 }

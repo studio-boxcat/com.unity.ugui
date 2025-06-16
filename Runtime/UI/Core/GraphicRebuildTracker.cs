@@ -9,7 +9,7 @@ namespace UnityEngine.UI
     /// </summary>
     public static class GraphicRebuildTracker
     {
-        static HashSet<Graphic> m_Tracked = new(ReferenceEqualityComparer.Object);
+        static HashSet<Graphic> m_Tracked = new(RefComparer.Instance);
         static bool s_Initialized;
 
         /// <summary>

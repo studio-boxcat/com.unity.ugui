@@ -10,7 +10,7 @@ namespace UnityEngine.UI
     /// </remarks>
     static class ClipperRegistry
     {
-        static readonly HashSet<RectMask2D> _clippers = new(ReferenceEqualityComparer.Object);
+        static readonly HashSet<RectMask2D> _clippers = new(RefComparer.Instance);
 
         public static void Register(RectMask2D c) => _clippers.Add(c);
         public static void Unregister(RectMask2D c) => _clippers.Remove(c);

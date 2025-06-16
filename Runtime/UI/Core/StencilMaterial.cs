@@ -143,7 +143,7 @@ namespace UnityEngine.UI
                 if (noRef && count > 4)
                 {
                     L.I($"[UGUI] Stencil material destroyed: {ent.customMat.name}", ent.baseMat);
-                    Misc.DestroyImmediate(ent.customMat);
+                    Object.DestroyImmediate(ent.customMat);
                     ent.baseMat = null;
                     m_List.RemoveAt(i);
                 }

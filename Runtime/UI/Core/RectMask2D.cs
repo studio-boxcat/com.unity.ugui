@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
-using UnityEngine.EventSystems;
 
 namespace UnityEngine.UI
 {
@@ -21,7 +20,7 @@ namespace UnityEngine.UI
         public RectTransform rectTransform => _rectTransform ??= GetComponent<RectTransform>();
 
         [NonSerialized]
-        readonly HashSet<Graphic> _targets = new(ReferenceEqualityComparer.Object);
+        readonly HashSet<Graphic> _targets = new(RefComparer.Instance);
 
         [NonSerialized] Rect _lastClipRect;
         [NonSerialized] bool _forceClip;
