@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace UnityEngine.UI
+namespace UnityEngine
 {
     public static class SetPropertyUtility
     {

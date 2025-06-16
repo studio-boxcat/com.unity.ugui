@@ -1,6 +1,5 @@
 using System;
 using JetBrains.Annotations;
-using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
 
 namespace UnityEngine.UI

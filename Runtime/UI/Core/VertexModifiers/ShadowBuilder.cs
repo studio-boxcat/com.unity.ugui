@@ -3,18 +3,18 @@ using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
-    public struct MeshShadowManipulator
+    internal struct ShadowBuilder
     {
-        readonly Color32 _color;
-        readonly bool _useGraphicAlpha;
+        private readonly Color32 _color;
+        private readonly bool _useGraphicAlpha;
 
-        int _orgVertCount;
-        int _orgVertStart;
-        Vector3[] _poses;
-        Color32[] _colors;
+        private int _orgVertCount;
+        private int _orgVertStart;
+        private Vector3[] _poses;
+        private Color32[] _colors;
 
 
-        public MeshShadowManipulator(Color32 color, bool useGraphicAlpha) : this()
+        public ShadowBuilder(Color32 color, bool useGraphicAlpha) : this()
         {
             _color = color;
             _useGraphicAlpha = useGraphicAlpha;

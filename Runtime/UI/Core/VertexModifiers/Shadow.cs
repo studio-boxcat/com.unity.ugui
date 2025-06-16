@@ -67,7 +67,7 @@ namespace UnityEngine.UI
 
         public override void ModifyMesh(MeshBuilder mb)
         {
-            var sm = new MeshShadowManipulator(m_EffectColor, m_UseGraphicAlpha);
+            var sm = new ShadowBuilder(m_EffectColor, m_UseGraphicAlpha);
 
             var dx = m_EffectDistance.x;
             var dy = m_EffectDistance.y;
