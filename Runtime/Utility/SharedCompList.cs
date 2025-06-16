@@ -1,0 +1,26 @@
+using System.Collections.Generic;
+using UnityEngine.UI;
+
+namespace UnityEngine
+{
+    public static class SharedCompList
+    {
+        public static readonly List<Graphic> Instance = new(16);
+
+        public static List<Graphic> GetGraphicsInChildrenShared(this GameObject target, bool includeInactive = false)
+        {
+            // any existing values in the list are overritten.
+            // https://docs.unity3d.com/ScriptReference/Component.GetComponentsInChildren.html
+            target.GetComponentsInChildren(includeInactive, Instance);
+            return Instance;
+        }
+
+        public static List<Graphic> GetGraphicsInChildrenShared(this Component target, bool includeInactive = false)
+        {
+            // any existing values in the list are overritten.
+            // https://docs.unity3d.com/ScriptReference/Component.GetComponentsInChildren.html
+            target.GetComponentsInChildren(includeInactive, Instance);
+            return Instance;
+        }
+    }
+}
