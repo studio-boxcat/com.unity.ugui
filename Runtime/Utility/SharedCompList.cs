@@ -22,5 +22,21 @@ namespace UnityEngine
             target.GetComponentsInChildren(includeInactive, Instance);
             return Instance;
         }
+
+        public static void SetGraphicPropertyRecursive(this GameObject target, Material material, bool includeInactive = false)
+        {
+            var graphics = target.GetGraphicsInChildrenShared(includeInactive);
+            foreach (var g in graphics) g.material = material;
+        }
+
+        public static void SetGraphicPropertyRecursive(this GameObject target, Material material, Color color, bool includeInactive = false)
+        {
+            var graphics = target.GetGraphicsInChildrenShared(includeInactive);
+            foreach (var g in graphics)
+            {
+                g.material = material;
+                g.color = color;
+            }
+        }
     }
 }
