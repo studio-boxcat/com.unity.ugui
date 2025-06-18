@@ -5,9 +5,11 @@ namespace UnityEngine.UI
     // Single-ownership mesh.
     public static class SharedMesh
     {
-        static Mesh _shared;
-        static Mesh _empty;
-        static bool _claimed;
+        private static Mesh _shared;
+        private static Mesh _empty;
+        private static bool _claimed;
+
+        private const string _debugName = "MwgKvNSc";
 
         // Mesh must be cleared on the calling site.
         public static Mesh Claim()
@@ -20,7 +22,7 @@ namespace UnityEngine.UI
 
             if (_shared is null)
             {
-                _shared = Create("Shared");
+                _shared = CreateDynamicMesh(_debugName);
                 _shared.MarkDynamic(); // Optimize for frequent updates.
             }
 
@@ -29,27 +31,27 @@ namespace UnityEngine.UI
 
         public static void Release(Mesh mesh)
         {
-            if (ReferenceEquals(mesh, _shared))
+            if (mesh.RefEq(_shared))
             {
                 _claimed = false;
             }
             else // rare-case
             {
                 L.W("[SharedMesh] Releasing non-shared mesh.");
-                Assert.AreEqual("Shared", mesh.name, "Mesh must be shared.");
+#if DEBUG
+                Assert.IsTrue(mesh.name == _debugName, "Mesh must be shared.");
+#endif
                 Object.Destroy(mesh);
             }
         }
 
-        public static Mesh Empty => _empty ??= Create("Empty");
+        public static Mesh Empty => _empty ??= CreateDynamicMesh("Empty");
 
-        static Mesh Create(string name)
+        public static Mesh CreateDynamicMesh(string debugName)
         {
-            return new Mesh
-            {
-                name = name,
-                hideFlags = HideFlags.HideAndDontSave // XXX: To prevent destroying the mesh after exiting play mode.
-            };
+            var mesh = new Mesh { hideFlags = HideFlags.HideAndDontSave }; // XXX: To prevent destroying the mesh after exiting play mode.
+            mesh.SetNameDebug(debugName);
+            return mesh;
         }
     }
 }

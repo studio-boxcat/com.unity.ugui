@@ -430,12 +430,9 @@ namespace UnityEngine.UI
             canvasRenderer.SetTexture(mainTexture);
         }
 
-        /// <summary>
-        /// Call to update the geometry of the Graphic onto the CanvasRenderer.
-        /// </summary>
-        protected virtual void UpdateGeometry()
+        public void BuildMesh(Mesh mesh)
         {
-            using var _ = MeshBuilderPool.Rent(out var mb);
+            using var _ = MeshBuilderPool.Rent(out var mb); // automatically returns the MeshBuilder to the pool
 
             OnPopulateMesh(mb);
 
@@ -453,9 +450,25 @@ namespace UnityEngine.UI
 
             MeshModifierUtils.GetComponentsAndModifyMesh(this, mb);
 
+            mb.FillMeshAndInvalidate(mesh);
+        }
+
+        [MustUseReturnValue]
+        public Mesh BuildMesh()
+        {
+            var mesh = SharedMesh.CreateDynamicMesh("TEA3lkRT");
+            BuildMesh(mesh);
+            return mesh;
+        }
+
+        /// <summary>
+        /// Call to update the geometry of the Graphic onto the CanvasRenderer.
+        /// </summary>
+        protected virtual void UpdateGeometry()
+        {
             var mesh = SharedMesh.Claim();
             mesh.Clear();
-            mb.FillMeshAndInvalidate(mesh);
+            BuildMesh(mesh);
             canvasRenderer.SetMesh(mesh);
             SharedMesh.Release(mesh);
         }
