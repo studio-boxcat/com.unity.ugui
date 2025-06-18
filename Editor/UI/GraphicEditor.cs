@@ -21,9 +21,6 @@ namespace UnityEditor.UI
         protected SerializedProperty m_RaycastPadding;
         protected SerializedProperty m_Maskable;
 
-        private GUIContent m_CorrectButtonContent;
-        protected AnimBool m_ShowNativeSize;
-
         GUIContent m_PaddingContent;
         GUIContent m_LeftContent;
         GUIContent m_RightContent;
@@ -34,12 +31,10 @@ namespace UnityEditor.UI
         protected virtual void OnDisable()
         {
             Tools.hidden = false;
-            m_ShowNativeSize.valueChanged.RemoveListener(Repaint);
         }
 
         protected virtual void OnEnable()
         {
-            m_CorrectButtonContent = EditorGUIUtility.TrTextContent("Set Native Size", "Sets the size to match the content.");
             m_PaddingContent = EditorGUIUtility.TrTextContent("Raycast Padding");
             m_LeftContent = EditorGUIUtility.TrTextContent("Left");
             m_RightContent = EditorGUIUtility.TrTextContent("Right");
@@ -52,9 +47,6 @@ namespace UnityEditor.UI
             m_RaycastTarget = serializedObject.FindProperty("m_RaycastTarget");
             m_RaycastPadding = serializedObject.FindProperty("m_RaycastPadding");
             m_Maskable = serializedObject.FindProperty("m_Maskable");
-
-            m_ShowNativeSize = new AnimBool(false);
-            m_ShowNativeSize.valueChanged.AddListener(Repaint);
         }
 
         public override void OnInspectorGUI()
@@ -65,44 +57,6 @@ namespace UnityEditor.UI
             RaycastControlsGUI();
             MaskableControlsGUI();
             serializedObject.ApplyModifiedProperties();
-        }
-
-        /// <summary>
-        /// Set if the 'Set Native Size' button should be visible for this editor.
-        /// </summary>
-        /// <param name="show">Are we showing or hiding the AnimBool for the size.</param>
-        /// <param name="instant">Should the size AnimBool change instantly.</param>
-        protected void SetShowNativeSize(bool show, bool instant)
-        {
-            if (instant)
-                m_ShowNativeSize.value = show;
-            else
-                m_ShowNativeSize.target = show;
-        }
-
-        /// <summary>
-        /// GUI for showing a button that sets the size of the RectTransform to the native size for this Graphic.
-        /// </summary>
-        protected void NativeSizeButtonGUI()
-        {
-            if (EditorGUILayout.BeginFadeGroup(m_ShowNativeSize.faded))
-            {
-                EditorGUILayout.BeginHorizontal();
-                {
-                    GUILayout.Space(EditorGUIUtility.labelWidth);
-                    if (GUILayout.Button(m_CorrectButtonContent, EditorStyles.miniButton))
-                    {
-                        foreach (Graphic graphic in targets.Select(obj => obj as Graphic))
-                        {
-                            Undo.RecordObject(graphic.rectTransform, "Set Native Size");
-                            graphic.SetNativeSize();
-                            EditorUtility.SetDirty(graphic);
-                        }
-                    }
-                }
-                EditorGUILayout.EndHorizontal();
-            }
-            EditorGUILayout.EndFadeGroup();
         }
 
         protected void MaskableControlsGUI()

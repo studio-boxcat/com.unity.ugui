@@ -737,24 +737,6 @@ namespace UnityEngine.UI
         }
 
         /// <summary>
-        /// Adjusts the image size to make it pixel-perfect.
-        /// </summary>
-        /// <remarks>
-        /// This means setting the Images RectTransform.sizeDelta to be equal to the Sprite dimensions.
-        /// </remarks>
-        public override void SetNativeSize()
-        {
-            if (activeSprite != null)
-            {
-                float w = activeSprite.rect.width / pixelsPerUnit;
-                float h = activeSprite.rect.height / pixelsPerUnit;
-                rectTransform.anchorMax = rectTransform.anchorMin;
-                rectTransform.sizeDelta = new Vector2(w, h);
-                SetAllDirty();
-            }
-        }
-
-        /// <summary>
         /// Update the UI renderer mesh.
         /// </summary>
         protected override void OnPopulateMesh(MeshBuilder toFill)

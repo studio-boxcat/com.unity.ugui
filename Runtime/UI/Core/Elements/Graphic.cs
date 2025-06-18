@@ -491,11 +491,6 @@ namespace UnityEngine.UI
         }
 
         /// <summary>
-        /// Make the Graphic have the native size of its content.
-        /// </summary>
-        public virtual void SetNativeSize() { }
-
-        /// <summary>
         /// Returns a pixel perfect Rect closest to the Graphic RectTransform.
         /// </summary>
         /// <remarks>

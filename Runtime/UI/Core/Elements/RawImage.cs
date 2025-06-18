@@ -46,17 +46,6 @@ namespace UnityEngine.UI
             }
         }
 
-        public override void SetNativeSize()
-        {
-            var tex = mainTexture;
-            if (tex is null) return;
-
-            var w = Mathf.RoundToInt(tex.width * uvRect.width);
-            var h = Mathf.RoundToInt(tex.height * uvRect.height);
-            rectTransform.anchorMax = rectTransform.anchorMin;
-            rectTransform.sizeDelta = new Vector2(w, h);
-        }
-
         protected override void OnPopulateMesh(MeshBuilder mb)
         {
             var tex = mainTexture;

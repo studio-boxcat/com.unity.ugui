@@ -110,8 +110,6 @@ namespace UnityEditor.UI
             m_ShowTiled.valueChanged.AddListener(Repaint);
             m_ShowFilled.valueChanged.AddListener(Repaint);
 
-            SetShowNativeSize(true);
-
             m_bIsDriven = false;
         }
 
@@ -144,28 +142,7 @@ namespace UnityEditor.UI
                 TypeGUI();
             EditorGUILayout.EndFadeGroup();
 
-            SetShowNativeSize(false);
-            if (EditorGUILayout.BeginFadeGroup(m_ShowNativeSize.faded))
-            {
-                EditorGUI.indentLevel++;
-
-                if ((Image.Type)m_Type.enumValueIndex == Image.Type.Simple)
-                    EditorGUILayout.PropertyField(m_UseSpriteMesh);
-
-                EditorGUILayout.PropertyField(m_PreserveAspect);
-                EditorGUI.indentLevel--;
-            }
-            EditorGUILayout.EndFadeGroup();
-            NativeSizeButtonGUI();
-
             serializedObject.ApplyModifiedProperties();
-        }
-
-        void SetShowNativeSize(bool instant)
-        {
-            Image.Type type = (Image.Type)m_Type.enumValueIndex;
-            bool showNativeSize = (type == Image.Type.Simple || type == Image.Type.Filled) && m_Sprite.objectReferenceValue != null;
-            base.SetShowNativeSize(showNativeSize, instant);
         }
 
         /// <summary>
