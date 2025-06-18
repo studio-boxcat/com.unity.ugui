@@ -94,15 +94,15 @@ namespace UnityEngine.UI
                 if (EditorGUI.EndChangeCheck())
                 {
                     var (lx, ly) = wtl.MultiplyPoint2D(newHandle); // local x, local y
-                    var value = side switch
+                    var (a, b) = side switch
                     {
-                        HandleSide.Left => Mathf.Clamp(lx - r.x, 0, r.width - padding.z),
-                        HandleSide.Bottom => Mathf.Clamp(ly - r.y, 0, r.height - padding.w),
-                        HandleSide.Right => Mathf.Clamp(r.xMax - lx, 0, r.width - padding.x),
-                        HandleSide.Top => Mathf.Clamp(r.yMax - ly, 0, r.height - padding.y),
+                        HandleSide.Left => (lx - r.x, r.width - padding.z),
+                        HandleSide.Bottom => (ly - r.y, r.height - padding.w),
+                        HandleSide.Right => (r.xMax - lx, r.width - padding.x),
+                        HandleSide.Top => (r.yMax - ly, r.height - padding.y),
                         _ => throw new ArgumentOutOfRangeException(nameof(side), side, null)
                     };
-                    padding[(int) side] = value.Round(); // snap to integer
+                    padding[(int) side] = Mathf.Min(a, b).Round(); // snap to integer
                     return true;
                 }
 
