@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace UnityEngine
 {
-    public static class SharedCompList
+    public static class GraphicManipulator
     {
         public static readonly List<Graphic> Instance = new(16);
 
