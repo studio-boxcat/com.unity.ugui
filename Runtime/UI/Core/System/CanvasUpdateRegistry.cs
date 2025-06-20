@@ -103,7 +103,7 @@ namespace UnityEngine.UI
             foreach (var canvasElement in _canvasElementsBuf)
             {
                 if (canvasElement.IsDestroyed() == false)
-                    _canvasElementsBufForSort.Add((canvasElement, ParentCount(canvasElement.transform)));
+                    _canvasElementsBufForSort.Add((canvasElement, canvasElement.transform.CalcParentCount()));
             }
             _canvasElementsBufForSort.Sort((a, b) => a.Depth - b.Depth);
 
@@ -170,18 +170,6 @@ namespace UnityEngine.UI
 
             m_PerformingGraphicUpdate = false;
             UISystemProfilerApi.EndSample(UISystemProfilerApi.SampleType.Render);
-        }
-
-        static int ParentCount(Transform child)
-        {
-            var parent = child.parent;
-            var count = 0;
-            while (parent is not null)
-            {
-                count++;
-                parent = parent.parent;
-            }
-            return count;
         }
 
         /// <summary>
