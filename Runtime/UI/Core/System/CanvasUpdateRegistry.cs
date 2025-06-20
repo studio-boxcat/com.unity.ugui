@@ -120,6 +120,7 @@ namespace UnityEngine.UI
                     catch (Exception e)
                     {
 #if DEBUG
+                        Debug.LogError($"Exception while rebuilding {rebuild.Element} for {m_CanvasUpdateProfilerStrings[i]}");
                         Debug.LogException(e);
 #endif
                     }
@@ -161,6 +162,7 @@ namespace UnityEngine.UI
                     catch (Exception e)
                     {
 #if DEBUG
+                        Debug.LogError($"Exception while rebuilding {element} for {m_CanvasUpdateProfilerStrings[i]}");
                         Debug.LogException(e);
 #endif
                     }

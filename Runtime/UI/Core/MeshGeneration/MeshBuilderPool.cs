@@ -30,10 +30,9 @@ namespace UnityEngine.UI
 
         public static void Return(MeshBuilder mb)
         {
-            Assert.AreEqual(MeshBuilder.Invalid, mb.Poses.Count,
-                "MeshBuilder must be invalidated before returning to the pool.");
-            Assert.AreEqual(MeshBuilder.Invalid, mb.Indices.Count,
-                "MeshBuilder must be invalidated before returning to the pool.");
+            Assert.IsFalse(_pool.Contains(mb), "MeshBuilder is already in the pool. It must be invalidated before returning to the pool.");
+            Assert.AreEqual(MeshBuilder.Invalid, mb.Poses.Count, "MeshBuilder must be invalidated before returning to the pool.");
+            Assert.AreEqual(MeshBuilder.Invalid, mb.Indices.Count, "MeshBuilder must be invalidated before returning to the pool.");
             _pool.Add(mb);
         }
 

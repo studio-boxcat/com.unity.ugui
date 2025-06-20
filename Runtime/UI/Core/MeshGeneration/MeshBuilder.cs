@@ -183,6 +183,7 @@ namespace UnityEngine.UI
 
         public void Invalidate()
         {
+            AssertPrepared();
             Poses.Invalidate();
             UVs.Invalidate();
             Colors.Invalidate();
