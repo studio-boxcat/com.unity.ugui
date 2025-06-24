@@ -27,20 +27,12 @@ namespace UnityEngine.UI
             };
         }
 
-        private enum Side
-        {
-            L = 0, // x
-            B = 1, // y
-            R = 2, // z = xMax
-            T = 3, // w = yMax
-        }
-
         private static void DrawRaycastRect(Graphic graphic)
         {
             var t = graphic.rectTransform;
             var padding = graphic.raycastPadding; // Store initial padding for handle positioning
-            t.CalcWorldCorners2D(padding, out var rect,
-                out var p0Temp, out var p1Temp, out var p2Temp, out var p3Temp);
+            t.CalcWorldCorners2D(padding,
+                out var p0Temp, out var p1Temp, out var p2Temp, out var p3Temp, out var rect);
 
             var p0 = p0Temp.WithZ(0);
             var p1 = p1Temp.WithZ(0);
@@ -72,7 +64,7 @@ namespace UnityEngine.UI
             return;
 
             static bool ProcessHandle(Side side,
-                Rect r,
+                Rect r, // transform rect in local-space
                 Matrix4x4 ltw,
                 Matrix4x4 wtl,
                 ref Vector4 padding, // The padding being updated this frame
@@ -80,38 +72,34 @@ namespace UnityEngine.UI
             {
                 EditorGUI.BeginChangeCheck();
 
+                var ctrlX = side is Side.L or Side.R; // controlling x?
+                var ltr = side is Side.L or Side.B; // left -> right, bottom -> top
 
-                var dim = (int) side; // dimension index for Vector4
+                var len = ctrlX ? r.width : r.height; // length of the side being adjusted
+                var pos = (ctrlX ? r.x : r.y) + (ltr ? 0 : len);
 
-                var pos = side switch
-                {
-                    Side.L => r.x,
-                    Side.B => r.y,
-                    Side.R => r.xMax,
-                    Side.T => r.yMax,
-                };
+                ref var paddingControl = ref padding.Get(side); // padding value for this side
+                ref var paddingOpposite = ref padding.Get(side.Opposite()); // opposite side padding value
+                var signedPadding = paddingControl * ltr.Sign(); // signed padding value
 
-                var movingX = side is Side.L or Side.R;
-                var fixedCenter = movingX ? r.MidY() : r.MidX();
-                var paddingValue = padding[dim]; // padding value for this side
-                var paddingFlipped = side is Side.R or Side.T; // flipped axis for right and top
-                var signedPadding = paddingValue * (paddingFlipped ? -1 : 1); // signed padding value
-
-                var oldHandle = new Vector2(pos + signedPadding, fixedCenter);
-                if (!movingX) oldHandle = oldHandle.YX(); // flip for vertical handles (T, B)
+                var center = ctrlX ? r.MidY() : r.MidX();
+                var centerFlow = side is Side.L or Side.T; // flip center for left and top sides
+                center += (padding.Get(side.Repeat(1)) - padding.Get(side.Repeat(3))).Half() * centerFlow.Sign(); // adjust center
+                var oldHandle = new Vector2(pos + signedPadding, center); // x for control point, y for center
+                if (!ctrlX) oldHandle = oldHandle.YX(); // flip for vertical handles (T, B)
                 oldHandle = ltw.MultiplyPoint2D(oldHandle); // translate into world-space
 
                 var newHandle = (Vector2) Handles.FreeMoveHandle(oldHandle, hSize, Vector3.zero, Handles.DotHandleCap);
                 if (EditorGUI.EndChangeCheck())
                 {
-                    var newPos = movingX
-                        ? wtl.MultiplyPoint2D_X(newHandle)
-                        : wtl.MultiplyPoint2D_Y(newHandle);
+                    var newPos = wtl.MultiplyPoint1D(newHandle, axisX: ctrlX); // translate back to local-space
+                    var mirror = Event.current.alt;
+
                     var a = newPos - pos;
-                    if (paddingFlipped) a = -a; // flip for right and top sides
-                    var paddingOpposite = padding[dim.Repeat(length: 4, offset: 2)]; // opposite side padding value
-                    var b = (movingX ? r.width : r.height) - paddingOpposite; // opposite side padding
-                    padding[dim] = Mathf.Min(a, b).Round(); // snap to integer
+                    if (!ltr) a = -a; // flip for right and top sides
+                    var b = mirror ? len.Half() : len - paddingOpposite;
+                    paddingControl = Mathf.Min(a, b).Round(); // snap to integer
+                    if (mirror) paddingOpposite = paddingControl;
                     return true;
                 }
 
