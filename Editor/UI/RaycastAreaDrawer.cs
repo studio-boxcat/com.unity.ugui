@@ -1,5 +1,6 @@
-using System;
 using UnityEditor;
+
+#pragma warning disable CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
 
 namespace UnityEngine.UI
 {
@@ -26,12 +27,12 @@ namespace UnityEngine.UI
             };
         }
 
-        private enum HandleSide
+        private enum Side
         {
-            Left = 0,
-            Bottom = 1,
-            Right = 2,
-            Top = 3,
+            L = 0, // x
+            B = 1, // y
+            R = 2, // z = xMax
+            T = 3, // w = yMax
         }
 
         private static void DrawRaycastRect(Graphic graphic)
@@ -58,10 +59,10 @@ namespace UnityEngine.UI
 
             var ltw = t.localToWorldMatrix;
             var wtl = t.worldToLocalMatrix;
-            var changed = ProcessHandle(HandleSide.Left, rect, ltw, wtl, ref padding, handleSize)
-                          || ProcessHandle(HandleSide.Right, rect, ltw, wtl, ref padding, handleSize)
-                          || ProcessHandle(HandleSide.Bottom, rect, ltw, wtl, ref padding, handleSize)
-                          || ProcessHandle(HandleSide.Top, rect, ltw, wtl, ref padding, handleSize);
+            var changed = ProcessHandle(Side.L, rect, ltw, wtl, ref padding, handleSize)
+                          || ProcessHandle(Side.R, rect, ltw, wtl, ref padding, handleSize)
+                          || ProcessHandle(Side.B, rect, ltw, wtl, ref padding, handleSize)
+                          || ProcessHandle(Side.T, rect, ltw, wtl, ref padding, handleSize);
             if (changed)
             {
                 Undo.RecordObject(graphic, "Adjust Raycast Padding");
@@ -70,37 +71,33 @@ namespace UnityEngine.UI
             }
             return;
 
-            static bool ProcessHandle(HandleSide side,
+            static bool ProcessHandle(Side side,
                 Rect r,
                 Matrix4x4 ltw,
                 Matrix4x4 wtl,
                 ref Vector4 padding, // The padding being updated this frame
-                float hSize
-                // Padding state at the start of this Draw call
-            )
+                float hSize)
             {
                 EditorGUI.BeginChangeCheck();
 
-                var oldHandle = ltw.MultiplyPoint3x4(side switch
+                var oldHandle = ltw.MultiplyPoint3x4(side switch // translate into world-space
                 {
-                    HandleSide.Left => new Vector3(r.x + padding.x, r.center.y, 0f),
-                    HandleSide.Right => new Vector3(r.xMax - padding.z, r.center.y, 0f),
-                    HandleSide.Bottom => new Vector3(r.center.x, r.y + padding.y, 0f),
-                    HandleSide.Top => new Vector3(r.center.x, r.yMax - padding.w, 0f),
-                    _ => throw new ArgumentOutOfRangeException(nameof(side), side, null)
+                    Side.L => new Vector3(r.x + padding.x, r.center.y, 0f),
+                    Side.R => new Vector3(r.xMax - padding.z, r.center.y, 0f),
+                    Side.B => new Vector3(r.center.x, r.y + padding.y, 0f),
+                    Side.T => new Vector3(r.center.x, r.yMax - padding.w, 0f),
                 });
 
                 var newHandle = Handles.FreeMoveHandle(oldHandle, hSize, Vector3.zero, Handles.DotHandleCap);
                 if (EditorGUI.EndChangeCheck())
                 {
                     var (lx, ly) = wtl.MultiplyPoint2D(newHandle); // local x, local y
-                    var (a, b) = side switch
+                    var (a, b) = side switch // b for opposite side
                     {
-                        HandleSide.Left => (lx - r.x, r.width - padding.z),
-                        HandleSide.Bottom => (ly - r.y, r.height - padding.w),
-                        HandleSide.Right => (r.xMax - lx, r.width - padding.x),
-                        HandleSide.Top => (r.yMax - ly, r.height - padding.y),
-                        _ => throw new ArgumentOutOfRangeException(nameof(side), side, null)
+                        Side.L => (lx - r.x, r.width - padding.z),
+                        Side.B => (ly - r.y, r.height - padding.w),
+                        Side.R => (r.xMax - lx, r.width - padding.x),
+                        Side.T => (r.yMax - ly, r.height - padding.y),
                     };
                     padding[(int) side] = Mathf.Min(a, b).Round(); // snap to integer
                     return true;
