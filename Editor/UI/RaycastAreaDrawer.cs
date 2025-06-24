@@ -80,26 +80,38 @@ namespace UnityEngine.UI
             {
                 EditorGUI.BeginChangeCheck();
 
-                var oldHandle = ltw.MultiplyPoint3x4(side switch // translate into world-space
-                {
-                    Side.L => new Vector3(r.x + padding.x, r.center.y, 0f),
-                    Side.R => new Vector3(r.xMax - padding.z, r.center.y, 0f),
-                    Side.B => new Vector3(r.center.x, r.y + padding.y, 0f),
-                    Side.T => new Vector3(r.center.x, r.yMax - padding.w, 0f),
-                });
 
-                var newHandle = Handles.FreeMoveHandle(oldHandle, hSize, Vector3.zero, Handles.DotHandleCap);
+                var dim = (int) side; // dimension index for Vector4
+
+                var pos = side switch
+                {
+                    Side.L => r.x,
+                    Side.B => r.y,
+                    Side.R => r.xMax,
+                    Side.T => r.yMax,
+                };
+
+                var movingX = side is Side.L or Side.R;
+                var fixedCenter = movingX ? r.MidY() : r.MidX();
+                var paddingValue = padding[dim]; // padding value for this side
+                var paddingFlipped = side is Side.R or Side.T; // flipped axis for right and top
+                var signedPadding = paddingValue * (paddingFlipped ? -1 : 1); // signed padding value
+
+                var oldHandle = new Vector2(pos + signedPadding, fixedCenter);
+                if (!movingX) oldHandle = oldHandle.YX(); // flip for vertical handles (T, B)
+                oldHandle = ltw.MultiplyPoint2D(oldHandle); // translate into world-space
+
+                var newHandle = (Vector2) Handles.FreeMoveHandle(oldHandle, hSize, Vector3.zero, Handles.DotHandleCap);
                 if (EditorGUI.EndChangeCheck())
                 {
-                    var (lx, ly) = wtl.MultiplyPoint2D(newHandle); // local x, local y
-                    var (a, b) = side switch // b for opposite side
-                    {
-                        Side.L => (lx - r.x, r.width - padding.z),
-                        Side.B => (ly - r.y, r.height - padding.w),
-                        Side.R => (r.xMax - lx, r.width - padding.x),
-                        Side.T => (r.yMax - ly, r.height - padding.y),
-                    };
-                    padding[(int) side] = Mathf.Min(a, b).Round(); // snap to integer
+                    var newPos = movingX
+                        ? wtl.MultiplyPoint2D_X(newHandle)
+                        : wtl.MultiplyPoint2D_Y(newHandle);
+                    var a = newPos - pos;
+                    if (paddingFlipped) a = -a; // flip for right and top sides
+                    var paddingOpposite = padding[dim.Repeat(length: 4, offset: 2)]; // opposite side padding value
+                    var b = (movingX ? r.width : r.height) - paddingOpposite; // opposite side padding
+                    padding[dim] = Mathf.Min(a, b).Round(); // snap to integer
                     return true;
                 }
 
