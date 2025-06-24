@@ -5,7 +5,7 @@ using UnityEditor;
 namespace UnityEngine.UI
 {
     [InitializeOnLoad]
-    public static class RaycastAreaDrawer
+    internal static class RaycastAreaDrawer
     {
         static RaycastAreaDrawer()
         {
