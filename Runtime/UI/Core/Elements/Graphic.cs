@@ -443,7 +443,6 @@ namespace UnityEngine.UI
             if (posCount is MeshBuilder.Invalid)
             {
                 canvasRenderer.SetMesh(SharedMesh.Empty);
-                mb.Invalidate();
                 return;
             }
 

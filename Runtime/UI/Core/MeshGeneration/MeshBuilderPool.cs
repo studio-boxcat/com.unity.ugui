@@ -6,7 +6,7 @@ namespace UnityEngine.UI
 {
     public static class MeshBuilderPool
     {
-        static readonly List<MeshBuilder> _pool = new();
+        private static readonly List<MeshBuilder> _pool = new();
 
         public static MeshBuilder Rent()
         {
@@ -38,7 +38,7 @@ namespace UnityEngine.UI
 
         public readonly struct Scope : IDisposable
         {
-            readonly MeshBuilder _mb;
+            private readonly MeshBuilder _mb;
 
             public Scope(MeshBuilder mb)
             {
