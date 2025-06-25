@@ -1,6 +1,7 @@
 using System;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
+using UnityEngine.Assertions;
 #if UNITY_EDITOR
 using System.Reflection;
 #endif
@@ -430,8 +431,10 @@ namespace UnityEngine.UI
             canvasRenderer.SetTexture(mainTexture);
         }
 
-        public void BuildMesh(Mesh mesh)
+        private void BuildMesh(Mesh mesh)
         {
+            Assert.IsTrue(mesh.vertexCount is 0, "Mesh is not empty. Please clear the mesh before building it again.");
+
             using var _ = MeshBuilderPool.Rent(out var mb); // automatically returns the MeshBuilder to the pool
 
             OnPopulateMesh(mb);
