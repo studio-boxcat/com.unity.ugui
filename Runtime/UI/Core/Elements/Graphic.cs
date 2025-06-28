@@ -437,7 +437,21 @@ namespace UnityEngine.UI
 
             using var _ = MeshBuilderPool.Rent(out var mb); // automatically returns the MeshBuilder to the pool
 
-            OnPopulateMesh(mb);
+            // XXX: never shouldn't be happening, but just in case.
+#if UNITY_EDITOR
+            try
+#endif
+            {
+                OnPopulateMesh(mb);
+            }
+#if UNITY_EDITOR
+            catch (Exception e)
+            {
+                L.E($"OnPopulateMesh failed for {name}", this);
+                L.E(e);
+                throw;
+            }
+#endif
 
             // When no vertices are generated, SetMesh with an empty mesh.
             // If we call canvasRenderer.Clear() to clear the mesh,
