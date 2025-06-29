@@ -119,6 +119,7 @@ namespace UnityEngine.UI
         {
             var oldActive = _active;
             _activePref!.Value = !oldActive; // _activePref will be created by the getter if it doesn't exist
+            SceneView.RepaintAll(); // Force all SceneViews to repaint
         }
     }
 }
