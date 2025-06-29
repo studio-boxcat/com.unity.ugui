@@ -1,6 +1,8 @@
-using UnityEditor;
-
+#nullable enable
 #pragma warning disable CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
+
+using Sirenix.OdinInspector.Editor;
+using UnityEditor;
 
 namespace UnityEngine.UI
 {
@@ -12,6 +14,8 @@ namespace UnityEngine.UI
             SceneView.duringSceneGui += sceneView =>
             {
                 if (!sceneView.drawGizmos)
+                    return;
+                if (!_active)
                     return;
 
                 foreach (var transform in Selection.transforms)
@@ -105,6 +109,16 @@ namespace UnityEngine.UI
 
                 return false;
             }
+        }
+
+        private static EditorPrefBool? _activePref;
+        private static bool _active => _activePref ??= new EditorPrefBool("G0HmzQzL", true); // random key
+
+        [MenuItem(MenuPath.UI + "Toggle Raycast Area")]
+        private static void ToggleRaycastArea()
+        {
+            var oldActive = _active;
+            _activePref!.Value = !oldActive; // _activePref will be created by the getter if it doesn't exist
         }
     }
 }
