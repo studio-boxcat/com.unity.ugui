@@ -483,12 +483,11 @@ namespace UnityEngine.UI
         /// </summary>
         protected virtual void UpdateGeometry()
         {
-            var mesh = SharedMesh.Claim();
+            var mesh = SharedMesh.Claim(out var meshIndex);
             mesh.SetNameDebug($"{name}:{GetType().Name}:{GetInstanceID()}");
-            mesh.Clear();
             BuildMesh(mesh);
             canvasRenderer.SetMesh(mesh);
-            SharedMesh.Release(mesh);
+            SharedMesh.Release(mesh, meshIndex);
         }
 
         public virtual void ForceUpdateGeometry() => UpdateGeometry();

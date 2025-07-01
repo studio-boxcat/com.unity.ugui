@@ -5,46 +5,50 @@ namespace UnityEngine.UI
     // Single-ownership mesh.
     public static class SharedMesh
     {
-        private static Mesh? _shared;
+        private static Mesh?[] _shared = new Mesh?[2];
         private static Mesh? _empty;
-        private static bool _claimed;
+        private static uint _usage; // 0b01 for mesh 1, 0b10 for mesh 2, 0b11 for both meshes.
 
         // Mesh must be cleared on the calling site.
-        public static Mesh Claim()
+        public static Mesh Claim(out uint token)
         {
-            // rare-case.
-            // happens when font rebuilt while OnPopulateMesh() is running on Text or LText.
+            // both mesh will be used when font rebuilt while OnPopulateMesh() is running on Text or LText.
             // Text.OnPopulateMesh()
             // -> TextGenerator.TextPopulateWithErrors()
             // -> Font.textureRebuilt
             // -> FontUpdateTracker.FontTextureChanged()
             // -> Graphic.UpdateGeometry() (other graphics, self graphic will be skipped by m_DisableFontTextureRebuiltCallback or _isPopulatingMesh)
-            if (_claimed)
+
+            // both mesh is in use, so we create a temporary mesh.
+            if (_usage is 0b11)
             {
-                L.W("[SharedMesh] Recreated shared mesh.");
-                _shared = null; // reset shared mesh to recreate it.
+                L.W("[SharedMesh] Create temp mesh");
+                token = 0;
+                return CreateDynamicMesh(debugName: "Temp");
             }
 
-            if (_shared is null)
-            {
-                _shared = CreateDynamicMesh();
-                _shared.MarkDynamic(); // Optimize for frequent updates.
-            }
+            // one of the meshes must be available.
+            var index = _usage is 0b01 ? 1 : 0; // if usage is 0b01, switch to mesh 2, else switch to mesh 1.
+            ref var mesh = ref _shared[index];
+            mesh ??= CreateDynamicMesh(); // create the mesh if it is not already created.
 
-            _claimed = true;
+            // mark the mesh as in use.
+            token = 1u << index; // set the mask for the mesh.
+            _usage |= token; // set the usage bit for the mesh.
 
-            return _shared;
+            return mesh;
         }
 
-        public static void Release(Mesh mesh)
+        public static void Release(Mesh mesh, uint token)
         {
-            if (mesh.RefEq(_shared))
+            if (token is not 0)
             {
-                _claimed = false;
+                _usage &= ~token; // clear the usage bit for the mesh.
+                mesh.Clear(); // clear the mesh to reuse it.
             }
             else // rare-case
             {
-                L.W("[SharedMesh] Releasing non-shared mesh.");
+                L.W("[SharedMesh] Releasing temporary mesh.");
                 Object.Destroy(mesh);
             }
         }
