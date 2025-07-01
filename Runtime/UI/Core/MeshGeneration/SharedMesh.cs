@@ -1,5 +1,7 @@
 #nullable enable
 
+using UnityEngine.Assertions;
+
 namespace UnityEngine.UI
 {
     // Single-ownership mesh.
@@ -40,6 +42,8 @@ namespace UnityEngine.UI
 
         public static void Release(Mesh mesh, uint token)
         {
+            Assert.IsTrue(token is 0b01 or 0b10, "Invalid token for SharedMesh.Release. Must be 0b01 or 0b10.");
+
             if (token is not 0)
             {
                 _usage &= ~token; // clear the usage bit for the mesh.
