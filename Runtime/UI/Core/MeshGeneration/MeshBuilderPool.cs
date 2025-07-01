@@ -45,7 +45,7 @@ namespace UnityEngine.UI
                 _mb = mb;
             }
 
-            void IDisposable.Dispose()
+            public void Dispose()
             {
                 Return(_mb);
             }

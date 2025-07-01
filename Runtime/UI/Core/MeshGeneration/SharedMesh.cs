@@ -49,7 +49,8 @@ namespace UnityEngine.UI
 
         public static Mesh CreateDynamicMesh(string debugName)
         {
-            var mesh = new Mesh { hideFlags = HideFlags.HideAndDontSave }; // XXX: To prevent destroying the mesh after exiting play mode.
+            var mesh = new Mesh();
+            mesh.EditorHideAndDontSaveFlag(); // XXX: To prevent destroying the mesh after exiting play mode.
             mesh.SetNameDebug(debugName);
             return mesh;
         }
