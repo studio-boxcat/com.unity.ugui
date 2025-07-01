@@ -460,7 +460,7 @@ namespace UnityEngine.UI
             if (posCount is MeshBuilder.Invalid)
             {
                 canvasRenderer.SetMesh(SharedMesh.Empty);
-                return;
+                return; // MeshBuilder will be returned to the pool by the scope.
             }
 
             mb.AssertPrepared();
