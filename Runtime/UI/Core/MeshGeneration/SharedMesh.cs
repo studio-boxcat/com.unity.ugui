@@ -1,15 +1,13 @@
-using UnityEngine.Assertions;
+#nullable enable
 
 namespace UnityEngine.UI
 {
     // Single-ownership mesh.
     public static class SharedMesh
     {
-        private static Mesh _shared;
-        private static Mesh _empty;
+        private static Mesh? _shared;
+        private static Mesh? _empty;
         private static bool _claimed;
-
-        private const string _debugName = "MwgKvNSc";
 
         // Mesh must be cleared on the calling site.
         public static Mesh Claim()
@@ -17,14 +15,16 @@ namespace UnityEngine.UI
             if (_claimed) // rare-case
             {
                 L.E("[SharedMesh] Already claimed.");
-                _shared = null;
+                _shared = null; // reset shared mesh to recreate it.
             }
 
             if (_shared is null)
             {
-                _shared = CreateDynamicMesh(_debugName);
+                _shared = CreateDynamicMesh();
                 _shared.MarkDynamic(); // Optimize for frequent updates.
             }
+
+            _claimed = true;
 
             return _shared;
         }
@@ -38,16 +38,13 @@ namespace UnityEngine.UI
             else // rare-case
             {
                 L.W("[SharedMesh] Releasing non-shared mesh.");
-#if DEBUG
-                Assert.IsTrue(mesh.name == _debugName, "Mesh must be shared.");
-#endif
                 Object.Destroy(mesh);
             }
         }
 
         public static Mesh Empty => _empty ??= CreateDynamicMesh("Empty");
 
-        public static Mesh CreateDynamicMesh(string debugName)
+        public static Mesh CreateDynamicMesh(string debugName = "")
         {
             var mesh = new Mesh();
             mesh.EditorHideAndDontSaveFlag(); // XXX: To prevent destroying the mesh after exiting play mode.

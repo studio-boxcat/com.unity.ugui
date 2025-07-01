@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using UnityEngine.Assertions;
@@ -11,8 +12,8 @@ namespace UnityEngine.UI
 
     public struct FontUpdateLink
     {
-        readonly IFontUpdateListener _listener;
-        int _fontId; // It is always unique, and never has the value 0.
+        private readonly IFontUpdateListener _listener;
+        private int _fontId; // It is always unique, and never has the value 0.
 
 
         public FontUpdateLink(IFontUpdateListener listener)
@@ -28,7 +29,7 @@ namespace UnityEngine.UI
             Assert.IsNotNull(_listener, "No listener to update");
             Assert.IsFalse(font is null, "Given font is null");
 
-            var fontId = font.GetInstanceID();
+            var fontId = font!.GetInstanceID();
             if (fontId == _fontId)
                 return;
 
@@ -62,7 +63,7 @@ namespace UnityEngine.UI
     /// </remarks>
     public static class FontUpdateTracker
     {
-        static readonly Dictionary<int, HashSet<IFontUpdateListener>> _tracked = new();
+        private static readonly Dictionary<int, HashSet<IFontUpdateListener>> _tracked = new();
 
         /// <summary>
         /// Register a Text element for receiving texture atlas rebuild calls.
@@ -101,9 +102,9 @@ namespace UnityEngine.UI
                 Font.textureRebuilt -= _rebuildForFont;
         }
 
-        static Action<Font> _rebuildForFont;
+        private static Action<Font>? _rebuildForFont;
 
-        static void RebuildForFont(Font font)
+        private static void RebuildForFont(Font font)
         {
             L.I($"[UGUI] Rebuild for font: {font.name}");
 
