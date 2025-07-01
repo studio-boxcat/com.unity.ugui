@@ -13,7 +13,7 @@ namespace UnityEngine.UI
 
             // Layer must be UI or AUI
             var layer = (LayerIndex) value.gameObject.layer;
-            if (layer is not LayerIndex.UI and not LayerIndex.AUI)
+            if (layer is not LayerIndex.UI and not LayerIndex.AUI and not LayerIndex.SceneTransition)
                 result.AddError("CanvasRenderer must be on a GameObject with layer 'UI' or 'AUI'.");
 
             // Graphic or GraphicRaycaster must be present.
