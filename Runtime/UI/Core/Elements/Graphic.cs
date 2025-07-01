@@ -521,12 +521,6 @@ namespace UnityEngine.UI
         protected virtual void OnValidate()
         {
             SetAllDirty();
-
-            if (TryGetComponent(out CanvasRenderer cr))
-            {
-                if (!UnityEditor.PrefabUtility.IsPartOfPrefabInstance(this))
-                    cr.hideFlags = HideFlags.HideInInspector;
-            }
         }
 
         protected virtual void Reset() => SetAllDirty();
