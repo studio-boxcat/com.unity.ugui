@@ -9,7 +9,6 @@ namespace UnityEngine.UI
         private static Mesh? _empty;
         private static uint _usage; // 0b01 for mesh 1, 0b10 for mesh 2, 0b11 for both meshes.
 
-        // Mesh must be cleared on the calling site.
         public static Mesh Claim(out uint token)
         {
             // both mesh will be used when font rebuilt while OnPopulateMesh() is running on Text or LText.
