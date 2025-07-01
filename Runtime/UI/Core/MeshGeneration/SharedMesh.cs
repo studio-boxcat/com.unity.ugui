@@ -12,9 +12,16 @@ namespace UnityEngine.UI
         // Mesh must be cleared on the calling site.
         public static Mesh Claim()
         {
-            if (_claimed) // rare-case
+            // rare-case.
+            // happens when font rebuilt while OnPopulateMesh() is running on Text or LText.
+            // Text.OnPopulateMesh()
+            // -> TextGenerator.TextPopulateWithErrors()
+            // -> Font.textureRebuilt
+            // -> FontUpdateTracker.FontTextureChanged()
+            // -> Graphic.UpdateGeometry() (other graphics, self graphic will be skipped by m_DisableFontTextureRebuiltCallback or _isPopulatingMesh)
+            if (_claimed)
             {
-                L.E("[SharedMesh] Already claimed.");
+                L.W("[SharedMesh] Recreated shared mesh.");
                 _shared = null; // reset shared mesh to recreate it.
             }
 
@@ -26,11 +33,14 @@ namespace UnityEngine.UI
 
             _claimed = true;
 
+            Debug.LogWarning("[SharedMesh] Claiming shared mesh: " + _shared.GetInstanceID());
             return _shared;
         }
 
         public static void Release(Mesh mesh)
         {
+            Debug.LogWarning($"[SharedMesh] Releasing mesh: {mesh.GetInstanceID()} ({mesh.name})");
+
             if (mesh.RefEq(_shared))
             {
                 _claimed = false;
