@@ -33,14 +33,11 @@ namespace UnityEngine.UI
 
             _claimed = true;
 
-            Debug.LogWarning("[SharedMesh] Claiming shared mesh: " + _shared.GetInstanceID());
             return _shared;
         }
 
         public static void Release(Mesh mesh)
         {
-            Debug.LogWarning($"[SharedMesh] Releasing mesh: {mesh.GetInstanceID()} ({mesh.name})");
-
             if (mesh.RefEq(_shared))
             {
                 _claimed = false;
