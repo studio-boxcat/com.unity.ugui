@@ -13,12 +13,17 @@ namespace UnityEngine.UI
 
             // Layer must be UI or AUI
             var layer = (LayerIndex) value.gameObject.layer;
-            if (layer is LayerIndex.UI or LayerIndex.AUI)
+            if (layer is not LayerIndex.UI and not LayerIndex.AUI)
                 result.AddError("CanvasRenderer must be on a GameObject with layer 'UI' or 'AUI'.");
 
-            // Graphic must be attached.
-            if (value.TryGetComponent<Graphic>(out _) == false)
-                result.AddError("CanvasRenderer must be attached to a GameObject with a Graphic component.");
+            // Graphic or GraphicRaycaster must be present.
+            // GraphicRaycaster uses CanvasRenderer internally for determining depth.
+            if (value.HasComponent<Graphic>() is false
+                && value.HasComponent<GraphicRaycaster>() is false)
+            {
+                result.AddError("CanvasRenderer must be attached to a GameObject with a Graphic component.")
+                    .WithFix("Remove CanvasRenderer", () => Object.DestroyImmediate(value));
+            }
         }
     }
 }
