@@ -42,12 +42,12 @@ namespace UnityEngine.UI
             // as material remains the same as long as the base material is the same.
 
             // If the graphic is not enabled, return the base material.
-            // just keep the mask material as it is, as it will be used when the graphic is enabled again.
+            // don't invalidate the mask material, as it will be used when the graphic is enabled again.
             if (enabled is false)
                 return baseMaterial;
 
             // No mask, return base material.
-            // just keep the mask material as it is, as it will be used when the graphic is enabled again.
+            // don't invalidate the mask material, as it will be used when the graphic is enabled again.
             var mask = MaskUtilities.GetEligibleMask(transform);
             if (mask is null)
                 return baseMaterial;
