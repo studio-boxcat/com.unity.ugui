@@ -106,7 +106,7 @@ namespace UnityEngine.UI
 
         private static void RebuildForFont(Font font)
         {
-            L.I($"[UGUI] Rebuild for font: {font.name}");
+            // L.I($"[UGUI] Rebuild for font: {font.name}");
 
             var fontId = font.GetInstanceID();
             if (_tracked.TryGetValue(fontId, out var listeners) == false)
