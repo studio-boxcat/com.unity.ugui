@@ -6,25 +6,8 @@ namespace UnityEngine.UI
     /// <summary>
     /// Mask related utility class. This class provides masking-specific utility functions.
     /// </summary>
-    public class MaskUtilities
+    public static class MaskUtilities
     {
-        /// <summary>
-        /// Notify all IClippables under the given component that they need to recalculate clipping.
-        /// </summary>
-        /// <param name="mask">The object thats changed for whose children should be notified.</param>
-        public static void Notify2DMaskStateChanged(Component mask)
-        {
-            var components = ListPool<IClippable>.Get();
-            mask.GetComponentsInChildren(components);
-            var maskGO = mask.gameObject;
-            foreach (var comp in components)
-            {
-                if (ReferenceEquals(comp.gameObject, maskGO)) continue;
-                comp.RecalculateClipping();
-            }
-            ListPool<IClippable>.Release(components);
-        }
-
         /// <summary>
         /// Notify all IMaskable under the given component that they need to recalculate masking.
         /// </summary>
@@ -49,7 +32,7 @@ namespace UnityEngine.UI
         /// <returns>What the proper stencil buffer index should be.</returns>
         public static int GetStencilDepth(Transform transform)
         {
-            if (ShouldStopSearchingMask(transform))
+            if (CanvasUtils.IsRenderRoot(transform))
                 return 0;
 
             var t = transform.parent;
@@ -57,10 +40,8 @@ namespace UnityEngine.UI
 
             while (t is not null)
             {
-                if (t.TryGetComponent<Mask>(out var mask) && mask.enabled && mask.graphic.enabled)
-                    ++depth;
-                if (ShouldStopSearchingMask(t))
-                    break;
+                if (GetEffectiveMask(t, out _)) ++depth; // increment depth if we found an effective mask.
+                if (CanvasUtils.IsRenderRoot(t)) break; // stop climbing if we reach a render root.
                 t = t.parent;
             }
 
@@ -69,62 +50,33 @@ namespace UnityEngine.UI
 
         public static Mask? GetEligibleMask(Transform transform)
         {
-            if (ShouldStopSearchingMask(transform))
+            if (CanvasUtils.IsRenderRoot(transform))
                 return null;
 
             var t = transform.parent;
 
             while (t is not null)
             {
-                if (t.TryGetComponent<Mask>(out var mask) && mask.enabled && mask.graphic.enabled)
-                    return mask;
-                if (ShouldStopSearchingMask(t))
-                    break;
+                if (GetEffectiveMask(t, out var mask)) return mask; // return the first eligible mask.
+                if (CanvasUtils.IsRenderRoot(t)) break; // stop climbing if we reach a render root.
                 t = t.parent;
             }
 
             return null;
         }
 
-        static bool ShouldStopSearchingMask(Component c)
+        private static bool GetEffectiveMask(Component c, out Mask mask)
         {
-            // Stop if we find a canvas with override sorting or root canvas.
-            return c.TryGetComponent(out Canvas canvas)
-                   && ((canvas.enabled && canvas.overrideSorting) || canvas.isRootCanvas);
-        }
-
-        /// <summary>
-        /// Find the correct RectMask2D for a given IClippable.
-        /// </summary>
-        /// <param name="clippable">Clippable to search from.</param>
-        /// <returns>The Correct RectMask2D</returns>
-        public static RectMask2D GetRectMaskForClippable(MaskableGraphic clippable)
-        {
-            var t = clippable.transform;
-
-            // Handle most common cases.
+            if (c.TryGetComponent<Mask>(out var m) && m.enabled && m.graphic.enabled)
             {
-                // No mask at all.
-                var mask = t.GetComponentInParent<RectMask2D>(true); // Do not skip inactive.
-                if (mask is null) return null;
-
-                // There is a enabled mask, and it's located on the same canvas with the graphic.
-                if (mask.enabled && ReferenceEquals(mask.Canvas, clippable.canvas))
-                    return mask;
+                mask = m;
+                return true;
             }
-
-            // Going up the hierarchy to find first mask.
-            do
+            else
             {
-                if (t.TryGetComponent(out RectMask2D mask) && mask.enabled)
-                    return mask;
-                // Stop if we find a canvas with override sorting or root canvas.
-                if (t.TryGetComponent(out Canvas canvas) && ((canvas.enabled && canvas.overrideSorting) || canvas.isRootCanvas))
-                    return null;
-                t = t.parent;
-            } while (t is not null);
-
-            return null;
+                mask = null!; // never use this value.
+                return false;
+            }
         }
     }
 }

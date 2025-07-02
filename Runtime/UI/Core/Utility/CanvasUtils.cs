@@ -7,6 +7,12 @@ namespace UnityEngine.UI
     /// </summary>
     public static class CanvasUtils
     {
+        public static bool IsRenderRoot(Component c)
+        {
+            return c.TryGetComponent(out Canvas canvas)
+                   && ((canvas.enabled && canvas.overrideSorting) || canvas.isRootCanvas);
+        }
+
         public static Rect BoundingRect(RectTransform rectTransform, Canvas canvas)
         {
             Assert.IsNotNull(canvas, "Canvas cannot be null");

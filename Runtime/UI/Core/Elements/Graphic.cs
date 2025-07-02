@@ -229,8 +229,7 @@ namespace UnityEngine.UI
         {
             get
             {
-                if (m_Canvas == null)
-                    CacheCanvas();
+                if (!m_Canvas) CacheCanvas();
                 return m_Canvas;
             }
         }
@@ -363,7 +362,7 @@ namespace UnityEngine.UI
             UpdateCull(cull);
         }
 
-        protected void UpdateCull(bool cull)
+        internal void UpdateCull(bool cull)
         {
             if (canvasRenderer.cull != cull)
             {

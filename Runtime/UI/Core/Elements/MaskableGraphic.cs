@@ -1,3 +1,6 @@
+// ReSharper disable InconsistentNaming
+
+#nullable enable
 using System;
 using Sirenix.OdinInspector;
 using UnityEngine.Rendering;
@@ -10,13 +13,10 @@ namespace UnityEngine.UI
     public abstract class MaskableGraphic : Graphic, IClippable, IMaskable, IMaterialModifier
     {
         [NonSerialized]
-        protected bool m_ShouldRecalculateStencil = true;
+        protected bool m_StencilDepthDirty = true;
 
         [NonSerialized]
-        protected Material m_MaskMaterial;
-
-        [NonSerialized]
-        private RectMask2D m_ParentMask;
+        protected Material? m_MaskMaterial;
 
         // m_Maskable is whether this graphic is allowed to be masked or not. It has the matching public property maskable.
         // The default for m_Maskable is true, so graphics under a mask are masked out of the box.
@@ -24,15 +24,15 @@ namespace UnityEngine.UI
         // m_IncludeForMasking is whether we actually consider this graphic for masking or not - this is an implementation detail.
         // m_IncludeForMasking should only be true if m_Maskable is true AND a parent of the graphic has an IMask component.
         // Things would still work correctly if m_IncludeForMasking was always true when m_Maskable is, but performance would suffer.
-        [SerializeField, FoldoutGroup("Advanced"), PropertyOrder(1)]
-        [ShowIf("@CanShow(GraphicPropertyFlag.Maskable)")]
+        [SerializeField, HideInInspector]
         private bool m_Maskable;
 
-        private bool m_IsMaskingGraphic = false;
+        private bool m_IsMaskingGraphic;
 
         /// <summary>
         /// Does this graphic allow masking.
         /// </summary>
+        [ShowInInspector, FoldoutGroup("Advanced"), PropertyOrder(1), ShowIf("@CanShow(GraphicPropertyFlag.Maskable)")]
         public bool maskable
         {
             get { return m_Maskable; }
@@ -41,8 +41,15 @@ namespace UnityEngine.UI
                 if (value == m_Maskable)
                     return;
                 m_Maskable = value;
-                m_ShouldRecalculateStencil = true;
+
+                if (!isActiveAndEnabled)
+                    return;
+
+                m_StencilDepthDirty = true;
                 SetMaterialDirty();
+
+                if (value) ClipperRegistry.RegisterTarget(this);
+                else ClipperRegistry.UnregisterTarget(this);
             }
         }
 
@@ -56,17 +63,11 @@ namespace UnityEngine.UI
         public bool isMaskingGraphic
         {
             get => m_IsMaskingGraphic;
-            set
-            {
-                if (value == m_IsMaskingGraphic)
-                    return;
-
-                m_IsMaskingGraphic = value;
-            }
+            set => m_IsMaskingGraphic = value;
         }
 
         [NonSerialized]
-        protected int m_StencilValue;
+        protected int m_StencilDepth;
 
         /// <summary>
         /// See IMaterialModifier.GetModifiedMaterial
@@ -75,18 +76,18 @@ namespace UnityEngine.UI
         {
             var toUse = baseMaterial;
 
-            if (m_ShouldRecalculateStencil)
+            if (m_StencilDepthDirty)
             {
-                m_StencilValue = maskable ? MaskUtilities.GetStencilDepth(transform) : 0;
-                m_ShouldRecalculateStencil = false;
+                m_StencilDepth = maskable ? MaskUtilities.GetStencilDepth(transform) : 0;
+                m_StencilDepthDirty = false;
             }
 
             // if we have a enabled Mask component then it will
             // generate the mask material. This is an optimization
             // it adds some coupling between components though :(
-            if (m_StencilValue > 0 && !isMaskingGraphic)
+            if (m_StencilDepth > 0 && !isMaskingGraphic)
             {
-                var maskMat = StencilMaterial.Add(toUse, (1 << m_StencilValue) - 1, StencilOp.Keep, CompareFunction.Equal, ColorWriteMask.All, (1 << m_StencilValue) - 1, 0);
+                var maskMat = StencilMaterial.Add(toUse, (1 << m_StencilDepth) - 1, StencilOp.Keep, CompareFunction.Equal, ColorWriteMask.All, (1 << m_StencilDepth) - 1, 0);
                 StencilMaterial.Remove(m_MaskMaterial);
                 m_MaskMaterial = maskMat;
                 toUse = m_MaskMaterial;
@@ -97,20 +98,22 @@ namespace UnityEngine.UI
         protected override void OnEnable()
         {
             base.OnEnable();
-            m_ShouldRecalculateStencil = true;
-            UpdateClipParent();
+
+            m_StencilDepthDirty = true;
             SetMaterialDirty();
 
             if (isMaskingGraphic)
                 MaskUtilities.NotifyStencilStateChanged(this);
+
+            if (maskable) ClipperRegistry.RegisterTarget(this);
         }
 
         protected override void OnDisable()
         {
             base.OnDisable();
-            m_ShouldRecalculateStencil = true;
+
+            m_StencilDepthDirty = true;
             SetMaterialDirty();
-            UpdateClipParent();
 
             if (m_MaskMaterial is not null)
             {
@@ -120,15 +123,15 @@ namespace UnityEngine.UI
 
             if (isMaskingGraphic)
                 MaskUtilities.NotifyStencilStateChanged(this);
+
+            if (maskable) ClipperRegistry.UnregisterTarget(this);
         }
 
 #if UNITY_EDITOR
         protected override void OnValidate()
         {
             base.OnValidate();
-            m_ShouldRecalculateStencil = true;
-            UpdateClipParent();
-            SetMaterialDirty();
+            m_StencilDepthDirty = true;
         }
 #endif
 
@@ -139,9 +142,9 @@ namespace UnityEngine.UI
             if (!isActiveAndEnabled)
                 return;
 
-            m_ShouldRecalculateStencil = true;
-            UpdateClipParent();
+            m_StencilDepthDirty = true;
             SetMaterialDirty();
+            if (maskable) ClipperRegistry.ReparentTarget(this);
         }
 
         protected override void OnCanvasHierarchyChanged()
@@ -151,35 +154,9 @@ namespace UnityEngine.UI
             if (!isActiveAndEnabled)
                 return;
 
-            m_ShouldRecalculateStencil = true;
-            UpdateClipParent();
+            m_StencilDepthDirty = true;
             SetMaterialDirty();
-        }
-
-        private void UpdateClipParent()
-        {
-            var newParent = (maskable && IsActive()) ? MaskUtilities.GetRectMaskForClippable(this) : null;
-
-            // if the new parent is different OR is now inactive
-            if (m_ParentMask != null && (newParent != m_ParentMask || !newParent.IsActive()))
-            {
-                m_ParentMask.RemoveClippable(this);
-                UpdateCull(false);
-            }
-
-            // don't re-add it if the newparent is inactive
-            if (newParent is not null && newParent.IsActive())
-                newParent.AddClippable(this);
-
-            m_ParentMask = newParent;
-        }
-
-        /// <summary>
-        /// See IClippable.RecalculateClipping
-        /// </summary>
-        public virtual void RecalculateClipping()
-        {
-            UpdateClipParent();
+            if (maskable) ClipperRegistry.ReparentTarget(this);
         }
 
         /// <summary>
@@ -195,8 +172,10 @@ namespace UnityEngine.UI
                 m_MaskMaterial = null;
             }
 
-            m_ShouldRecalculateStencil = true;
+            m_StencilDepthDirty = true;
             SetMaterialDirty();
         }
+
+        Graphic IClippable.Graphic => this;
     }
 }
