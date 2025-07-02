@@ -1,4 +1,4 @@
-using JetBrains.Annotations;
+#nullable enable
 using UnityEngine.Pool;
 
 namespace UnityEngine.UI
@@ -67,8 +67,7 @@ namespace UnityEngine.UI
             return depth;
         }
 
-        [CanBeNull]
-        public static Mask GetEligibleMask(Transform transform)
+        public static Mask? GetEligibleMask(Transform transform)
         {
             if (ShouldStopSearchingMask(transform))
                 return null;
