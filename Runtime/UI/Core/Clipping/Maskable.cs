@@ -8,28 +8,28 @@ namespace UnityEngine.UI
     public class Maskable : MonoBehaviour, IMaskable, IMaterialModifier
     {
         [SerializeField, Required, ChildGameObjectsOnly]
-        Graphic _graphic;
+        private Graphic _graphic;
 
         [NonSerialized, ShowInInspector, ReadOnly, FoldoutGroup("Advanced")]
-        Material _maskMaterial;
+        private Material _maskMaterial;
         [NonSerialized, ShowInInspector, ReadOnly, FoldoutGroup("Advanced")]
-        Mask _mask;
+        private Mask _mask;
         [NonSerialized]
-        bool _maskDirty = true;
+        private bool _maskDirty = true;
 
-        void OnEnable()
+        private void OnEnable()
         {
             _maskDirty = true;
             _graphic.SetMaterialDirty();
         }
 
-        void OnDisable()
+        private void OnDisable()
         {
             _maskDirty = true;
             _graphic.SetMaterialDirty();
         }
 
-        void OnDestroy()
+        private void OnDestroy()
         {
             if (_maskMaterial is not null)
             {
@@ -39,17 +39,17 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
-        void Reset() => _graphic = GetComponent<Graphic>();
-        void OnValidate() => _maskDirty = true;
+        private void Reset() => _graphic = GetComponent<Graphic>();
+        private void OnValidate() => _maskDirty = true;
 #endif
 
-        void OnTransformParentChanged()
+        private void OnTransformParentChanged()
         {
             _maskDirty = true;
             _graphic.SetMaterialDirty();
         }
 
-        void OnCanvasHierarchyChanged()
+        private void OnCanvasHierarchyChanged()
         {
             _maskDirty = true;
             _graphic.SetMaterialDirty();
@@ -82,6 +82,7 @@ namespace UnityEngine.UI
                 _maskMaterial = null;
             }
 
+            // Only the first masking level will work.
             return _maskMaterial = StencilMaterial.Add(
                 baseMaterial, stencilID: 1,
                 StencilOp.Keep, CompareFunction.Equal, ColorWriteMask.All,
