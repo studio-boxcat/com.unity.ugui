@@ -38,15 +38,9 @@ namespace UnityEngine.UI
         /// <summary>
         /// Add a new material using the specified base and stencil ID.
         /// </summary>
-        public static Material Add(Material baseMat, int stencilID, StencilOp operation, CompareFunction compareFunction, ColorWriteMask colorWriteMask)
-        {
-            return Add(baseMat, stencilID, operation, compareFunction, colorWriteMask, 255, 255);
-        }
-
-        /// <summary>
-        /// Add a new material using the specified base and stencil ID.
-        /// </summary>
-        public static Material Add(Material baseMat, int stencilID, StencilOp operation, CompareFunction compareFunction, ColorWriteMask colorWriteMask, int readMask, int writeMask)
+        private static Material Add(Material baseMat,
+            int stencilID, StencilOp operation, CompareFunction compareFunction,
+            ColorWriteMask colorWriteMask, int readMask = 255, int writeMask = 255)
         {
             if ((stencilID <= 0 && colorWriteMask == ColorWriteMask.All) || baseMat == null)
                 return baseMat;
@@ -127,7 +121,30 @@ namespace UnityEngine.UI
                 StencilOp.Keep,
                 CompareFunction.Equal,
                 ColorWriteMask.All,
-                readMask: (1 << depth) - 1, 0);
+                readMask: (1 << depth) - 1,
+                writeMask: 0);
+        }
+
+        public static (Material Mask, Material Unmask) AddMaskPair(Material baseMaterial, int depth, bool showMaskGraphic)
+        {
+            var colorWriteMask = showMaskGraphic ? ColorWriteMask.All : 0;
+
+            // if we are at the first level...
+            // we want to destroy what is there
+            if (depth is 0)
+            {
+                return (Add(baseMaterial, stencilID: 1, StencilOp.Replace, CompareFunction.Always, colorWriteMask: colorWriteMask),
+                    Add(baseMaterial, stencilID: 1, StencilOp.Zero, CompareFunction.Always, colorWriteMask: 0));
+            }
+            //otherwise we need to be a bit smarter and set some read / write masks
+            else
+            {
+                var bit = 1 << depth;
+                return (Add(baseMaterial, stencilID: bit | (bit - 1), StencilOp.Replace, CompareFunction.Equal,
+                        colorWriteMask: colorWriteMask, readMask: bit - 1, writeMask: bit | (bit - 1)),
+                    Add(baseMaterial, stencilID: bit - 1, StencilOp.Replace, CompareFunction.Equal,
+                        colorWriteMask: 0, readMask: bit - 1, writeMask: bit | (bit - 1)));
+            }
         }
 
         /// <summary>
@@ -162,7 +179,7 @@ namespace UnityEngine.UI
         }
 
 #if DEBUG
-        static void CheckPropertyExists(Material mat, int id)
+        private static void CheckPropertyExists(Material mat, int id)
         {
             if (mat.HasProperty(id)) return;
             L.W("[UGUI] Material " + mat.name + " doesn't have " + id + " property", mat);

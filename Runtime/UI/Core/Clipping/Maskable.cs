@@ -65,10 +65,7 @@ namespace UnityEngine.UI
             }
 
             // create a new mask material. (StencilMaterial is pooling materials, so need to worry about leaks)
-            return _maskMaterial = StencilMaterial.Add(
-                baseMaterial, stencilID: 1, // hardcoded to 1, as we don't support multiple masks.
-                StencilOp.Keep, CompareFunction.Equal, ColorWriteMask.All,
-                readMask: 1, writeMask: 0);
+            return _maskMaterial = StencilMaterial.AddMaskable(baseMaterial, 1); // hardcoded to 1, as we don't support multiple masks.
         }
 
 #if UNITY_EDITOR

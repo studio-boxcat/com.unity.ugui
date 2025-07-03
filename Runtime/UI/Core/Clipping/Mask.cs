@@ -128,33 +128,21 @@ namespace UnityEngine.UI
                 return baseMaterial;
             }
 
-            var renderer = graphic.canvasRenderer;
             var oldMaskMaterial = m_MaskMaterial;
             var oldUnmaskMaterial = m_UnmaskMaterial;
+            (m_MaskMaterial, m_UnmaskMaterial) = StencilMaterial.AddMaskPair(baseMaterial, stencilDepth, m_ShowMaskGraphic);
 
-            // if we are at the first level...
-            // we want to destroy what is there
-            var desiredStencilBit = 1 << stencilDepth;
-            if (desiredStencilBit == 1)
-            {
-                m_MaskMaterial = StencilMaterial.Add(baseMaterial, 1, StencilOp.Replace, CompareFunction.Always, m_ShowMaskGraphic ? ColorWriteMask.All : 0);
-                m_UnmaskMaterial = StencilMaterial.Add(baseMaterial, 1, StencilOp.Zero, CompareFunction.Always, 0);
-            }
-            //otherwise we need to be a bit smarter and set some read / write masks
-            else
-            {
-                m_MaskMaterial = StencilMaterial.Add(baseMaterial, desiredStencilBit | (desiredStencilBit - 1), StencilOp.Replace, CompareFunction.Equal, m_ShowMaskGraphic ? ColorWriteMask.All : 0, desiredStencilBit - 1, desiredStencilBit | (desiredStencilBit - 1));
-                m_UnmaskMaterial = StencilMaterial.Add(baseMaterial, desiredStencilBit - 1, StencilOp.Replace, CompareFunction.Equal, 0, desiredStencilBit - 1, desiredStencilBit | (desiredStencilBit - 1));
-                renderer.hasPopInstruction = true;
-            }
+            // configure the CanvasRenderer to use the mask material.
+            var cr = graphic.canvasRenderer;
+            if (stencilDepth is not 0) cr.hasPopInstruction = true;
+            cr.popMaterialCount = 1;
+            cr.SetPopMaterial(m_UnmaskMaterial, 0);
 
-            renderer.popMaterialCount = 1;
-            renderer.SetPopMaterial(m_UnmaskMaterial, 0);
-
+            // remove the old mask at last to avoid destroying & creating materials.
             if (oldMaskMaterial is not null)
             {
                 StencilMaterial.Remove(oldMaskMaterial);
-                StencilMaterial.Remove(oldUnmaskMaterial);
+                StencilMaterial.Remove(oldUnmaskMaterial!);
             }
 
             return m_MaskMaterial;
