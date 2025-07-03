@@ -250,12 +250,10 @@ namespace UnityEngine.UI
         /// </summary>
         public virtual Material material
         {
-            get => m_Material != null ? m_Material : defaultGraphicMaterial;
+            get => m_Material ? m_Material : defaultGraphicMaterial;
             set
             {
-                if (ReferenceEquals(m_Material, value))
-                    return;
-
+                if (m_Material.RefEq(value)) return;
                 m_Material = value;
                 SetMaterialDirty();
             }
