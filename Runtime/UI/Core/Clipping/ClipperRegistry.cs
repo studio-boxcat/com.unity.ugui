@@ -16,6 +16,7 @@ namespace UnityEngine.UI
         private static readonly Dictionary<IClippable, Clipper?> _targets = new(RefComparer.Instance);
         private static readonly List<Clipper> _dirtyClippers = new(); // can contain duplicates.
         private static readonly List<IClippable> _dirtyTargets = new(); // can contain duplicates.
+        private static readonly List<IClippable> _tempTargets = new(); // used to collect targets from clippers.
 
         public static void RegisterClipper(Clipper c)
         {
@@ -82,7 +83,8 @@ namespace UnityEngine.UI
                 prevHash = h;
 
                 if (!clipper) continue; // skip destroyed clippers.
-                clipper.GetComponentsInChildren(includeInactive: false, _dirtyTargets);
+                clipper.GetComponentsInChildren(includeInactive: false, _tempTargets);
+                _dirtyTargets.AddRange(_tempTargets);
             }
             _dirtyClippers.Clear();
 

@@ -523,15 +523,30 @@ namespace UnityEngine.UI
             get
             {
                 var sb = SbPool.Rent();
-                var mesh = canvasRenderer.GetMesh();
                 sb
                     .Append("canvas: \"").Append(canvas.SafeName()).Append("\", ")
                     .Append("cull: ").Append(canvasRenderer.cull).Append(", ")
                     .Append("materialForRendering: \"").Append(materialForRendering.name).Append("\", ")
                     .Append("inheritedAlpha: ").Append((int) (canvasRenderer.GetInheritedAlpha() * 255)).Append(", ")
-                    .Append("vertices: ").Append(mesh.vertexCount).Append(", ")
-                    .Append("indices: ").Append(mesh.GetIndexCount(0)).Append(", ")
                     ;
+
+                if (canvasRenderer.hasRectClipping)
+                {
+                    sb.Append("clipping: ").Append(canvasRenderer.clippingSoftness).Append(", ");
+                }
+                else
+                {
+                    sb.Append("clipping: none, ");
+                }
+
+                // for deactivated graphics, the mesh is not built.
+                var mesh = canvasRenderer.GetMesh();
+                if (mesh)
+                {
+                    sb.Append("vertices: ").Append(mesh.vertexCount).Append(", ")
+                        .Append("indices: ").Append(mesh.GetIndexCount(0)).Append(", ");
+                }
+
                 sb.Length -= 2; // remove last ", "
                 return sb.ToString();
             }
