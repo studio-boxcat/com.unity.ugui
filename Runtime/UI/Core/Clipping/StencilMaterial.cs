@@ -48,6 +48,9 @@ namespace UnityEngine.UI
         {
             Assert.IsTrue(baseMat, "Base material must not be null.");
             Assert.IsTrue(stencilID > 0, "Stencil ID must be greater than 0.");
+            Assert.IsTrue(stencilID <= 0xff && (int) operation <= 0xff && (int) compareFunction <= 0xff
+                          && (int) colorWriteMask <= 0xff && readMask <= 0xff && writeMask <= 0xff,
+                "Stencil ID, operation, compare function, color write mask, read mask and write mask must be <= 0xff.");
 
 #if DEBUG
             CheckPropertyExists(baseMat, _stencil);
@@ -61,7 +64,7 @@ namespace UnityEngine.UI
             // If we have a pre-existing entry matching the description,
             // just increase the ref count and return the material.
             var hash = Hash(stencilID, operation, compareFunction, colorWriteMask, readMask, writeMask);
-            foreach (var e in m_List)
+            foreach (var e in m_List) // not that huge, so we can use foreach.
             {
                 if (e.baseMat.RefEq(baseMat) && e.hash == hash)
                 {
@@ -114,6 +117,8 @@ namespace UnityEngine.UI
 
         public static Material AddMaskable(Material toUse, int depth)
         {
+            Assert.IsTrue(depth is > 0 and < 8, "Stencil depth must be greater than 0 and less than 8.");
+
             return Add(toUse,
                 stencilID: (1 << depth) - 1,
                 StencilOp.Keep,
