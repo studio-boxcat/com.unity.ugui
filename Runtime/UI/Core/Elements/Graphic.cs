@@ -515,7 +515,6 @@ namespace UnityEngine.UI
 
 #if UNITY_EDITOR
         protected virtual void OnValidate() => SetAllDirty();
-        protected virtual void Reset() => SetAllDirty();
 
 
         protected virtual void OnInspectorMaterialChanged()
