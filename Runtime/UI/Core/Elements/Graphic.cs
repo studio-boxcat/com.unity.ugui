@@ -26,7 +26,7 @@ namespace UnityEngine.UI
 
         // Cached and saved values
         [FormerlySerializedAs("m_Mat")]
-        [ShowIf("@CanShow(GraphicPropertyFlag.Material)"), PropertyOrder(501)]
+        [ShowIf("@CanShow(GraphicPropertyFlag.Material)"), PropertyOrder(501), OnValueChanged("OnInspectorMaterialChanged")]
         [SerializeField] protected Material m_Material;
 
         [ShowIf("@CanShow(GraphicPropertyFlag.Color)"), PropertyOrder(500), DontValidate]
@@ -516,12 +516,14 @@ namespace UnityEngine.UI
         protected Rect GetPixelAdjustedRect() => rectTransform.rect;
 
 #if UNITY_EDITOR
-        protected virtual void OnValidate()
-        {
-            SetAllDirty();
-        }
-
+        protected virtual void OnValidate() => SetAllDirty();
         protected virtual void Reset() => SetAllDirty();
+
+
+        protected virtual void OnInspectorMaterialChanged()
+        {
+            // Do nothing.
+        }
 
         /// <summary>
         /// Editor-only callback that is issued by Unity if a rebuild of the Graphic is required.
