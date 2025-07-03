@@ -1,3 +1,4 @@
+#nullable enable
 using System.Collections.Generic;
 using UnityEngine.Bindings;
 using UnityEngine.Rendering;
@@ -117,6 +118,16 @@ namespace UnityEngine.UI
 
             L.I($"[UGUI] Stencil material created: {newMat.name}", baseMat);
             return newMat;
+        }
+
+        public static Material AddMaskable(Material toUse, int depth)
+        {
+            return Add(toUse,
+                stencilID: (1 << depth) - 1,
+                StencilOp.Keep,
+                CompareFunction.Equal,
+                ColorWriteMask.All,
+                readMask: (1 << depth) - 1, 0);
         }
 
         /// <summary>

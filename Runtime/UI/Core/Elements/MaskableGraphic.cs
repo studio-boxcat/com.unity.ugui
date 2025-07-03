@@ -3,7 +3,6 @@
 #nullable enable
 using System;
 using Sirenix.OdinInspector;
-using UnityEngine.Rendering;
 
 namespace UnityEngine.UI
 {
@@ -12,9 +11,6 @@ namespace UnityEngine.UI
     /// </summary>
     public abstract class MaskableGraphic : Graphic, IClippable, IMaskable, IMaterialModifier
     {
-        [NonSerialized]
-        protected bool m_StencilDepthDirty = true;
-
         [NonSerialized]
         protected Material? m_MaskMaterial;
 
@@ -35,7 +31,7 @@ namespace UnityEngine.UI
         [ShowInInspector, FoldoutGroup("Advanced"), PropertyOrder(1), ShowIf("@CanShow(GraphicPropertyFlag.Maskable)")]
         public bool maskable
         {
-            get { return m_Maskable; }
+            get => m_Maskable;
             set
             {
                 if (value == m_Maskable)
@@ -45,7 +41,7 @@ namespace UnityEngine.UI
                 if (!isActiveAndEnabled)
                     return;
 
-                m_StencilDepthDirty = true;
+                m_StencilDepth = null;
                 SetMaterialDirty();
 
                 if (value) ClipperRegistry.RegisterTarget(this);
@@ -67,28 +63,28 @@ namespace UnityEngine.UI
         }
 
         [NonSerialized]
-        protected int m_StencilDepth;
+        protected int? m_StencilDepth;
 
         /// <summary>
         /// See IMaterialModifier.GetModifiedMaterial
         /// </summary>
-        public virtual Material GetModifiedMaterial(Material baseMaterial)
+        public Material GetModifiedMaterial(Material baseMaterial)
         {
             var toUse = baseMaterial;
 
-            if (m_StencilDepthDirty)
+            if (m_StencilDepth.TryGetValue(out var d) is false)
             {
-                m_StencilDepth = maskable ? MaskUtilities.GetStencilDepth(transform) : 0;
-                m_StencilDepthDirty = false;
+                d = maskable ? MaskUtilities.GetStencilDepth(transform) : 0;
+                m_StencilDepth = d;
             }
 
             // if we have a enabled Mask component then it will
             // generate the mask material. This is an optimization
             // it adds some coupling between components though :(
-            if (m_StencilDepth > 0 && !isMaskingGraphic)
+            if (d > 0 && !isMaskingGraphic)
             {
-                var maskMat = StencilMaterial.Add(toUse, (1 << m_StencilDepth) - 1, StencilOp.Keep, CompareFunction.Equal, ColorWriteMask.All, (1 << m_StencilDepth) - 1, 0);
-                StencilMaterial.Remove(m_MaskMaterial);
+                var maskMat = StencilMaterial.AddMaskable(toUse, d);
+                if (m_MaskMaterial is not null) StencilMaterial.Remove(m_MaskMaterial); // return the previous mask material if it exists.
                 m_MaskMaterial = maskMat;
                 toUse = m_MaskMaterial;
             }
@@ -99,7 +95,7 @@ namespace UnityEngine.UI
         {
             base.OnEnable();
 
-            m_StencilDepthDirty = true;
+            m_StencilDepth = null;
             SetMaterialDirty();
 
             if (isMaskingGraphic)
@@ -112,7 +108,7 @@ namespace UnityEngine.UI
         {
             base.OnDisable();
 
-            m_StencilDepthDirty = true;
+            m_StencilDepth = null;
             SetMaterialDirty();
 
             if (m_MaskMaterial is not null)
@@ -127,14 +123,6 @@ namespace UnityEngine.UI
             if (maskable) ClipperRegistry.UnregisterTarget(this);
         }
 
-#if UNITY_EDITOR
-        protected override void OnValidate()
-        {
-            base.OnValidate();
-            m_StencilDepthDirty = true;
-        }
-#endif
-
         protected override void OnTransformParentChanged()
         {
             base.OnTransformParentChanged();
@@ -142,7 +130,7 @@ namespace UnityEngine.UI
             if (!isActiveAndEnabled)
                 return;
 
-            m_StencilDepthDirty = true;
+            m_StencilDepth = null;
             SetMaterialDirty();
             if (maskable) ClipperRegistry.ReparentTarget(this);
         }
@@ -154,7 +142,7 @@ namespace UnityEngine.UI
             if (!isActiveAndEnabled)
                 return;
 
-            m_StencilDepthDirty = true;
+            m_StencilDepth = null;
             SetMaterialDirty();
             if (maskable) ClipperRegistry.ReparentTarget(this);
         }
@@ -172,7 +160,7 @@ namespace UnityEngine.UI
                 m_MaskMaterial = null;
             }
 
-            m_StencilDepthDirty = true;
+            m_StencilDepth = null;
             SetMaterialDirty();
         }
 

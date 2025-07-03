@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
@@ -20,15 +21,31 @@ namespace UnityEngine.UI
 
     public static class MaterialModifierUtils
     {
-        private static readonly List<IMaterialModifier> _materialModifierBuf = new();
+        private static readonly List<IMaterialModifier> _buf = new();
 
         public static Material ResolveMaterialForRendering(Component comp, Material baseMaterial)
         {
             var currentMat = baseMaterial;
-            comp.GetComponents(_materialModifierBuf);
-            var count = _materialModifierBuf.Count; // mostly 0.
+            comp.GetComponents(_buf);
+            var count = _buf.Count; // mostly 0.
             for (var i = 0; i < count; i++)
-                currentMat = _materialModifierBuf[i].GetModifiedMaterial(currentMat);
+                currentMat = _buf[i].GetModifiedMaterial(currentMat);
+            return currentMat;
+        }
+
+        public static Material ResolveMaterialForRenderingExceptSelf(Component comp, Material baseMaterial)
+        {
+            var currentMat = baseMaterial;
+            var self = comp as IMaterialModifier;
+
+            comp.GetComponents(_buf);
+            var count = _buf.Count; // mostly 0.
+            for (var i = 0; i < count; i++)
+            {
+                var mod = _buf[i];
+                if (self.RefEq(mod)) continue; // skip self.
+                currentMat = mod.GetModifiedMaterial(currentMat);
+            }
             return currentMat;
         }
     }

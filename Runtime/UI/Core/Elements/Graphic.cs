@@ -454,7 +454,7 @@ namespace UnityEngine.UI
 
             // When no vertices are generated, SetMesh with an empty mesh.
             // If we call canvasRenderer.Clear() to clear the mesh,
-            // somehow it will prevent further graphic rendering.
+            // it will also remove the material, which is not what we want.
             var posCount = mb.Poses.Count;
             if (posCount is MeshBuilder.Invalid)
             {
