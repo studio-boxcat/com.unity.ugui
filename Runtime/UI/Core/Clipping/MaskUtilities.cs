@@ -30,13 +30,13 @@ namespace UnityEngine.UI
         /// </summary>
         /// <param name="transform">The starting transform to search.</param>
         /// <returns>What the proper stencil buffer index should be.</returns>
-        public static int GetStencilDepth(Transform transform)
+        public static byte GetStencilDepth(Transform transform)
         {
             if (CanvasUtils.IsRenderRoot(transform))
                 return 0;
 
             var t = transform.parent;
-            var depth = 0;
+            byte depth = 0;
 
             while (t is not null)
             {

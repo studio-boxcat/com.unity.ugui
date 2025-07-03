@@ -89,7 +89,7 @@ namespace UnityEngine.UI
             if (m_MaskMaterial is not null)
             {
                 StencilMaterial.Remove(m_MaskMaterial);
-                StencilMaterial.Remove(m_UnmaskMaterial);
+                StencilMaterial.Remove(m_UnmaskMaterial!);
                 m_MaskMaterial = null;
                 m_UnmaskMaterial = null;
             }
