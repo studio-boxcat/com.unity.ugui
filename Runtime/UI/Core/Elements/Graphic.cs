@@ -458,7 +458,7 @@ namespace UnityEngine.UI
             var posCount = mb.Poses.Count;
             if (posCount is MeshBuilder.Invalid)
             {
-                canvasRenderer.SetMesh(SharedMesh.Empty);
+                canvasRenderer.SetMesh(MeshPool.Empty);
                 return; // MeshBuilder will be returned to the pool by the scope.
             }
 
@@ -472,7 +472,7 @@ namespace UnityEngine.UI
         [MustUseReturnValue]
         public Mesh BuildMesh()
         {
-            var mesh = SharedMesh.CreateDynamicMesh("TEA3lkRT");
+            var mesh = MeshPool.CreateDynamicMesh("TEA3lkRT");
             BuildMesh(mesh);
             return mesh;
         }
@@ -482,11 +482,11 @@ namespace UnityEngine.UI
         /// </summary>
         protected virtual void UpdateGeometry()
         {
-            var mesh = SharedMesh.Claim(out var meshIndex);
+            var mesh = MeshPool.Rent();
             mesh.SetNameDebug($"{name}:{GetType().Name}:{GetInstanceID()}");
             BuildMesh(mesh);
             canvasRenderer.SetMesh(mesh);
-            SharedMesh.Release(mesh, meshIndex);
+            MeshPool.Return(mesh);
         }
 
         public virtual void ForceUpdateGeometry() => UpdateGeometry();
