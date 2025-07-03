@@ -516,6 +516,26 @@ namespace UnityEngine.UI
 #if UNITY_EDITOR
         protected virtual void OnValidate() => SetAllDirty();
 
+        [BoxGroup("Advanced/Top", showLabel: false, order: -1)]
+        [ShowInInspector, HideLabel, MultiLineProperty(4)]
+        private string _infoMessage
+        {
+            get
+            {
+                var sb = SbPool.Rent();
+                var mesh = canvasRenderer.GetMesh();
+                sb
+                    .Append("canvas: \"").Append(canvas.SafeName()).Append("\", ")
+                    .Append("cull: ").Append(canvasRenderer.cull).Append(", ")
+                    .Append("materialForRendering: \"").Append(materialForRendering.name).Append("\", ")
+                    .Append("inheritedAlpha: ").Append((int) (canvasRenderer.GetInheritedAlpha() * 255)).Append(", ")
+                    .Append("vertices: ").Append(mesh.vertexCount).Append(", ")
+                    .Append("indices: ").Append(mesh.GetIndexCount(0)).Append(", ")
+                    ;
+                sb.Length -= 2; // remove last ", "
+                return sb.ToString();
+            }
+        }
 
         protected virtual void OnInspectorMaterialChanged()
         {
