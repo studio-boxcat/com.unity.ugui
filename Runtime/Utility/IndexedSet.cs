@@ -1,8 +1,10 @@
+// ReSharper disable InconsistentNaming
+#nullable enable
 using System.Collections.Generic;
 
 namespace UnityEngine
 {
-    class IndexedSet<T> where T : class
+    internal class IndexedSet<T> where T : class
     {
         //This is a container that gives:
         //  - Unique items
@@ -19,8 +21,8 @@ namespace UnityEngine
         //When removing we move the last item to the removed item position, this way we only need to update the index cache of a single item. (fast removal)
         //Order of the elements is not guaranteed. A removal will change the order of the items.
 
-        readonly List<T> m_List = new();
-        readonly Dictionary<int, int> m_IndexMap = new();
+        private readonly List<T> m_List = new();
+        private readonly Dictionary<int, int> m_IndexMap = new();
 
         public void Add(T item)
         {

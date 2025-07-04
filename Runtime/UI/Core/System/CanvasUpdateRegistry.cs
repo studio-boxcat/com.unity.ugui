@@ -73,8 +73,8 @@ namespace UnityEngine.UI
         private readonly IndexedSet<ICanvasElement> m_LayoutRebuildQueue = new();
         private readonly IndexedSet<ICanvasElement> m_GraphicRebuildQueue = new();
 
-        static readonly List<ICanvasElement> _canvasElementsBuf = new();
-        static readonly List<(ICanvasElement Element, int Depth)> _canvasElementsBufForSort = new();
+        private static readonly List<ICanvasElement> _canvasElementsBuf = new();
+        private static readonly List<(ICanvasElement Element, int Depth)> _canvasElementsBufForSort = new();
 
         // This list matches the CanvasUpdate enum above. Keep in sync
         private static readonly string[] m_CanvasUpdateProfilerStrings = {"CanvasUpdate.Prelayout", "CanvasUpdate.Layout", "CanvasUpdate.PostLayout", "CanvasUpdate.PreRender", "CanvasUpdate.LatePreRender"};
