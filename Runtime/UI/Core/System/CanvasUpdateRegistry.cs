@@ -240,7 +240,7 @@ namespace UnityEngine.UI
                 return;
             }
 
-            instance.m_LayoutRebuildQueue.TryRemove(element);
+            m_LayoutRebuildQueue.TryRemove(element);
         }
 
         private void InternalUnRegisterCanvasElementForGraphicRebuild(ICanvasElement element)
@@ -251,7 +251,7 @@ namespace UnityEngine.UI
                 return;
             }
 
-            instance.m_GraphicRebuildQueue.TryRemove(element);
+            m_GraphicRebuildQueue.TryRemove(element);
         }
 
         /// <summary>
