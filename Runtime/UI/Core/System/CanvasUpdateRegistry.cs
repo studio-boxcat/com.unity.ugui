@@ -1,6 +1,7 @@
+// ReSharper disable InconsistentNaming
+#nullable enable
 using System;
 using System.Collections.Generic;
-using JetBrains.Annotations;
 
 namespace UnityEngine.UI
 {
@@ -64,12 +65,7 @@ namespace UnityEngine.UI
     /// </summary>
     public class CanvasUpdateRegistry
     {
-        private static CanvasUpdateRegistry s_Instance;
-
-        /// <summary>
-        /// Get the singleton registry instance.
-        /// </summary>
-        public static CanvasUpdateRegistry instance => s_Instance ??= new CanvasUpdateRegistry();
+        private static readonly CanvasUpdateRegistry instance = new();
 
         private bool m_PerformingLayoutUpdate;
         private bool m_PerformingGraphicUpdate;
@@ -84,7 +80,7 @@ namespace UnityEngine.UI
         private static readonly string[] m_CanvasUpdateProfilerStrings = {"CanvasUpdate.Prelayout", "CanvasUpdate.Layout", "CanvasUpdate.PostLayout", "CanvasUpdate.PreRender", "CanvasUpdate.LatePreRender"};
         private const string m_CullingUpdateProfilerString = "ClipperRegistry.Cull";
 
-        CanvasUpdateRegistry()
+        private CanvasUpdateRegistry()
         {
             Canvas.willRenderCanvases += PerformUpdate;
         }
@@ -214,15 +210,15 @@ namespace UnityEngine.UI
         /// Will not return if successfully added.
         /// </summary>
         /// <param name="element">The element that is needing rebuilt.</param>
-        public static void RegisterCanvasElementForGraphicRebuild([NotNull] ICanvasElement element)
+        public static void RegisterCanvasElementForGraphicRebuild(ICanvasElement element)
         {
             instance.InternalRegisterCanvasElementForGraphicRebuild(element);
         }
 
-        private void InternalRegisterCanvasElementForGraphicRebuild([NotNull] ICanvasElement element)
+        private void InternalRegisterCanvasElementForGraphicRebuild(ICanvasElement element)
         {
             if (m_PerformingGraphicUpdate)
-                Debug.LogError(string.Format("Trying to add {0} for graphic rebuild while we are already inside a graphic rebuild loop. This is not supported.", element));
+                Debug.LogError($"Trying to add {element} for graphic rebuild while we are already inside a graphic rebuild loop. This is not supported.");
             m_GraphicRebuildQueue.TryAdd(element);
         }
 
@@ -230,28 +226,28 @@ namespace UnityEngine.UI
         /// Remove the given element from both the graphic and the layout rebuild lists.
         /// </summary>
         /// <param name="element"></param>
-        public static void UnRegisterCanvasElementForRebuild([NotNull] ICanvasElement element)
+        public static void UnRegisterCanvasElementForRebuild(ICanvasElement element)
         {
             instance.InternalUnRegisterCanvasElementForLayoutRebuild(element);
             instance.InternalUnRegisterCanvasElementForGraphicRebuild(element);
         }
 
-        private void InternalUnRegisterCanvasElementForLayoutRebuild([NotNull] ICanvasElement element)
+        private void InternalUnRegisterCanvasElementForLayoutRebuild(ICanvasElement element)
         {
             if (m_PerformingLayoutUpdate)
             {
-                Debug.LogError(string.Format("Trying to remove {0} from rebuild list while we are already inside a rebuild loop. This is not supported.", element));
+                Debug.LogError($"Trying to remove {element} from rebuild list while we are already inside a rebuild loop. This is not supported.");
                 return;
             }
 
             instance.m_LayoutRebuildQueue.TryRemove(element);
         }
 
-        private void InternalUnRegisterCanvasElementForGraphicRebuild([NotNull] ICanvasElement element)
+        private void InternalUnRegisterCanvasElementForGraphicRebuild(ICanvasElement element)
         {
             if (m_PerformingGraphicUpdate)
             {
-                Debug.LogError(string.Format("Trying to remove {0} from rebuild list while we are already inside a rebuild loop. This is not supported.", element));
+                Debug.LogError($"Trying to remove {element} from rebuild list while we are already inside a rebuild loop. This is not supported.");
                 return;
             }
 
@@ -261,7 +257,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// Are graphics layouts currently being calculated..
         /// </summary>
-        /// <returns>True if the rebuild loop is CanvasUpdate.Prelayout, CanvasUpdate.Layout or CanvasUpdate.Postlayout</returns>
+        /// <returns>True if the rebuild loop is CanvasUpdate.Prelayout, CanvasUpdate.Layout or CanvasUpdate.PostLayout</returns>
         public static bool IsRebuildingLayout()
         {
             return instance.m_PerformingLayoutUpdate;
