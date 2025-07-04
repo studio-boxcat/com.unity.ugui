@@ -70,7 +70,8 @@ namespace UnityEngine.UI
 #if UNITY_EDITOR
         protected virtual void OnValidate()
         {
-            graphic?.SetVerticesDirty();
+            m_Graphic = GetComponent<Graphic>();
+            m_Graphic?.SetVerticesDirty();
         }
 #endif
 
