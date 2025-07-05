@@ -11,15 +11,15 @@ namespace UnityEngine.UI
         /// <summary>
         /// Notify all IMaskable under the given component that they need to recalculate masking.
         /// </summary>
-        /// <param name="mask">The object thats changed for whose children should be notified.</param>
-        public static void NotifyStencilStateChanged(Component mask)
+        /// <param name="root">The object thats changed for whose children should be notified.</param>
+        public static void NotifyStencilStateChanged(Component root)
         {
             var components = ListPool<IMaskable>.Get();
-            mask.GetComponentsInChildren(components);
-            var maskGO = mask.gameObject;
+            root.GetComponentsInChildren(components);
+            var rootGO = root.gameObject;
             foreach (var comp in components)
             {
-                if (ReferenceEquals(comp.gameObject, maskGO)) continue;
+                if (rootGO.RefEq(comp.gameObject)) continue; // skip self.
                 comp.RecalculateMasking();
             }
             ListPool<IMaskable>.Release(components);
@@ -29,7 +29,7 @@ namespace UnityEngine.UI
         /// Find the stencil depth for a given element.
         /// </summary>
         /// <param name="transform">The starting transform to search.</param>
-        /// <returns>What the proper stencil buffer index should be.</returns>
+        /// <returns>What the proper stencil buffer index should be. 0 means no mask at all.</returns>
         public static byte GetStencilDepth(Transform transform)
         {
             if (CanvasUtils.IsRenderRoot(transform))

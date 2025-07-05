@@ -2,6 +2,7 @@
 
 #nullable enable
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine.Assertions;
 using UnityEngine.Bindings;
 using UnityEngine.Rendering;
@@ -99,6 +100,11 @@ namespace UnityEngine.UI
             L.I($"[UGUI] Stencil material created: {newMat.name}", baseMat);
 
             m_List.Add(new MatEntry(baseMat, newMat, hash) { refCount = 1 });
+
+#if UNITY_EDITOR
+            if (m_List.Count > 16)
+                L.E($"[UGUI] Too many stencil materials created: {m_List.Count}, list=[{string.Join(", ", m_List.Select(e => e.customMat.name))}]");
+#endif
             return newMat;
 
             static ulong Hash(

@@ -1161,12 +1161,6 @@ namespace UnityEngine.UI
             }
         }
 
-        private void UpdateCaretMaterial()
-        {
-            if (m_TextComponent != null && m_CachedInputRenderer != null)
-                m_CachedInputRenderer.SetMaterial(m_TextComponent.GetModifiedMaterial(Graphic.defaultGraphicMaterial), Texture2D.whiteTexture);
-        }
-
         /// <summary>
         /// Focus the input field initializing properties.
         /// </summary>

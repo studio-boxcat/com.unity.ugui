@@ -23,8 +23,6 @@ namespace UnityEngine.UI
         [SerializeField, HideInInspector]
         private bool m_Maskable;
 
-        private bool m_IsMaskingGraphic;
-
         /// <summary>
         /// Does this graphic allow masking.
         /// </summary>
@@ -34,18 +32,15 @@ namespace UnityEngine.UI
             get => m_Maskable;
             set
             {
-                if (value == m_Maskable)
-                    return;
-                m_Maskable = value;
+                if (value.CmpSet(ref m_Maskable) // skip if the value is the same
+                    && isActiveAndEnabled) // skip if OnEnable() has not been called yet
+                {
+                    m_StencilDepth = null;
+                    SetMaterialDirty();
 
-                if (!isActiveAndEnabled)
-                    return;
-
-                m_StencilDepth = null;
-                SetMaterialDirty();
-
-                if (value) ClipperRegistry.RegisterTarget(this);
-                else ClipperRegistry.UnregisterTarget(this);
+                    if (value) ClipperRegistry.RegisterTarget(this);
+                    else ClipperRegistry.UnregisterTarget(this);
+                }
             }
         }
 
@@ -56,11 +51,7 @@ namespace UnityEngine.UI
         /// <remarks>
         /// If toggled ensure to call MaskUtilities.NotifyStencilStateChanged(this); manually as it changes how stenciles are calculated for this image.
         /// </remarks>
-        public bool isMaskingGraphic
-        {
-            get => m_IsMaskingGraphic;
-            set => m_IsMaskingGraphic = value;
-        }
+        private bool isMaskingGraphic => canvasRenderer.hasPopInstruction; // set by Mask.OnEnable, Mask.OnDisable
 
         [NonSerialized]
         protected int? m_StencilDepth;
@@ -98,6 +89,7 @@ namespace UnityEngine.UI
             m_StencilDepth = null;
             SetMaterialDirty();
 
+            // connected mask also be in-effect, need to recalculate the stencil state.
             if (isMaskingGraphic)
                 MaskUtilities.NotifyStencilStateChanged(this);
 
@@ -117,6 +109,7 @@ namespace UnityEngine.UI
                 m_MaskMaterial = null;
             }
 
+            // connected mask also be disengaged, need to recalculate the stencil state.
             if (isMaskingGraphic)
                 MaskUtilities.NotifyStencilStateChanged(this);
 
@@ -126,22 +119,18 @@ namespace UnityEngine.UI
         protected override void OnTransformParentChanged()
         {
             base.OnTransformParentChanged();
-
-            if (!isActiveAndEnabled)
-                return;
-
-            m_StencilDepth = null;
-            SetMaterialDirty();
-            if (maskable) ClipperRegistry.ReparentTarget(this);
+            OnHierarchChanged();
         }
 
         protected override void OnCanvasHierarchyChanged()
         {
             base.OnCanvasHierarchyChanged();
+            OnHierarchChanged();
+        }
 
-            if (!isActiveAndEnabled)
-                return;
-
+        private void OnHierarchChanged()
+        {
+            if (!isActiveAndEnabled) return;
             m_StencilDepth = null;
             SetMaterialDirty();
             if (maskable) ClipperRegistry.ReparentTarget(this);

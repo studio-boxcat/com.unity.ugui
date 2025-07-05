@@ -243,7 +243,7 @@ namespace UnityEngine.UI
         /// A reference to the CanvasRenderer populated by this Graphic.
         /// </summary>
         // The CanvasRenderer is a required component that must not be destroyed. Based on this assumption, a null-reference check is sufficient.
-        public CanvasRenderer canvasRenderer => m_CanvasRenderer ??= (GetComponent<CanvasRenderer>() ?? gameObject.AddComponent<CanvasRenderer>());
+        public CanvasRenderer canvasRenderer => m_CanvasRenderer ??= GetComponent<CanvasRenderer>();
 
         /// <summary>
         /// The Material set by the user
