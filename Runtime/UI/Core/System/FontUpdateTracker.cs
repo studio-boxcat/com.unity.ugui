@@ -64,6 +64,7 @@ namespace UnityEngine.UI
     public static class FontUpdateTracker
     {
         private static readonly Dictionary<int, HashSet<IFontUpdateListener>> _tracked = new();
+        private static readonly Dictionary<int, ulong> _fontTexHashes = new();
 
         /// <summary>
         /// Register a Text element for receiving texture atlas rebuild calls.
@@ -106,17 +107,36 @@ namespace UnityEngine.UI
 
         private static void RebuildForFont(Font font)
         {
-            // L.I($"[UGUI] Rebuild for font: {font.name}");
-
             var fontId = font.GetInstanceID();
             if (_tracked.TryGetValue(fontId, out var listeners) == false)
                 return;
 
+            var newHash = 0ul;
+            if (_fontTexHashes.TryGetValue(fontId, out var lastHash)
+                && lastHash == (newHash = CalcFontTexHash(font)))
+            {
+                // No change in the texture, so we don't need to rebuild.
+                return;
+            }
+
+            _fontTexHashes[fontId] = newHash;
+            L.I($"[UGUI] Rebuild for font: {font.name}, hash: {newHash:X16}");
+
             foreach (var listener in listeners)
             {
-                Assert.IsNotNull((Object) listener);
+                Assert.IsTrue((Object) listener, "IFontUpdateListener is destroyed");
                 Assert.IsTrue(listener is not Text text || text.font == font);
                 listener.FontTextureChanged();
+            }
+            return;
+
+            static ulong CalcFontTexHash(Font font)
+            {
+                // Use the texture's update count as a hash.
+                var tex = font.material.mainTexture;
+                var instanceId = tex.GetInstanceID();
+                var updateCount = tex.updateCount;
+                return (((ulong) instanceId) << 32) | updateCount;
             }
         }
     }
