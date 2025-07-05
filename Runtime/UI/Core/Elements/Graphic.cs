@@ -26,10 +26,10 @@ namespace UnityEngine.UI
 
         // Cached and saved values
         [FormerlySerializedAs("m_Mat")]
-        [ShowIf("@CanShow(GraphicPropertyFlag.Material)"), PropertyOrder(501), OnValueChanged("OnInspectorMaterialChanged")]
+        [ShowIf("@CanShow(GraphicPropertyFlag.Material)"), PropertyOrder(GraphicPropOrder.Material), OnValueChanged("OnInspectorMaterialChanged")]
         [SerializeField] protected Material m_Material;
 
-        [ShowIf("@CanShow(GraphicPropertyFlag.Color)"), PropertyOrder(500), DontValidate]
+        [ShowIf("@CanShow(GraphicPropertyFlag.Color)"), PropertyOrder(GraphicPropOrder.Color), DontValidate]
         [SerializeField] Color m_Color = Color.white;
 
         [NonSerialized] protected bool m_SkipLayoutUpdate;
@@ -45,7 +45,7 @@ namespace UnityEngine.UI
         }
 
         [SerializeField, ShowIf("@CanShow(GraphicPropertyFlag.Raycast)")]
-        [FoldoutGroup("Advanced", order: 2000)]
+        [FoldoutGroup("Advanced", order: GraphicPropOrder.Advanced)]
         [HorizontalGroup("Advanced/RaycastTarget", DisableAutomaticLabelWidth = true, Width = 124)]
         bool m_RaycastTarget = false;
 
@@ -516,7 +516,7 @@ namespace UnityEngine.UI
 #if UNITY_EDITOR
         protected virtual void OnValidate() => SetAllDirty();
 
-        [BoxGroup("Advanced/Top", showLabel: false, order: -1)]
+        [BoxGroup("Advanced/Top", showLabel: false, order: GraphicPropOrder.Advanced_Info)]
         [ShowInInspector, HideLabel, MultiLineProperty(4)]
         private string _infoMessage
         {

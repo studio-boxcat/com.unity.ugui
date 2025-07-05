@@ -26,7 +26,8 @@ namespace UnityEngine.UI
         /// <summary>
         /// Does this graphic allow masking.
         /// </summary>
-        [ShowInInspector, FoldoutGroup("Advanced"), PropertyOrder(1), ShowIf("@CanShow(GraphicPropertyFlag.Maskable)")]
+        [ShowInInspector, FoldoutGroup("Advanced"), PropertyOrder(GraphicPropOrder.Advanced_Maskable)]
+        [ShowIf("@CanShow(GraphicPropertyFlag.Maskable)")]
         public bool maskable
         {
             get => m_Maskable;
