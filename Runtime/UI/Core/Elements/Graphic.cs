@@ -526,7 +526,6 @@ namespace UnityEngine.UI
                 sb
                     .Append("canvas: \"").Append(canvas.SafeName()).Append("\", ")
                     .Append("cull: ").Append(canvasRenderer.cull).Append(", ")
-                    .Append("materialForRendering: \"").Append(materialForRendering.name).Append("\", ")
                     .Append("inheritedAlpha: ").Append((int) (canvasRenderer.GetInheritedAlpha() * 255)).Append(", ")
                     ;
 
