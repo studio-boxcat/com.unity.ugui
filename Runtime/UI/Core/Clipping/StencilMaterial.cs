@@ -75,7 +75,7 @@ namespace UnityEngine.UI
             }
 
             var newMat = new Material(baseMat);
-            newMat.EditorDontSaveFlag(); // Prevent material from unloading.
+            newMat.SetDontSave(); // Prevent material from unloading.
             newMat.SetNameDebug($"{baseMat.name} (Stencil Id:{stencilID}, Op:{operation}, Comp:{compareFunction}, WriteMask:{writeMask}, ReadMask:{readMask}, ColorMask:{colorWriteMask})");
 
             newMat.SetFloat(_stencil, stencilID);
