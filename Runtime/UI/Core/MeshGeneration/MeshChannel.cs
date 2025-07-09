@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
@@ -8,10 +9,10 @@ namespace UnityEngine.UI
 {
     public abstract class MeshChannel<T> where T : struct
     {
-        protected T[] Data { get; private set; }
+        protected T[]? Data { get; private set; }
         public int Count { get; private set; }
 
-        T[] _buf;
+        private T[] _buf;
 
 
         protected MeshChannel(int capacity)
@@ -26,7 +27,7 @@ namespace UnityEngine.UI
             {
                 Assert.IsNotNull(Data, "MeshChannel.SetUp() must be called before accessing data.");
                 Assert.IsTrue(index >= 0 && index < Count);
-                return Data[index];
+                return Data![index];
             }
         }
 
@@ -81,7 +82,7 @@ namespace UnityEngine.UI
             // Otherwise, copy the data to a writable array.
             if (_buf.Length < Count)
                 _buf = new T[Count];
-            Array.Copy(Data, 0, _buf, 0, Count);
+            Array.Copy(Data!, 0, _buf, 0, Count);
             Data = _buf;
             return _buf.AsSpan(0, Count);
         }
@@ -101,7 +102,7 @@ namespace UnityEngine.UI
                     return _buf;
                 }
 
-                Array.Copy(Data, 0, _buf, 0, Mathf.Min(Count, count));
+                Array.Copy(Data!, 0, _buf, 0, Mathf.Min(Count, count));
             }
             // When the data is already writable.
             else if (ReferenceEquals(_buf, Data))
@@ -112,7 +113,7 @@ namespace UnityEngine.UI
             else
             {
                 _buf = new T[count];
-                Array.Copy(Data, 0, _buf, 0, Count); // Data is smaller than _buf.
+                Array.Copy(Data!, 0, _buf, 0, Count); // Data is smaller than _buf.
             }
 
             Data = _buf;
@@ -156,12 +157,14 @@ namespace UnityEngine.UI
 
         public Rect CalculateBoundingRect()
         {
+            Assert.IsNotNull(Data, "MeshPosChannel.SetUp() must be called before calculating bounding rect.");
+
             var xMin = float.MaxValue;
             var xMax = float.MinValue;
             var yMin = float.MaxValue;
             var yMax = float.MinValue;
 
-            var data = Data;
+            var data = Data!;
             var count = Count;
             for (var i = 0; i < count; i++)
             {
@@ -275,7 +278,7 @@ namespace UnityEngine.UI
                 data[indexPtr++] = (ushort) (src[i] + toAdd);
         }
 
-        static readonly List<ushort> _meshIndexBuf = new();
+        private static readonly List<ushort> _meshIndexBuf = new();
 
         public void SetUp(Mesh mesh)
         {
