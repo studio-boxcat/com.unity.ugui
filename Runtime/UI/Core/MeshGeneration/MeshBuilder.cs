@@ -102,6 +102,15 @@ namespace UnityEngine.UI
             // ReSharper restore MustUseReturnValue
         }
 
+        public void SetUp_EmptyExceptColors()
+        {
+            // ReSharper disable MustUseReturnValue
+            Poses.SetUp(0);
+            UVs.SetUp(0);
+            Indices.SetUp(0);
+            // ReSharper restore MustUseReturnValue
+        }
+
         [MustUseReturnValue]
         public MeshQuadBuilder SetUp_Quad(int quadCapacity)
         {
