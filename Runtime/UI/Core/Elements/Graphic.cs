@@ -522,16 +522,20 @@ namespace UnityEngine.UI
         {
             get
             {
+                var cr = canvasRenderer;
+                if (!cr)
+                    return "CanvasRenderer is not available.";
+
                 var sb = SbPool.Rent();
                 sb
                     .Append("canvas: \"").Append(canvas.SafeName()).Append("\", ")
-                    .Append("cull: ").Append(canvasRenderer.cull).Append(", ")
-                    .Append("inheritedAlpha: ").Append((int) (canvasRenderer.GetInheritedAlpha() * 255)).Append(", ")
+                    .Append("cull: ").Append(cr.cull).Append(", ")
+                    .Append("inheritedAlpha: ").Append((int) (cr.GetInheritedAlpha() * 255)).Append(", ")
                     ;
 
-                if (canvasRenderer.hasRectClipping)
+                if (cr.hasRectClipping)
                 {
-                    sb.Append("clipping: ").Append(canvasRenderer.clippingSoftness).Append(", ");
+                    sb.Append("clipping: ").Append(cr.clippingSoftness).Append(", ");
                 }
                 else
                 {
@@ -539,7 +543,7 @@ namespace UnityEngine.UI
                 }
 
                 // for deactivated graphics, the mesh is not built.
-                var mesh = canvasRenderer.GetMesh();
+                var mesh = cr.GetMesh();
                 if (mesh)
                 {
                     sb.Append("vertices: ").Append(mesh.vertexCount).Append(", ")
@@ -547,7 +551,7 @@ namespace UnityEngine.UI
                 }
 
                 sb.Length -= 2; // remove last ", "
-                return sb.ToString();
+                return SbPool.Return(sb);
             }
         }
 
