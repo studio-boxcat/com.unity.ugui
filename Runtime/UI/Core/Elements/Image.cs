@@ -626,7 +626,7 @@ namespace UnityEngine.UI
         }
 
 
-        [SerializeField]
+        [SerializeField, Min(0.01f)]
         private float m_PixelsPerUnitMultiplier = 1.0f;
 
         /// <summary>
@@ -1372,14 +1372,5 @@ namespace UnityEngine.UI
             SetVerticesDirty();
             SetRaycastDirty();
         }
-
-#if UNITY_EDITOR
-        protected override void OnValidate()
-        {
-            base.OnValidate();
-            m_PixelsPerUnitMultiplier = Mathf.Max(0.01f, m_PixelsPerUnitMultiplier);
-        }
-
-#endif
     }
 }

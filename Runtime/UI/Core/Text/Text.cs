@@ -8,6 +8,7 @@ namespace UnityEngine.UI
     public class Text : MaskableGraphic, ILayoutElement, IFontUpdateListener
     {
         [SerializeField, InlineProperty, HideLabel, PropertyOrder(500)]
+        [OnValueChanged("FontData_OnValueChanged")]
         private FontData m_FontData;
 
         [SerializeField, PropertyOrder(-1)]
@@ -499,12 +500,10 @@ namespace UnityEngine.UI
 
         // The Text inspector editor can change the font, and we need a way to track changes so that we get the appropriate rebuild callbacks
         // We can intercept changes in OnValidate, and keep track of the previous font reference
-        protected override void OnValidate()
+        private void FontData_OnValueChanged()
         {
             if (_fontUpdateLink.IsTracking())
                 _fontUpdateLink.Update(m_FontData.font);
-
-            base.OnValidate();
         }
 #endif // if UNITY_EDITOR
     }

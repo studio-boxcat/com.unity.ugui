@@ -506,8 +506,6 @@ namespace UnityEngine.UI
         protected Rect GetPixelAdjustedRect() => rectTransform.rect;
 
 #if UNITY_EDITOR
-        protected virtual void OnValidate() => SetAllDirty();
-
         [BoxGroup("Advanced/Top", showLabel: false, order: GraphicPropOrder.Advanced_Info)]
         [ShowInInspector, HideLabel, MultiLineProperty(4)]
         private string _infoMessage
@@ -547,10 +545,7 @@ namespace UnityEngine.UI
             }
         }
 
-        protected virtual void OnInspectorMaterialChanged()
-        {
-            // Do nothing.
-        }
+        protected virtual void OnInspectorMaterialChanged() => SetMaterialDirty();
 
         /// <summary>
         /// Editor-only callback that is issued by Unity if a rebuild of the Graphic is required.
