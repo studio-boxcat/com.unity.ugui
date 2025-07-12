@@ -428,7 +428,7 @@ namespace UnityEngine.UI
             canvasRenderer.SetTexture(mainTexture);
         }
 
-        private void BuildMesh(Mesh mesh)
+        public void BuildMesh(Mesh mesh)
         {
             Assert.IsTrue(mesh.vertexCount is 0, "Mesh is not empty. Please clear the mesh before building it again.");
 
@@ -465,14 +465,6 @@ namespace UnityEngine.UI
             MeshModifierUtils.GetComponentsAndModifyMesh(this, mb);
 
             mb.FillMeshAndInvalidate(mesh);
-        }
-
-        [MustUseReturnValue]
-        public Mesh BuildMesh()
-        {
-            var mesh = MeshPool.CreateDynamicMesh("TEA3lkRT");
-            BuildMesh(mesh);
-            return mesh;
         }
 
         /// <summary>
