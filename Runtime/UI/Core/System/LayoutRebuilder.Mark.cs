@@ -9,47 +9,63 @@ namespace UnityEngine.UI
         /// <summary>
         /// Mark the given RectTransform as needing it's layout to be recalculated during the next layout pass.
         /// </summary>
-        /// <param name="rect">Rect to rebuild.</param>
-        public static void MarkLayoutForRebuild(RectTransform rect)
+        /// <param name="t">Rect to rebuild.</param>
+        public static void MarkLayoutForRebuild(RectTransform t)
         {
-            var rebuildTarget = ResolveRebuildTarget(rect);
-            if (rebuildTarget is null) return;
+            // XXX: even if the target is inactive, we still need to register its root for layout rebuild.
+            // e.g. inactivate a child of a HorizontalLayoutGroup,
+            var layoutRoot = ResolveLayoutRoot(t);
+            if (layoutRoot is null) return;
 
-            var rebuilder = LayoutBuildProxy.Rent(rebuildTarget);
+            // no need to rebuild if the layout root itself is not active.
+            if (!layoutRoot.gameObject.activeInHierarchy) return;
+
+            var rebuilder = LayoutBuildProxy.Rent(layoutRoot);
             if (!CanvasUpdateRegistry.TryRegisterCanvasElementForLayoutRebuild(rebuilder))
                 LayoutBuildProxy.Release(rebuilder);
             return;
 
-            static RectTransform? ResolveRebuildTarget(RectTransform rect)
+            // Case #1: has ILayoutGroup parent chain (p1, p2)
+            // p3
+            //   p2 (ILayoutGroup) *
+            //     p1 (ILayoutGroup)
+            //       target (ILayoutGroup)
+            // Case #2: no ILayoutGroup parent chain, but has ILayoutController
+            // p1
+            //   target (ILayoutGroup) *
+            // Case #3: has ILayoutController
+            // p1
+            //   target (ILayoutSelfController) *
+            static RectTransform? ResolveLayoutRoot(RectTransform t)
             {
-                // When there is an layout root, mark it for rebuild.
-                var layoutRoot = GetLayoutRoot(rect);
-                if (layoutRoot is not null)
-                    return layoutRoot;
+                // find the topmost ILayoutGroup in the parent chain.
+                var topMostGroup = TopMostGroupInParentChain(t);
+                if (topMostGroup is not null) return topMostGroup;
 
-                // If there is no layout root, we need to check if the rect itself is a ILayoutController.
-                if (ComponentSearch.AnyEnabledComponent<ILayoutController>(rect))
-                    return rect;
+                // if there is no ILayoutGroup in the parent chain,
+                // check if the target itself is an ILayoutController. (ILayoutGroup or ILayoutSelfController)
+                if (ComponentSearch.AnyEnabledComponent<ILayoutController>(t))
+                    return t;
 
                 return null;
             }
 
-            static RectTransform? GetLayoutRoot(RectTransform rect)
+            static RectTransform? TopMostGroupInParentChain(RectTransform t)
             {
-                // Layout root is the topmost consecutive parent chain of ILayoutGroups.
-                RectTransform? layoutRoot = null;
+                RectTransform? found = null;
 
-                var parent = rect.parent as RectTransform;
-                while (parent is not null)
+                var ptr = t.parent as RectTransform;
+                while (ptr is not null)
                 {
-                    if (ComponentSearch.AnyEnabledComponent<ILayoutGroup>(parent) == false)
-                        return layoutRoot;
+                    // will return false at the first parent in most cases
+                    if (ComponentSearch.AnyEnabledComponent<ILayoutGroup>(ptr) is false)
+                        return found;
 
-                    layoutRoot = parent;
-                    parent = parent.parent as RectTransform;
+                    found = ptr;
+                    ptr = ptr.parent as RectTransform; // climb up
                 }
 
-                return layoutRoot;
+                return found;
             }
         }
 
@@ -94,7 +110,7 @@ namespace UnityEngine.UI
             void ICanvasElement.Rebuild(CanvasUpdate executing)
             {
                 if (executing != CanvasUpdate.Layout) return;
-                if (_target) ForceRebuildLayoutImmediate(_target);
+                if (_target) ForceRebuildLayoutImmediate(_target!);
             }
 
             // GetHashCode() is used by IndexedSet.

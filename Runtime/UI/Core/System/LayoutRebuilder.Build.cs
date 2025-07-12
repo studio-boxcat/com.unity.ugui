@@ -1,5 +1,6 @@
+#nullable enable
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+using UnityEngine.Assertions;
 using UnityEngine.Pool;
 
 namespace UnityEngine.UI
@@ -14,15 +15,22 @@ namespace UnityEngine.UI
         /// Normal use of the layout system should not use this method. Instead MarkLayoutForRebuild should be used instead, which triggers a delayed layout rebuild during the next layout pass. The delayed rebuild automatically handles objects in the entire layout hierarchy in the correct order, and prevents multiple recalculations for the same layout elements.
         /// However, for special layout calculation needs, ::ref::ForceRebuildLayoutImmediate can be used to get the layout of a sub-tree resolved immediately. This can even be done from inside layout calculation methods such as ILayoutController.SetLayoutHorizontal orILayoutController.SetLayoutVertical. Usage should be restricted to cases where multiple layout passes are unavaoidable despite the extra cost in performance.
         /// </remarks>
-        public static void ForceRebuildLayoutImmediate([NotNull] RectTransform target)
+        public static void ForceRebuildLayoutImmediate(RectTransform target)
         {
-            var layoutElements = ListPool<ILayoutElement>.Get();
-            var layoutControllers = ListPool<ILayoutController>.Get();
-            CollectLayoutCalculationTargets(target, layoutElements);
-            CollectLayoutTargets(target, layoutControllers);
+            // No need to calculate layout for inactive objects.
+            if (!target.gameObject.activeInHierarchy)
+            {
+                L.W("[LayoutRebuilder] Attempting calculate layout for inactive object: " + target.name, target);
+                return;
+            }
+
+            var layoutCalcTargets = ListPool<ILayoutElement>.Get(); // calculate layout, dimensions, etc.
+            var layoutControllers = ListPool<ILayoutController>.Get(); // controls rect transforms
+            CollectLayoutCalcTargets(target, layoutCalcTargets);
+            CollectLayoutControllers(target, layoutControllers);
 
             // Horizontal layout first.
-            foreach (var layoutElement in layoutElements)
+            foreach (var layoutElement in layoutCalcTargets)
             {
                 // L.I("[LayoutRebuilder] CalculateLayoutInputHorizontal: " + layoutElement, (Object) layoutElement);
                 layoutElement.CalculateLayoutInputHorizontal();
@@ -34,7 +42,7 @@ namespace UnityEngine.UI
             }
 
             // Then vertical layout.
-            foreach (var layoutElement in layoutElements)
+            foreach (var layoutElement in layoutCalcTargets)
             {
                 // L.I("[LayoutRebuilder] CalculateLayoutInputVertical: " + layoutElement, (Object) layoutElement);
                 layoutElement.CalculateLayoutInputVertical();
@@ -45,19 +53,49 @@ namespace UnityEngine.UI
                 layoutController.SetLayoutVertical();
             }
 
-            ListPool<ILayoutElement>.Release(layoutElements);
+            ListPool<ILayoutElement>.Release(layoutCalcTargets);
             ListPool<ILayoutController>.Release(layoutControllers);
         }
 
-        static void CollectLayoutTargets(RectTransform rect, List<ILayoutController> result)
+        private static void CollectLayoutCalcTargets(RectTransform t, List<ILayoutElement> result)
         {
-            using var _ = CompBuf.GetEnabledComponents(
-                rect, typeof(ILayoutController), out var components);
+            Assert.IsTrue(t.gameObject.activeInHierarchy, "Target must be active in hierarchy: " + t.name);
 
-            // If there are no controllers on this rect we can skip this entire sub-tree
+            // If the target is a layout group, we need to recurse to children.
+            // Layout calculations needs to executed bottom up with children being done before their parents,
+            // because the parent calculated sizes rely on the sizes of the children.
+            if (t.HasComponent(typeof(ILayoutGroup)))
+            {
+                for (var i = 0; i < t.childCount; i++)
+                {
+                    var c = t.GetChild(i);
+                    if (c is RectTransform child && c.gameObject.activeSelf) // only consider active children
+                        CollectLayoutCalcTargets(child, result);
+                }
+            }
+
+            // If there are no controllers on the target we can skip this entire sub-tree
             // We don't need to consider controllers on children deeper in the sub-tree either,
             // since they will be their own roots.
-            var count = components.Count;
+            using (CompBuf.GetEnabledComponents(t, typeof(ILayoutElement), out var elems))
+            {
+                // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
+                foreach (ILayoutElement elem in elems)
+                    result.Add(elem);
+            }
+        }
+
+        private static void CollectLayoutControllers(RectTransform t, List<ILayoutController> result)
+        {
+            Assert.IsTrue(t.gameObject.activeInHierarchy, "Target must be active in hierarchy: " + t.name);
+
+            using var _ = CompBuf.GetEnabledComponents(
+                t, typeof(ILayoutController), out var components);
+
+            // If there are no controllers on the target we can skip this entire sub-tree
+            // We don't need to consider controllers on children deeper in the sub-tree either,
+            // since they will be their own roots.
+            var count = components.Count; // mostly 1 or 2.
             if (count is 0)
                 return;
 
@@ -73,46 +111,24 @@ namespace UnityEngine.UI
             for (var i = 0; i < count; i++)
             {
                 var comp = components[i];
-                if (comp is ILayoutSelfController)
+                if (comp is ILayoutSelfController) // already added
                     continue;
 
+                // when the scrollRect is the content itself (scrollRect == comp == t == content?)
+                // XXX: it should be validated by Odin validator.
                 if (comp is ScrollRect scrollRect
-                    && ReferenceEquals(scrollRect.content, rect))
+                    && ReferenceEquals(scrollRect.content, t))
                     continue;
 
                 result.Add((ILayoutController) comp);
             }
 
             // Then recurse to children.
-            for (var i = 0; i < rect.childCount; i++)
+            for (var i = 0; i < t.childCount; i++)
             {
-                if (rect.GetChild(i) is RectTransform child)
-                    CollectLayoutTargets(child, result);
-            }
-        }
-
-        static void CollectLayoutCalculationTargets(RectTransform rect, List<ILayoutElement> result)
-        {
-            // If rect is a layout group, we need to recurse to children.
-            // Layout calculations needs to executed bottom up with children being done before their parents,
-            // because the parent calculated sizes rely on the sizes of the children.
-            if (rect.TryGetComponent(typeof(ILayoutGroup), out _))
-            {
-                for (var i = 0; i < rect.childCount; i++)
-                {
-                    if (rect.GetChild(i) is RectTransform child)
-                        CollectLayoutCalculationTargets(child, result);
-                }
-            }
-
-            // If there are no controllers on this rect we can skip this entire sub-tree
-            // We don't need to consider controllers on children deeper in the sub-tree either,
-            // since they will be their own roots.
-            using (CompBuf.GetEnabledComponents(rect, typeof(ILayoutElement), out var layoutElements))
-            {
-                // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
-                foreach (ILayoutElement layoutElement in layoutElements)
-                    result.Add(layoutElement);
+                var c = t.GetChild(i);
+                if (c is RectTransform child && c.gameObject.activeSelf) // only consider active children
+                    CollectLayoutControllers(child, result);
             }
         }
     }

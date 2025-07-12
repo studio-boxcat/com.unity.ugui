@@ -134,9 +134,8 @@ namespace UnityEngine.EventSystems
             var t = root.transform;
             do
             {
-                var go = t.gameObject;
-                if (ComponentSearch.AnyEnabledComponent<T>(go))
-                    return go;
+                if (ComponentSearch.AnyEnabledComponent<T>(t))
+                    return t.gameObject;
                 t = t.parent;
             } while (t is not null);
 
