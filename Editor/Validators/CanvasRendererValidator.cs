@@ -4,11 +4,11 @@ using Sirenix.OdinInspector.Editor.Validation;
 
 namespace UnityEngine.UI
 {
-    public class CanvasRendererValidator : ValueValidator<CanvasRenderer>
+    public class CanvasRendererValidator : RootObjectValidator<CanvasRenderer>
     {
         protected override void Validate(Sirenix.OdinInspector.Editor.Validation.ValidationResult result)
         {
-            var value = ValueEntry.SmartValue;
+            var value = Object;
             if (value is null) return;
 
             // Layer must be UI or AUI
@@ -22,7 +22,7 @@ namespace UnityEngine.UI
                 && value.HasComponent<GraphicRaycaster>() is false)
             {
                 result.AddError("CanvasRenderer must be attached to a GameObject with a Graphic component.")
-                    .WithFix("Remove CanvasRenderer", () => Object.DestroyImmediate(value));
+                    .WithFix("Remove CanvasRenderer", () => UnityEngine.Object.DestroyImmediate(value));
             }
         }
     }
