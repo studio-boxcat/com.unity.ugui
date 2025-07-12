@@ -1,4 +1,5 @@
 // ReSharper disable InconsistentNaming
+
 #nullable enable
 using System;
 using System.Collections.Generic;
@@ -77,7 +78,7 @@ namespace UnityEngine.UI
         private static readonly List<(ICanvasElement Element, int Depth)> _canvasElementsBufForSort = new();
 
         // This list matches the CanvasUpdate enum above. Keep in sync
-        private static readonly string[] m_CanvasUpdateProfilerStrings = {"CanvasUpdate.Prelayout", "CanvasUpdate.Layout", "CanvasUpdate.PostLayout", "CanvasUpdate.PreRender", "CanvasUpdate.LatePreRender"};
+        private static readonly string[] m_CanvasUpdateProfilerStrings = { "CanvasUpdate.Prelayout", "CanvasUpdate.Layout", "CanvasUpdate.PostLayout", "CanvasUpdate.PreRender", "CanvasUpdate.LatePreRender" };
         private const string m_CullingUpdateProfilerString = "ClipperRegistry.Cull";
 
         private CanvasUpdateRegistry()
