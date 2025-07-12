@@ -29,7 +29,7 @@ namespace UnityEngine.UI
         [ShowIf("@CanShow(GraphicPropertyFlag.Material)"), PropertyOrder(GraphicPropOrder.Material), OnValueChanged("OnInspectorMaterialChanged")]
         [SerializeField] protected Material m_Material;
 
-        [ShowIf("@CanShow(GraphicPropertyFlag.Color)"), PropertyOrder(GraphicPropOrder.Color), DontValidate]
+        [ShowIf("@CanShow(GraphicPropertyFlag.Color)"), PropertyOrder(GraphicPropOrder.Color), OnValueChanged("SetVerticesDirty"), DontValidate]
         [SerializeField] Color m_Color = Color.white;
 
         [NonSerialized] protected bool m_SkipLayoutUpdate;
@@ -44,9 +44,9 @@ namespace UnityEngine.UI
             }
         }
 
-        [SerializeField, ShowIf("@CanShow(GraphicPropertyFlag.Raycast)")]
+        [SerializeField, ShowIf("@CanShow(GraphicPropertyFlag.Raycast)"), OnValueChanged("SetRaycastDirty")]
         [FoldoutGroup("Advanced", order: GraphicPropOrder.Advanced)]
-        [HorizontalGroup("Advanced/RaycastTarget", DisableAutomaticLabelWidth = true, Width = 124)]
+        [HorizontalGroup("Advanced/RaycastTarget", Order = GraphicPropOrder.Advanced_RaycastTarget, DisableAutomaticLabelWidth = true, Width = 124)]
         bool m_RaycastTarget = false;
 
         protected RaycastRegisterLink m_RaycastRegisterLink;
