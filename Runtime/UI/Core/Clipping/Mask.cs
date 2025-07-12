@@ -89,7 +89,6 @@ namespace UnityEngine.UI
             if (g.enabled is false) return baseMaterial; // if the graphic is disabled, the mask also be disabled too.
 
             var stencilDepth = MaskUtilities.GetStencilDepth(transform);
-            Assert.IsTrue(stencilDepth > 0, "Mask.GetModifiedMaterial called with stencil depth 0, this should not happen.");
             if (stencilDepth >= 8)
             {
                 Debug.LogWarning("Attempting to use a stencil mask with depth > 8", gameObject);

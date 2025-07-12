@@ -29,7 +29,7 @@ namespace UnityEngine.UI
         /// Find the stencil depth for a given element.
         /// </summary>
         /// <param name="transform">The starting transform to search.</param>
-        /// <returns>What the proper stencil buffer index should be. 0 means no mask at all.</returns>
+        /// <returns>What the proper stencil buffer index should be. 0 means no mask in the parents.</returns>
         public static byte GetStencilDepth(Transform transform)
         {
             if (CanvasUtils.IsRenderRoot(transform))
