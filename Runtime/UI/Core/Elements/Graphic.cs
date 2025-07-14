@@ -423,9 +423,10 @@ namespace UnityEngine.UI
             if (!IsActive())
                 return;
 
-            canvasRenderer.materialCount = 1;
-            canvasRenderer.SetMaterial(materialForRendering, 0);
-            canvasRenderer.SetTexture(mainTexture);
+            var cr = canvasRenderer;
+            cr.materialCount = 1;
+            cr.SetMaterial(materialForRendering, 0);
+            cr.SetTexture(mainTexture);
         }
 
         /// <summary>
@@ -433,24 +434,10 @@ namespace UnityEngine.UI
         /// </summary>
         protected virtual void UpdateGeometry()
         {
-            var mesh = MeshPool.Rent();
-            mesh.SetNameDebug($"{name}:{GetType().Name}:{GetInstanceID()}");
-            BuildMesh(mesh);
-            canvasRenderer.SetMesh(mesh);
-            MeshPool.Return(mesh);
-        }
-
-        public virtual void ForceUpdateGeometry() => UpdateGeometry();
-
-        public void BuildMesh(Mesh mesh)
-        {
-            Assert.IsTrue(mesh.vertexCount is 0, "Mesh is not empty. Please clear the mesh before building it again.");
-
+            // Populate the mesh builder with the vertices of the graphic.
             using var _ = MeshBuilderPool.Rent(out var mb); // automatically returns the MeshBuilder to the pool
-
-            // XXX: never shouldn't be happening, but just in case.
 #if UNITY_EDITOR
-            try
+            try // XXX: never shouldn't be happening, but just in case.
 #endif
             {
                 OnPopulateMesh(mb);
@@ -471,15 +458,24 @@ namespace UnityEngine.UI
             if (posCount is MeshBuilder.Invalid)
             {
                 canvasRenderer.SetMesh(MeshPool.Empty);
-                return; // MeshBuilder will be returned to the pool by the scope.
+                return;
             }
 
-            mb.AssertPrepared();
 
+            // modify the mesh.
             MeshModifierUtils.GetComponentsAndModifyMesh(this, mb);
 
+
+            // set the mesh to the CanvasRenderer
+            var mesh = MeshPool.Rent();
+            Assert.IsTrue(mesh.vertexCount is 0, "Mesh is not empty. Please clear the mesh before building it again.");
+            mesh.SetNameDebug($"{name}:{GetType().Name}:{GetInstanceID()}");
             mb.FillMeshAndInvalidate(mesh);
+            canvasRenderer.SetMesh(mesh);
+            MeshPool.Return(mesh); // return the mesh to the pool
         }
+
+        public virtual void ForceUpdateGeometry() => UpdateGeometry();
 
         /// <summary>
         /// Callback function when a UI element needs to generate vertices. Fills the vertex buffer data.
@@ -487,7 +483,12 @@ namespace UnityEngine.UI
         /// <remarks>
         /// Used by Text, UI.Image, and RawImage for example to generate vertices specific to their use case.
         /// </remarks>
-        protected virtual void OnPopulateMesh(MeshBuilder mb) { }
+        protected virtual void OnPopulateMesh(MeshBuilder mb)
+        {
+#if UNITY_EDITOR
+            L.E("[Graphic] OnPopulateMesh not implemented: " + GetType().Name);
+#endif
+        }
 
         // Call from unity if animation properties have changed
 
