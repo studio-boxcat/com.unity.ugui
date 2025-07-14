@@ -428,6 +428,20 @@ namespace UnityEngine.UI
             canvasRenderer.SetTexture(mainTexture);
         }
 
+        /// <summary>
+        /// Call to update the geometry of the Graphic onto the CanvasRenderer.
+        /// </summary>
+        protected virtual void UpdateGeometry()
+        {
+            var mesh = MeshPool.Rent();
+            mesh.SetNameDebug($"{name}:{GetType().Name}:{GetInstanceID()}");
+            BuildMesh(mesh);
+            canvasRenderer.SetMesh(mesh);
+            MeshPool.Return(mesh);
+        }
+
+        public virtual void ForceUpdateGeometry() => UpdateGeometry();
+
         public void BuildMesh(Mesh mesh)
         {
             Assert.IsTrue(mesh.vertexCount is 0, "Mesh is not empty. Please clear the mesh before building it again.");
@@ -466,20 +480,6 @@ namespace UnityEngine.UI
 
             mb.FillMeshAndInvalidate(mesh);
         }
-
-        /// <summary>
-        /// Call to update the geometry of the Graphic onto the CanvasRenderer.
-        /// </summary>
-        protected virtual void UpdateGeometry()
-        {
-            var mesh = MeshPool.Rent();
-            mesh.SetNameDebug($"{name}:{GetType().Name}:{GetInstanceID()}");
-            BuildMesh(mesh);
-            canvasRenderer.SetMesh(mesh);
-            MeshPool.Return(mesh);
-        }
-
-        public virtual void ForceUpdateGeometry() => UpdateGeometry();
 
         /// <summary>
         /// Callback function when a UI element needs to generate vertices. Fills the vertex buffer data.
