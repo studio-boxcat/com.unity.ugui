@@ -99,8 +99,6 @@ namespace UnityEngine.UI
                 "Destroyed Graphic components are not allowed in Clipper.PerformClipping.");
 
             var canvas = GetCanvas();
-            if (ReferenceEquals(canvas, null))
-                return;
 
             //TODO See if an IsActive() test would work well here or whether it might cause unexpected side effects (re case 776771)
 

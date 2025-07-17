@@ -8,7 +8,7 @@ namespace UnityEngine.UI
     [ExecuteAlways]
     internal class Clippable : MonoBehaviour, IClippable
     {
-        [SerializeField, Required, ChildGameObjectsOnly]
+        [SerializeField, Required, ChildGameObjectsOnly, HideIf("@m_Graphic")]
         private Graphic m_Graphic = null!;
 
         private void OnEnable() => ClipperRegistry.RegisterTarget(this);
@@ -26,6 +26,7 @@ namespace UnityEngine.UI
 
 #if UNITY_EDITOR
         private void Reset() => m_Graphic = GetComponent<Graphic>();
+        private void OnValidate() => m_Graphic ??= GetComponent<Graphic>(); // ensure m_Graphic is set in the editor
 #endif
     }
 }
