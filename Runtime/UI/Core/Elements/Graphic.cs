@@ -234,10 +234,7 @@ namespace UnityEngine.UI
             }
         }
 
-        void CacheCanvas()
-        {
-            m_Canvas = ComponentSearch.SearchEnabledParentOrSelfComponent<Canvas>(this);
-        }
+        private void CacheCanvas() => m_Canvas = ComponentSearch.NearestUpwards_GOAnyAndCompEnabled<Canvas>(this);
 
         /// <summary>
         /// A reference to the CanvasRenderer populated by this Graphic.

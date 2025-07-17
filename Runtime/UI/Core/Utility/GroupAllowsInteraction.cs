@@ -1,9 +1,10 @@
 namespace UnityEngine.UI
 {
-    public struct InteractabilityResolver
+    /// only checks the CanvasGroup allows the interaction or not.
+    public struct GroupAllowsInteraction
     {
-        bool _valid;
-        bool _interactable;
+        private bool _valid;
+        private bool _interactable;
 
         public void SetDirty() => _valid = false;
 
@@ -25,15 +26,17 @@ namespace UnityEngine.UI
         {
             while (t is not null)
             {
-                var canvasGroup = ComponentSearch.SearchEnabledParentOrSelfComponent<CanvasGroup>(t);
+                // includes inactive GameObject too, as we only cares about whether the group allows interaction or not.
+                // only checks the CanvasGroup component is enabled or not.
+                var canvasGroup = ComponentSearch.NearestUpwards_GOAnyAndCompEnabled<CanvasGroup>(t);
                 if (canvasGroup is null)
                     return true;
 
                 // Interaction is not allowed if the group is not interactable.
-                if (canvasGroup.interactable == false)
+                if (canvasGroup.interactable is false)
                     return false;
 
-                // If ignoreParentGroups is true, we should not consider the parent groups.
+                // If ignoreParentGroups is true, we can safely skip the parent groups.
                 if (canvasGroup.ignoreParentGroups)
                     return true;
 

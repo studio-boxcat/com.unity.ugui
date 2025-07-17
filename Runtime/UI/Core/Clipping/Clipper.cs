@@ -70,7 +70,7 @@ namespace UnityEngine.UI
         public Canvas GetCanvas()
         {
             if (_canvasCache is not null) return _canvasCache;
-            _canvasCache = ComponentSearch.SearchEnabledParentOrSelfComponent<Canvas>(this);
+            _canvasCache = ComponentSearch.NearestUpwards_GOAnyAndCompEnabled<Canvas>(this);
             Assert.IsTrue(_canvasCache, "Clipper requires a Canvas component in the hierarchy.");
             return _canvasCache!;
         }

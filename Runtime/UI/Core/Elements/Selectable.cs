@@ -19,7 +19,7 @@ namespace UnityEngine.UI
         [SerializeField]
         private bool m_Interactable = true;
 
-        private InteractabilityResolver m_GroupsAllowInteraction;
+        private GroupAllowsInteraction m_GroupsAllowInteraction;
 
         public bool              interactable
         {
