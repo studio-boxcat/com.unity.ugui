@@ -241,14 +241,15 @@ namespace UnityEngine.EventSystems
                 }
             }
 
+            // return true if the comparison is valid.
             public bool CompareCanvasRendererDepth(RaycasterComparisonData other, out int compareResult)
             {
                 _rootCanvas ??= Canvas.rootCanvas;
                 other._rootCanvas ??= other.Canvas.rootCanvas;
 
-                if (ReferenceEquals(_rootCanvas, other._rootCanvas) == false)
+                if (_rootCanvas.RefNq(other._rootCanvas)) // cannot compare because the canvases are not in the same hierarchy.
                 {
-                    compareResult = default;
+                    compareResult = 0;
                     return false;
                 }
 
@@ -262,7 +263,7 @@ namespace UnityEngine.EventSystems
                 else
                 {
                     Assert.AreEqual(-1, a, "CanvasRenderer is initialized but there's other renderer with the same depth.");
-                    compareResult = default;
+                    compareResult = 0;
                     return false;
                 }
             }
