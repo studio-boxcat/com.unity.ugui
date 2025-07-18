@@ -31,8 +31,6 @@ namespace UnityEngine.UI
         /// <param name="g">The graphic to remove from tracking.</param>
         public static void UnTrackGraphic(Graphic g)
         {
-            if (!g.isActiveAndEnabled) return;
-
             var removed = _tracked.Remove(g);
             Assert.IsTrue(removed, "Graphic was not tracked: " + g.SafeName());
             if (_tracked.IsEmpty())
