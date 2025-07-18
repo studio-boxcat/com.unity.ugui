@@ -467,7 +467,6 @@ namespace UnityEngine.UI
             // set the mesh to the CanvasRenderer
             var mesh = MeshPool.Rent();
             Assert.IsTrue(mesh.vertexCount is 0, "Mesh is not empty. Please clear the mesh before building it again.");
-            mesh.SetNameDebug($"{name}:{GetType().Name}:{GetInstanceID()}");
             mb.FillMeshAndInvalidate(mesh);
             canvasRenderer.SetMesh(mesh);
             MeshPool.Return(mesh); // return the mesh to the pool
