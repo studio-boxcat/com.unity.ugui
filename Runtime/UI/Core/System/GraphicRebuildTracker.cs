@@ -1,5 +1,7 @@
 #if UNITY_EDITOR
+#nullable enable
 using System.Collections.Generic;
+using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
@@ -9,8 +11,7 @@ namespace UnityEngine.UI
     /// </summary>
     public static class GraphicRebuildTracker
     {
-        static HashSet<Graphic> m_Tracked = new(RefComparer.Instance);
-        static bool s_Initialized;
+        private static readonly HashSet<Graphic> _tracked = new(RefComparer.Instance);
 
         /// <summary>
         /// Add a Graphic to the list of tracked Graphics
@@ -18,13 +19,10 @@ namespace UnityEngine.UI
         /// <param name="g">The graphic to track</param>
         public static void TrackGraphic(Graphic g)
         {
-            if (!s_Initialized)
-            {
+            if (_tracked.IsEmpty())
                 CanvasRenderer.onRequestRebuild += OnRebuildRequested;
-                s_Initialized = true;
-            }
-
-            m_Tracked.Add(g);
+            var added = _tracked.Add(g);
+            Assert.IsTrue(added, "Graphic was already tracked: " + g.SafeName());
         }
 
         /// <summary>
@@ -33,12 +31,17 @@ namespace UnityEngine.UI
         /// <param name="g">The graphic to remove from tracking.</param>
         public static void UnTrackGraphic(Graphic g)
         {
-            m_Tracked.Remove(g);
+            if (!g.isActiveAndEnabled) return;
+
+            var removed = _tracked.Remove(g);
+            Assert.IsTrue(removed, "Graphic was not tracked: " + g.SafeName());
+            if (_tracked.IsEmpty())
+                CanvasRenderer.onRequestRebuild -= OnRebuildRequested;
         }
 
-        static void OnRebuildRequested()
+        private static void OnRebuildRequested()
         {
-            foreach (var graphic in m_Tracked)
+            foreach (var graphic in _tracked)
                 graphic.OnRebuildRequested();
         }
     }

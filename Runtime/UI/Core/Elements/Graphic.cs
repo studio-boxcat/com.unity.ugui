@@ -1,10 +1,10 @@
+// ReSharper disable InconsistentNaming
+
+#nullable enable
 using System;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
-#if UNITY_EDITOR
-using System.Reflection;
-#endif
 using UnityEngine.Serialization;
 
 namespace UnityEngine.UI
@@ -15,22 +15,21 @@ namespace UnityEngine.UI
     [ExecuteAlways]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform), typeof(CanvasRenderer))]
-    public abstract class Graphic
-        : UIBehaviour,
-            ICanvasElement
+    public abstract class Graphic : UIBehaviour, ICanvasElement
     {
-        static Material s_DefaultUI = null;
+        private static Material? s_DefaultUI;
         public static Material defaultGraphicMaterial => s_DefaultUI ??= Canvas.GetDefaultCanvasMaterial();
-        static Texture2D s_WhiteTexture = null;
+        private static Texture2D? s_WhiteTexture;
         protected static Texture2D whiteTexture => s_WhiteTexture ??= Texture2D.whiteTexture;
 
         // Cached and saved values
         [FormerlySerializedAs("m_Mat")]
         [ShowIf("@CanShow(GraphicPropertyFlag.Material)"), PropertyOrder(GraphicPropOrder.Material), OnValueChanged("OnInspectorMaterialChanged")]
-        [SerializeField] protected Material m_Material;
+        [SerializeField] protected Material? m_Material;
 
         [ShowIf("@CanShow(GraphicPropertyFlag.Color)"), PropertyOrder(GraphicPropOrder.Color), OnValueChanged("SetVerticesDirty"), DontValidate]
-        [SerializeField] Color m_Color = Color.white;
+        [SerializeField]
+        private Color m_Color = Color.white;
 
         [NonSerialized] protected bool m_SkipLayoutUpdate;
         [NonSerialized] protected bool m_SkipMaterialUpdate;
@@ -47,7 +46,7 @@ namespace UnityEngine.UI
         [SerializeField, ShowIf("@CanShow(GraphicPropertyFlag.Raycast)"), OnValueChanged("SetRaycastDirty")]
         [FoldoutGroup("Advanced", order: GraphicPropOrder.Advanced)]
         [HorizontalGroup("Advanced/RaycastTarget", Order = GraphicPropOrder.Advanced_RaycastTarget, DisableAutomaticLabelWidth = true, Width = 124)]
-        bool m_RaycastTarget = false;
+        private bool m_RaycastTarget;
 
         protected RaycastRegisterLink m_RaycastRegisterLink;
 
@@ -67,7 +66,7 @@ namespace UnityEngine.UI
 
         [SerializeField, HideLabel, ShowIf("@CanShow(GraphicPropertyFlag.Raycast) && m_RaycastTarget")]
         [FoldoutGroup("Advanced"), HorizontalGroup("Advanced/RaycastTarget", Width = 120)]
-        Vector4 m_RaycastPadding;
+        private Vector4 m_RaycastPadding;
 
         /// <summary>
         /// Padding to be applied to the masking
@@ -82,12 +81,12 @@ namespace UnityEngine.UI
             set => m_RaycastPadding = value;
         }
 
-        [NonSerialized] RectTransform m_RectTransform;
-        [NonSerialized] CanvasRenderer m_CanvasRenderer;
-        [NonSerialized] Canvas m_Canvas;
+        [NonSerialized] private RectTransform? m_RectTransform;
+        [NonSerialized] private CanvasRenderer? m_CanvasRenderer;
+        [NonSerialized] private Canvas? m_Canvas;
 
-        [NonSerialized] bool m_VertsDirty;
-        [NonSerialized] bool m_MaterialDirty;
+        [NonSerialized] private bool m_VertsDirty;
+        [NonSerialized] private bool m_MaterialDirty;
 
         /// <summary>
         /// Set all properties of the Graphic dirty and needing rebuilt.
@@ -172,7 +171,7 @@ namespace UnityEngine.UI
 
         protected virtual void OnRectTransformDimensionsChange()
         {
-            if (gameObject.activeInHierarchy)
+            if (isActiveAndEnabled)
             {
                 // prevent double dirtying...
                 if (CanvasUpdateRegistry.IsRebuildingLayout())
@@ -230,7 +229,7 @@ namespace UnityEngine.UI
             get
             {
                 if (!m_Canvas) CacheCanvas();
-                return m_Canvas;
+                return m_Canvas!; // must be exists
             }
         }
 
@@ -247,7 +246,7 @@ namespace UnityEngine.UI
         /// </summary>
         public virtual Material material
         {
-            get => m_Material ? m_Material : defaultGraphicMaterial;
+            get => m_Material ? m_Material! : defaultGraphicMaterial;
             set
             {
                 if (m_Material.RefEq(value)) return;
@@ -274,21 +273,22 @@ namespace UnityEngine.UI
         ///
         /// Bear in mind that Unity tries to batch UI elements together to improve performance, so its ideal to work with atlas to reduce the number of draw calls.
         /// </remarks>
-        public virtual Texture mainTexture => s_WhiteTexture;
+        public virtual Texture? mainTexture => s_WhiteTexture;
 
         /// <summary>
         /// Mark the Graphic and the canvas as having been changed.
         /// </summary>
         protected virtual void OnEnable()
         {
+#if UNITY_EDITOR
+            EnabledMemory.Mark(this);
+            GraphicRebuildTracker.TrackGraphic(this);
+#endif
+
             CacheCanvas();
             m_RaycastRegisterLink.Reset(m_Canvas, this);
 
-#if UNITY_EDITOR
-            GraphicRebuildTracker.TrackGraphic(this);
-#endif
-            if (s_WhiteTexture == null)
-                s_WhiteTexture = Texture2D.whiteTexture;
+            s_WhiteTexture ??= Texture2D.whiteTexture;
 
             SetAllDirty();
         }
@@ -299,13 +299,14 @@ namespace UnityEngine.UI
         protected virtual void OnDisable()
         {
 #if UNITY_EDITOR
+            if (!EnabledMemory.Erase(this)) return; // OnDisable() is called without OnEnable(), mostly domain reload.
             GraphicRebuildTracker.UnTrackGraphic(this);
 #endif
+
             m_RaycastRegisterLink.TryUnlink(this);
             CanvasUpdateRegistry.UnRegisterCanvasElementForRebuild(this);
 
-            if (canvasRenderer != null)
-                canvasRenderer.Clear();
+            canvasRenderer.Clear();
 
             LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
         }
@@ -336,7 +337,7 @@ namespace UnityEngine.UI
         {
             if (!canvasRenderer.cull && (m_VertsDirty || m_MaterialDirty))
             {
-                /// When we were culled, we potentially skipped calls to <c>Rebuild</c>.
+                // When we were culled, we potentially skipped calls to <c>Rebuild</c>.
                 CanvasUpdateRegistry.RegisterCanvasElementForGraphicRebuild(this);
             }
         }
@@ -392,7 +393,7 @@ namespace UnityEngine.UI
         /// </remarks>
         public virtual void Rebuild(CanvasUpdate update)
         {
-            if (canvasRenderer is null || canvasRenderer.cull)
+            if (canvasRenderer.cull)
                 return;
 
             switch (update)
@@ -556,15 +557,7 @@ namespace UnityEngine.UI
             // calling OnValidate... Because MB's don't have a common base class
             // we do this via reflection. It's nasty and ugly... Editor only.
             m_SkipLayoutUpdate = true;
-            var mbs = gameObject.GetComponents<MonoBehaviour>();
-            foreach (var mb in mbs)
-            {
-                if (mb == null)
-                    continue;
-                var methodInfo = mb.GetType().GetMethod("OnValidate", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                if (methodInfo != null)
-                    methodInfo.Invoke(mb, null);
-            }
+            SetAllDirty();
             m_SkipLayoutUpdate = false;
         }
 
