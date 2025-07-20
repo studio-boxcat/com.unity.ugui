@@ -51,7 +51,7 @@ namespace UnityEngine.UI
         /// </summary>
         public static void SetRootDirty(Transform t)
         {
-            L.I("[LayoutRebuilder] SetRootDirty: " + t);
+            // L.I("[LayoutRebuilder] SetRootDirty: " + t);
 
             // XXX: even if the target is inactive, we still need to register its root for layout rebuild.
             // e.g. inactivate a child of a HorizontalLayoutGroup.
