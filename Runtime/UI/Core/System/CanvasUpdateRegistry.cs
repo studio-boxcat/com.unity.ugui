@@ -232,15 +232,24 @@ namespace UnityEngine.UI
             // XXX: Instance ID could be reused when the Edit mode exits, the same GameObject in the scene will have the same ID,
             // but the old one will be destroyed.
             // https://docs.unity3d.com/6000.1/Documentation/ScriptReference/Object.GetInstanceID.html
-            static void PruneDestroyedAndSortByInstanceID<TObject>(List<(TObject, int)> list) where TObject : Object
+            static void PruneDestroyedAndSortByInstanceID<TObject>(List<(TObject, int InstanceID)> list) where TObject : Object
             {
-                for (var i = list.Count - 1; i >= 0; i--)
+                var count = list.Count;
+                var offset = 0;
+                for (var i = 0; i < count; i++)
                 {
-                    if (!list[i].Item1) // if the object is destroyed.
-                        list.RemoveAt(i); // remove it.
+                    if (!list[i].Item1)
+                    {
+                        offset++;
+                    }
+                    else if (offset is not 0)
+                    {
+                        list[i - offset] = list[i]; // move the item to the left.
+                    }
                 }
 
-                list.Sort((a, b) => a.Item2 - b.Item2);
+                list.RemoveRange(count - offset, offset); // remove the last `offset` items.
+                list.Sort((a, b) => a.InstanceID - b.InstanceID);
             }
         }
 
