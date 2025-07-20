@@ -14,7 +14,7 @@ namespace UnityEngine.UI
     /// <remarks>
     /// ScrollRect will not do any clipping on its own. Combined with a Mask component, it can be turned into a scroll view.
     /// </remarks>
-    public class ScrollRect : UIBehaviour, IInitializePotentialDragHandler, IBeginDragHandler, IEndDragHandler, IDragHandler, IScrollHandler, ILayoutRebuildTarget, ILayoutElement, ILayoutGroup
+    public class ScrollRect : UIBehaviour, IInitializePotentialDragHandler, IBeginDragHandler, IEndDragHandler, IDragHandler, IScrollHandler, IPostLayoutRebuildCallback, ILayoutElement, ILayoutGroup
     {
         /// <summary>
         /// A setting for which behavior to use when content moves beyond the confines of its container.
@@ -410,17 +410,13 @@ namespace UnityEngine.UI
         /// <summary>
         /// Rebuilds the scroll rect data after initialization.
         /// </summary>
-        /// <param name="timing">The current step in the rendering CanvasUpdate cycle.</param>
-        void ILayoutRebuildTarget.Rebuild(LayoutRebuildTiming timing)
+        void IPostLayoutRebuildCallback.PostLayoutRebuild()
         {
-            if (timing == LayoutRebuildTiming.Post)
-            {
-                UpdateBounds();
-                UpdateScrollbars(Vector2.zero);
-                UpdatePrevData();
+            UpdateBounds();
+            UpdateScrollbars(Vector2.zero);
+            UpdatePrevData();
 
-                m_HasRebuiltLayout = true;
-            }
+            m_HasRebuiltLayout = true;
         }
 
         void OnEnable()
@@ -430,7 +426,7 @@ namespace UnityEngine.UI
             if (m_Vertical && m_VerticalScrollbar)
                 m_VerticalScrollbar.onValueChanged.AddListener(SetVerticalNormalizedPosition);
 
-            CanvasUpdateRegistry.QueueLayout(this);
+            CanvasUpdateRegistry.QueueLayoutRebuildCallback(this);
             SetDirty();
         }
 
@@ -445,7 +441,7 @@ namespace UnityEngine.UI
             m_Scrolling = false;
             m_HasRebuiltLayout = false;
             m_Velocity = Vector2.zero;
-            LayoutRebuilder.SetRootDirty(rectTransform);
+            LayoutRebuilder.SetDirty(rectTransform);
         }
 
         private void EnsureLayoutHasRebuilt()
@@ -1080,7 +1076,7 @@ namespace UnityEngine.UI
             if (!IsActive())
                 return;
 
-            LayoutRebuilder.SetRootDirty(rectTransform);
+            LayoutRebuilder.SetDirty(rectTransform);
         }
     }
 }

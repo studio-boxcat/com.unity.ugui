@@ -7,18 +7,14 @@ using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
-    public enum LayoutRebuildTiming { Pre, Post }
-
-    public enum GraphicRebuildTiming { Pre, Post }
-
-    public interface ILayoutRebuildTarget
+    public interface IPostLayoutRebuildCallback
     {
-        void Rebuild(LayoutRebuildTiming timing);
+        void PostLayoutRebuild();
     }
 
-    public interface IGraphicRebuildTarget
+    public interface IPostGraphicRebuildCallback
     {
-        void Rebuild(GraphicRebuildTiming timing);
+        void PostGraphicRebuild();
     }
 
     /// <summary>
@@ -29,10 +25,12 @@ namespace UnityEngine.UI
         private static bool _performingLayoutUpdate;
         private static bool _performingGraphicUpdate;
 
-        private static readonly List<Component> _layoutRebuildQueue = new(); // ILayoutRebuildTarget or Transform.
-        private static readonly List<(Component, int Depth)> _layoutBuf = new();
-        private static readonly List<MonoBehaviour> _graphicRebuildQueue = new();
-        private static readonly List<MonoBehaviour> _graphicBuf = new();
+        private static readonly List<(Transform, int)> _layoutRebuildQueue = new(); // ILayoutRebuildTarget or Transform (layout node).
+        private static readonly List<(Graphic, int)> _graphicRebuildQueue = new();
+        private static readonly List<(Object, int)> _layoutRebuildCallbacks = new();
+        private static readonly List<(Object, int)> _graphicRebuildCallbacks = new();
+        private static readonly List<Object> _tempBuf = new();
+        private static readonly HashSet<Transform> _visitedBuf = new(RefComparer.Instance);
 
         static CanvasUpdateRegistry() => Canvas.willRenderCanvases += PerformUpdate;
 
@@ -44,50 +42,56 @@ namespace UnityEngine.UI
             // layout -> cull -> render
 
             // Perform Layout Rebuild.
-            UISystemProfilerApi.BeginSample(UISystemProfilerApi.SampleType.Layout);
-
-            // rebuild queue to buffer and then sort by depth.
-            // layout rebuild must be done in depth order.
-            _layoutBuf.Clear();
-            FlushAndSortByDepth(_layoutRebuildQueue, result: _layoutBuf);
-
-            // rebuild the layout.
-            _performingLayoutUpdate = true;
-            for (var t = LayoutRebuildTiming.Pre; t <= LayoutRebuildTiming.Post; t++)
+            if (_layoutRebuildQueue.NotEmpty() || _layoutRebuildCallbacks.NotEmpty())
             {
-                Profiling.Profiler.BeginSample(GetProfilerString_Layout(t));
+                _performingLayoutUpdate = true;
+                UISystemProfilerApi.BeginSample(UISystemProfilerApi.SampleType.Layout);
 
-                foreach (var (layout, _) in _layoutBuf) // element is guaranteed to be non-destroyed here.
+                if (_layoutRebuildQueue.NotEmpty())
                 {
-                    try
+                    _tempBuf.Clear();
+                    FlushLayoutRoot(_layoutRebuildQueue, result: _tempBuf);
+                    // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
+                    foreach (Transform layoutRoot in _tempBuf) // element is guaranteed to be non-destroyed here.
                     {
-                        if (layout is Transform trans) // most common case.
+                        try
                         {
-                            if (t is LayoutRebuildTiming.Pre)
-                                LayoutRebuilder.RebuildLayoutRootImmediate(trans);
+                            LayoutRebuilder.RebuildRootImmediate(layoutRoot);
                         }
-                        else if (layout is ILayoutRebuildTarget target)
+                        catch (Exception e)
                         {
-                            target.Rebuild(t);
-                        }
-                        else
-                        {
-                            throw new ArgumentException($"Unsupported type for layout rebuild: {layout.GetType()}. Expected ILayoutRebuildTarget or RectTransform.");
-                        }
-                    }
-                    catch (Exception e)
-                    {
 #if DEBUG
-                        L.E($"Exception while rebuilding {layout} for {GetProfilerString_Layout(t)}");
-                        L.E(e);
+                            L.E($"Exception while rebuilding Layout {layoutRoot}");
+                            L.E(e);
 #endif
+                        }
                     }
                 }
-                Profiling.Profiler.EndSample();
-            }
-            _performingLayoutUpdate = false;
 
-            UISystemProfilerApi.EndSample(UISystemProfilerApi.SampleType.Layout);
+                if (_layoutRebuildCallbacks.NotEmpty())
+                {
+                    _tempBuf.Clear();
+                    FlushCallbacks(_layoutRebuildCallbacks, result: _tempBuf);
+                    // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
+                    foreach (IPostLayoutRebuildCallback callback in _tempBuf)
+                    {
+                        try
+                        {
+                            callback.PostLayoutRebuild();
+                        }
+                        catch (Exception e)
+                        {
+#if DEBUG
+                            L.E($"Exception while executing PostLayoutRebuild for {callback}");
+                            L.E(e);
+#endif
+                        }
+                    }
+                }
+
+                UISystemProfilerApi.EndSample(UISystemProfilerApi.SampleType.Layout);
+                _performingLayoutUpdate = false;
+            }
 
 
             // now layout is complete do culling...
@@ -97,145 +101,182 @@ namespace UnityEngine.UI
 
 
             // Perform Graphic Rebuild.
-            UISystemProfilerApi.BeginSample(UISystemProfilerApi.SampleType.Render);
-
-            _graphicBuf.Clear();
-            Flush(_graphicRebuildQueue, result: _graphicBuf);
-
-            _performingGraphicUpdate = true;
-            for (var t = GraphicRebuildTiming.Pre; t <= GraphicRebuildTiming.Post; t++)
+            if (_graphicRebuildQueue.NotEmpty() || _graphicRebuildCallbacks.NotEmpty())
             {
-                Profiling.Profiler.BeginSample(GetProfilerString_Graphic(t));
-                // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
-                foreach (var graphic in _graphicBuf)
+                _performingGraphicUpdate = true;
+                UISystemProfilerApi.BeginSample(UISystemProfilerApi.SampleType.Render);
+
+                if (_graphicRebuildQueue.NotEmpty())
                 {
-                    try
+                    _tempBuf.Clear();
+                    FlushGraphic(_graphicRebuildQueue, result: _tempBuf);
+                    // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
+                    foreach (Graphic graphic in _tempBuf)
                     {
-                        ((IGraphicRebuildTarget) graphic).Rebuild(t);
-                    }
-                    catch (Exception e)
-                    {
+                        try
+                        {
+                            graphic.Rebuild();
+                        }
+                        catch (Exception e)
+                        {
 #if DEBUG
-                        L.E($"Exception while rebuilding {graphic} for {GetProfilerString_Graphic(t)}");
-                        L.E(e);
+                            L.E($"Exception while rebuilding Graphic {graphic}");
+                            L.E(e);
 #endif
+                        }
                     }
                 }
-                Profiling.Profiler.EndSample();
-            }
-            _performingGraphicUpdate = false;
 
-            UISystemProfilerApi.EndSample(UISystemProfilerApi.SampleType.Render);
+                if (_graphicRebuildCallbacks.NotEmpty())
+                {
+                    _tempBuf.Clear();
+                    FlushCallbacks(_graphicRebuildCallbacks, result: _tempBuf);
+                    // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
+                    foreach (IPostGraphicRebuildCallback callback in _tempBuf)
+                    {
+                        try
+                        {
+                            callback.PostGraphicRebuild();
+                        }
+                        catch (Exception e)
+                        {
+#if DEBUG
+                            L.E($"Exception while executing PostGraphicRebuild for {callback}");
+                            L.E(e);
+#endif
+                        }
+                    }
+                }
+
+                UISystemProfilerApi.EndSample(UISystemProfilerApi.SampleType.Render);
+                _performingGraphicUpdate = false;
+            }
+
             return;
 
-            static void FlushAndSortByDepth(List<Component> source, List<(Component, int Depth)> result)
+            static void FlushLayoutRoot(List<(Transform, int)> source, List<Object> result)
             {
                 Assert.IsTrue(result.IsEmpty(), "Result list should be empty before processing.");
 
-                PruneAndSort(source);
+                PruneDestroyedAndSortByInstanceID(source);
 
+                var orgCount = source.Count;
                 var lastId = 0; // 0 is invalid ID.
-                foreach (var item in source)
+                for (var index = 0; index < orgCount; index++)
                 {
-                    var id = item.GetInstanceID();
-                    if (id == lastId) continue; // skip duplicates.
-                    lastId = id; // update lastId to current.
+                    var (node, instanceID) = source[index];
+                    if (instanceID == lastId) continue; // skip duplicates.
+                    lastId = instanceID; // update lastId to current.
+                    if (!node) continue; // skip destroyed transforms.
 
-                    Transform t;
-
-                    if (item is Transform t2)
-                    {
-                        // skip the inactive layout root.
-                        if (t2.gameObject.activeInHierarchy is false)
-                            continue;
-
-                        t = t2;
-                    }
-                    else
-                    {
-                        // skip disabled components.
-                        if (((MonoBehaviour) item).isActiveAndEnabled is false)
-                            continue;
-
-                        t = item.transform;
-                    }
-
-                    result.Add((item, t.CalcParentCount()));
+                    // even if the item is not active, we still need to resolve the layout root.
+                    // add the item to the source list again to be sorted by depth.
+                    source.Add((node, node.CalcParentCount()));
                 }
 
-                result.Sort((a, b) => b.Depth - a.Depth);
+                // remove the original items and then sort by depth.
+                source.RemoveRange(0, orgCount);
+                source.Sort((a, b) => b.Item2 - a.Item2); // descending order. more parent count (depth) = far from the root.
 
-                source.Clear(); // flush the source list.
+                // now it's time to resolve the layout root.
+                _visitedBuf.Clear();
+                foreach (var (node, _) in source)
+                {
+                    var root = LayoutRebuilder.ResolveUnvisitedLayoutRoot(node, _visitedBuf);
+                    if (root is null) continue; // already visited or no root found.
+                    if (root.gameObject.activeInHierarchy is false) continue; // skip inactive layout roots.
+                    result.Add(root);
+                }
+
+                source.Clear(); // clear the source list.
             }
 
-            static void Flush(List<MonoBehaviour> source, List<MonoBehaviour> result)
+            static void FlushGraphic(List<(Graphic, int)> source, List<Object> result)
             {
                 Assert.IsTrue(result.IsEmpty(), "Result list should be empty before processing.");
 
-                PruneAndSort(source);
+                PruneDestroyedAndSortByInstanceID(source);
 
                 var lastId = 0; // 0 is invalid ID.
-                foreach (var item in source)
+                foreach (var (graphic, instanceID) in source)
                 {
-                    var id = item.GetInstanceID();
-                    if (id == lastId) continue; // skip duplicates.
-                    lastId = id; // update lastId to current.
-                    if (item.isActiveAndEnabled is false) continue; // skip disabled or never enabled components.
-                    result.Add(item);
+                    if (instanceID == lastId) continue; // skip duplicates.
+                    lastId = instanceID; // update lastId to current.
+                    if (!graphic) continue; // skip destroyed graphics.
+                    if (graphic.isActiveAndEnabled is false) continue; // skip disabled or never enabled components.
+                    result.Add(graphic);
                 }
 
                 source.Clear(); // flush the source list.
             }
 
-            static void PruneAndSort<T>(List<T> list) where T : Object
+            static void FlushCallbacks(List<(Object, int)> source, List<Object> result)
+            {
+                Assert.IsTrue(result.IsEmpty(), "Result list should be empty before processing.");
+
+                PruneDestroyedAndSortByInstanceID(source);
+
+                var lastId = 0; // 0 is invalid ID.
+                foreach (var (callback, instanceID) in source)
+                {
+                    if (instanceID == lastId) continue; // skip duplicates.
+                    lastId = instanceID; // update lastId to current.
+                    if (!callback) continue; // skip destroyed objects.
+                    result.Add(callback);
+                }
+
+                source.Clear(); // flush the source list.
+            }
+
+            // It is always unique, and never has the value 0.
+            // XXX: Instance ID could be reused when the Edit mode exits, the same GameObject in the scene will have the same ID,
+            // but the old one will be destroyed.
+            // https://docs.unity3d.com/6000.1/Documentation/ScriptReference/Object.GetInstanceID.html
+            static void PruneDestroyedAndSortByInstanceID<TObject>(List<(TObject, int)> list) where TObject : Object
             {
                 for (var i = list.Count - 1; i >= 0; i--)
                 {
-                    if (!list[i])
-                        list.RemoveAt(i);
+                    if (!list[i].Item1) // if the object is destroyed.
+                        list.RemoveAt(i); // remove it.
                 }
 
-                // sort by GetInstanceID(), if the object is destroyed, use 0.
-                // It is always unique, and never has the value 0.
-                // https://docs.unity3d.com/6000.1/Documentation/ScriptReference/Object.GetInstanceID.html
-                list.Sort((a, b) => a.GetInstanceID() - b.GetInstanceID());
+                list.Sort((a, b) => a.Item2 - b.Item2);
             }
-
-            static string GetProfilerString_Layout(LayoutRebuildTiming t) => t switch
-            {
-                LayoutRebuildTiming.Pre => "CanvasUpdateRegistry.PreLayout",
-                LayoutRebuildTiming.Post => "CanvasUpdateRegistry.PostLayout",
-                _ => throw new ArgumentOutOfRangeException(nameof(t), t, null)
-            };
-
-            static string GetProfilerString_Graphic(GraphicRebuildTiming t) => t switch
-            {
-                GraphicRebuildTiming.Pre => "CanvasUpdateRegistry.PreRender",
-                GraphicRebuildTiming.Post => "CanvasUpdateRegistry.PostRender",
-                _ => throw new ArgumentOutOfRangeException(nameof(t), t, null)
-            };
         }
 
-        public static void QueueLayout<TLayoutRebuildTarget>(TLayoutRebuildTarget target) where TLayoutRebuildTarget : MonoBehaviour, ILayoutRebuildTarget =>
-            DoQueueLayout(target);
-
-        internal static void QueueLayoutRoot(Transform target) => DoQueueLayout(target); // resolved layout root only.
-
-        private static void DoQueueLayout(Component target)
+        internal static void QueueLayoutNode(Transform target)
         {
             if (_performingLayoutUpdate)
                 L.E($"[CanvasUpdateRegistry] Trying to add {target} for layout rebuild while we are already inside a rebuild loop.");
 
-            _layoutRebuildQueue.Add(target);
+            // root will be resolved by LayoutRebuilder.
+            _layoutRebuildQueue.Add((target, target.GetInstanceID()));
         }
 
-        public static void QueueGraphic<TGraphicRebuildTarget>(TGraphicRebuildTarget target)
-            where TGraphicRebuildTarget : MonoBehaviour, IGraphicRebuildTarget
+        public static void QueueGraphic(Graphic target)
         {
             if (_performingGraphicUpdate)
                 L.W($"[CanvasUpdateRegistry] Trying to add {target} for graphic rebuild while we are already inside a rebuild loop.");
 
-            _graphicRebuildQueue.Add(target);
+            _graphicRebuildQueue.Add((target, target.GetInstanceID()));
+        }
+
+        public static void QueueLayoutRebuildCallback<TLayoutRebuildTarget>(TLayoutRebuildTarget target)
+            where TLayoutRebuildTarget : MonoBehaviour, IPostLayoutRebuildCallback
+        {
+            if (_performingLayoutUpdate)
+                L.E($"[CanvasUpdateRegistry] Trying to add {target} for layout rebuild while we are already inside a rebuild loop.");
+
+            _layoutRebuildCallbacks.Add((target, target.GetInstanceID()));
+        }
+
+        public static void QueueGraphicRebuildCallback<TGraphicRebuildTarget>(TGraphicRebuildTarget target)
+            where TGraphicRebuildTarget : MonoBehaviour, IPostGraphicRebuildCallback
+        {
+            if (_performingGraphicUpdate)
+                L.W($"[CanvasUpdateRegistry] Trying to add {target} for graphic rebuild while we are already inside a rebuild loop.");
+
+            _graphicRebuildCallbacks.Add((target, target.GetInstanceID()));
         }
     }
 }

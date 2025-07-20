@@ -18,7 +18,7 @@ namespace UnityEngine.UI
         IDragHandler,
         IEndDragHandler,
         IPointerClickHandler,
-        IGraphicRebuildTarget,
+        IPostGraphicRebuildCallback,
         ILayoutElement
     {
         /// <summary>
@@ -2623,24 +2623,13 @@ namespace UnityEngine.UI
                 return;
 #endif
 
-            CanvasUpdateRegistry.QueueGraphic(this);
+            CanvasUpdateRegistry.QueueGraphicRebuildCallback(this);
         }
 
         /// <summary>
         /// Rebuild the input fields geometry. (caret and highlight).
         /// </summary>
-        /// <param name="timing">Which update loop we are in.</param>
-        public void Rebuild(GraphicRebuildTiming timing)
-        {
-            switch (timing)
-            {
-                case GraphicRebuildTiming.Post:
-                    UpdateGeometry();
-                    break;
-            }
-        }
-
-        private void UpdateGeometry()
+        void IPostGraphicRebuildCallback.PostGraphicRebuild()
         {
 #if UNITY_EDITOR
             if (!Application.isPlaying)

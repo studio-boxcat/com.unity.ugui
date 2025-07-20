@@ -7,10 +7,68 @@ namespace UnityEngine.UI
 {
     public partial class LayoutRebuilder
     {
-        public static void ResolveLayoutRootAndRebuildImmediate(Transform t)
+        /// <summary>
+        /// Mark the given Transform as needing it's layout to be recalculated during the next layout pass.
+        /// </summary>
+        public static void SetDirty(Transform t) => CanvasUpdateRegistry.QueueLayoutNode(t);
+
+        public static void SetDirty(MonoBehaviour comp) => SetDirty(comp.transform);
+
+        // null if not found or already visited. returned Transform always has ILayoutController.
+        // Case #1: has ILayoutGroup parent chain (p1, p2)
+        // p3
+        //   p2 (ILayoutGroup) *
+        //     p1 (ILayoutGroup)
+        //       target (ILayoutGroup)
+        // Case #2: no ILayoutGroup parent chain, but has ILayoutController
+        // p1
+        //   target (ILayoutGroup) *
+        // Case #3: has ILayoutController
+        // p1
+        //   target (ILayoutSelfController) *
+        internal static Transform? ResolveUnvisitedLayoutRoot(Transform t, HashSet<Transform>? visited)
         {
-            var layoutRoot = ResolveLayoutRoot(t);
-            if (layoutRoot is not null) RebuildLayoutRootImmediate(layoutRoot);
+            // L.I("[LayoutRebuilder] ResolveUnvisitedLayoutRoot: " + t.name, t);
+
+            // skip if already visited.
+            if (visited?.Add(t) is false)
+                return null;
+
+            // find the topmost ILayoutGroup in the parent chain.
+            if (StopVisitOrClimbToTopMostGroupInParentChain(t, visited, out var topMostGroup))
+                return topMostGroup;
+
+            // if there is no ILayoutGroup in the parent chain,
+            // check if the target itself is an ILayoutController. (ILayoutGroup or ILayoutSelfController)
+            if (ComponentSearch.AnyEnabledComponent<ILayoutController>(t))
+                return t;
+
+            return null;
+
+            // found transform must have ILayoutController
+            // true if already visited or ILayoutGroup found.
+            static bool StopVisitOrClimbToTopMostGroupInParentChain(
+                Transform t, HashSet<Transform>? visited, out Transform? found)
+            {
+                found = null;
+
+                var ptr = t.parent;
+                while (ptr is not null)
+                {
+                    // already visited
+                    if (visited?.Add(ptr) is false)
+                        return true;
+
+                    // will return false at the first parent in most cases
+                    if (ComponentSearch.AnyEnabledComponent<ILayoutGroup>(ptr) is false)
+                        return found is not null;
+
+                    found = ptr;
+                    ptr = ptr.parent; // climb up
+                }
+
+                return found is not null;
+            }
         }
 
         /// <summary>
@@ -18,11 +76,13 @@ namespace UnityEngine.UI
         /// </summary>
         /// <param name="layoutRoot">The layout element to perform the layout rebuild on.</param>
         /// <remarks>
-        /// Normal use of the layout system should not use this method. Instead SetRootDirty should be used instead, which triggers a delayed layout rebuild during the next layout pass. The delayed rebuild automatically handles objects in the entire layout hierarchy in the correct order, and prevents multiple recalculations for the same layout elements.
-        /// However, for special layout calculation needs, ::ref::RebuildLayoutRootImmediate can be used to get the layout of a sub-tree resolved immediately. This can even be done from inside layout calculation methods such as ILayoutController.SetLayoutHorizontal orILayoutController.SetLayoutVertical. Usage should be restricted to cases where multiple layout passes are unavaoidable despite the extra cost in performance.
+        /// Normal use of the layout system should not use this method. Instead SetDirty should be used instead, which triggers a delayed layout rebuild during the next layout pass. The delayed rebuild automatically handles objects in the entire layout hierarchy in the correct order, and prevents multiple recalculations for the same layout elements.
+        /// However, for special layout calculation needs, ::ref::RebuildRootImmediate can be used to get the layout of a sub-tree resolved immediately. This can even be done from inside layout calculation methods such as ILayoutController.SetLayoutHorizontal orILayoutController.SetLayoutVertical. Usage should be restricted to cases where multiple layout passes are unavaoidable despite the extra cost in performance.
         /// </remarks>
-        internal static void RebuildLayoutRootImmediate(Transform layoutRoot)
+        internal static void RebuildRootImmediate(Transform layoutRoot)
         {
+            // L.I("[LayoutRebuilder] RebuildRootImmediate: " + layoutRoot.name, layoutRoot);
+
 #if DEBUG
             if (!layoutRoot.gameObject.activeInHierarchy)
                 L.E("[LayoutRebuilder] Attempting calculate layout for inactive object: " + layoutRoot.name, layoutRoot);
@@ -136,6 +196,12 @@ namespace UnityEngine.UI
                 if (c.gameObject.activeSelf) // only consider active children
                     CollectLayoutControllers(c, result);
             }
+        }
+
+        public static void ResolveRootAndRebuildImmediate(Transform t)
+        {
+            var layoutRoot = ResolveUnvisitedLayoutRoot(t, visited: null);
+            if (layoutRoot is not null) RebuildRootImmediate(layoutRoot);
         }
     }
 }

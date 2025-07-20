@@ -92,7 +92,7 @@ namespace UnityEngine.UI
         protected virtual void OnDisable()
         {
             m_Tracker.Clear();
-            LayoutRebuilder.SetRootDirty(rectTransform);
+            LayoutRebuilder.SetDirty(rectTransform);
         }
 
         protected virtual void OnTransformParentChanged()

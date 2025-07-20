@@ -102,7 +102,7 @@ namespace UnityEngine.UI
         void OnDisable()
         {
             m_Tracker.Clear();
-            LayoutRebuilder.SetRootDirty(rectTransform);
+            LayoutRebuilder.SetDirty(rectTransform);
         }
 
         /// <summary>
@@ -301,7 +301,7 @@ namespace UnityEngine.UI
             if (!IsActive())
                 return;
 
-            LayoutRebuilder.SetRootDirty(rectTransform);
+            LayoutRebuilder.SetDirty(rectTransform);
         }
 
 #if UNITY_EDITOR

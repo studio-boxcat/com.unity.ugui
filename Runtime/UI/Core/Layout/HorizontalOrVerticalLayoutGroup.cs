@@ -286,7 +286,7 @@ namespace UnityEngine.UI
             }
 
             if (dirty)
-                LayoutRebuilder.SetRootDirty(transform);
+                LayoutRebuilder.SetDirty(transform);
         }
 
 #endif

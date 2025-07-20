@@ -38,7 +38,7 @@ namespace UnityEngine.UI
 
         void SetDirty()
         {
-            LayoutRebuilder.SetRootDirty(transform);
+            LayoutRebuilder.SetDirty(transform);
         }
 
         void SetDirtyIfActive()
