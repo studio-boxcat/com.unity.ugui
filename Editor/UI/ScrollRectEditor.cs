@@ -25,8 +25,6 @@ namespace UnityEditor.UI
         SerializedProperty m_VerticalScrollbar;
         SerializedProperty m_HorizontalScrollbarVisibility;
         SerializedProperty m_VerticalScrollbarVisibility;
-        SerializedProperty m_HorizontalScrollbarSpacing;
-        SerializedProperty m_VerticalScrollbarSpacing;
         AnimBool m_ShowElasticity;
         AnimBool m_ShowDecelerationRate;
         bool m_ViewportIsNotChild, m_HScrollbarIsNotChild, m_VScrollbarIsNotChild;
@@ -48,8 +46,6 @@ namespace UnityEditor.UI
             m_VerticalScrollbar     = serializedObject.FindProperty("m_VerticalScrollbar");
             m_HorizontalScrollbarVisibility = serializedObject.FindProperty("m_HorizontalScrollbarVisibility");
             m_VerticalScrollbarVisibility   = serializedObject.FindProperty("m_VerticalScrollbarVisibility");
-            m_HorizontalScrollbarSpacing    = serializedObject.FindProperty("m_HorizontalScrollbarSpacing");
-            m_VerticalScrollbarSpacing      = serializedObject.FindProperty("m_VerticalScrollbarSpacing");
 
             m_ShowElasticity = new AnimBool(Repaint);
             m_ShowDecelerationRate = new AnimBool(Repaint);
@@ -135,15 +131,6 @@ namespace UnityEditor.UI
             {
                 EditorGUI.indentLevel++;
                 EditorGUILayout.PropertyField(m_HorizontalScrollbarVisibility, EditorGUIUtility.TrTextContent("Visibility"));
-
-                if ((ScrollRect.ScrollbarVisibility)m_HorizontalScrollbarVisibility.enumValueIndex == ScrollRect.ScrollbarVisibility.AutoHideAndExpandViewport
-                    && !m_HorizontalScrollbarVisibility.hasMultipleDifferentValues)
-                {
-                    if (m_ViewportIsNotChild || m_HScrollbarIsNotChild)
-                        EditorGUILayout.HelpBox(s_HError, MessageType.Error);
-                    EditorGUILayout.PropertyField(m_HorizontalScrollbarSpacing, EditorGUIUtility.TrTextContent("Spacing"));
-                }
-
                 EditorGUI.indentLevel--;
             }
 
@@ -152,15 +139,6 @@ namespace UnityEditor.UI
             {
                 EditorGUI.indentLevel++;
                 EditorGUILayout.PropertyField(m_VerticalScrollbarVisibility, EditorGUIUtility.TrTextContent("Visibility"));
-
-                if ((ScrollRect.ScrollbarVisibility)m_VerticalScrollbarVisibility.enumValueIndex == ScrollRect.ScrollbarVisibility.AutoHideAndExpandViewport
-                    && !m_VerticalScrollbarVisibility.hasMultipleDifferentValues)
-                {
-                    if (m_ViewportIsNotChild || m_VScrollbarIsNotChild)
-                        EditorGUILayout.HelpBox(s_VError, MessageType.Error);
-                    EditorGUILayout.PropertyField(m_VerticalScrollbarSpacing, EditorGUIUtility.TrTextContent("Spacing"));
-                }
-
                 EditorGUI.indentLevel--;
             }
 

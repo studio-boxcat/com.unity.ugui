@@ -15,7 +15,7 @@ namespace UnityEngine.UI
     [ExecuteAlways]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform), typeof(CanvasRenderer))]
-    public abstract class Graphic : UIBehaviour, ICanvasElement
+    public abstract class Graphic : UIBehaviour, IGraphicRebuildTarget
     {
         private static Material? s_DefaultUI;
         public static Material defaultGraphicMaterial => s_DefaultUI ??= Canvas.GetDefaultCanvasMaterial();
@@ -131,7 +131,7 @@ namespace UnityEngine.UI
             if (!IsActive())
                 return;
 
-            LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
+            LayoutRebuilder.SetRootDirty(rectTransform);
         }
 
         /// <summary>
@@ -146,7 +146,7 @@ namespace UnityEngine.UI
                 return;
 
             m_VertsDirty = true;
-            CanvasUpdateRegistry.RegisterCanvasElementForGraphicRebuild(this);
+            CanvasUpdateRegistry.QueueGraphic(this);
         }
 
         /// <summary>
@@ -161,7 +161,7 @@ namespace UnityEngine.UI
                 return;
 
             m_MaterialDirty = true;
-            CanvasUpdateRegistry.RegisterCanvasElementForGraphicRebuild(this);
+            CanvasUpdateRegistry.QueueGraphic(this);
         }
 
         public void SetRaycastDirty()
@@ -173,14 +173,11 @@ namespace UnityEngine.UI
         {
             if (isActiveAndEnabled)
             {
+                SetVerticesDirty();
+
                 // prevent double dirtying...
-                if (CanvasUpdateRegistry.IsRebuildingLayout())
-                    SetVerticesDirty();
-                else
-                {
-                    SetVerticesDirty();
+                if (CanvasUpdateRegistry.IsRebuildingLayout() is false)
                     SetLayoutDirty();
-                }
             }
         }
 
@@ -190,7 +187,7 @@ namespace UnityEngine.UI
                 return;
 
             m_RaycastRegisterLink.TryUnlink(this);
-            LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
+            LayoutRebuilder.SetRootDirty(rectTransform);
         }
 
         protected virtual void OnTransformParentChanged()
@@ -304,11 +301,10 @@ namespace UnityEngine.UI
 #endif
 
             m_RaycastRegisterLink.TryUnlink(this);
-            CanvasUpdateRegistry.UnRegisterCanvasElementForRebuild(this);
 
             canvasRenderer.Clear();
 
-            LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
+            LayoutRebuilder.SetRootDirty(rectTransform);
         }
 
         protected virtual void OnCanvasHierarchyChanged()
@@ -319,7 +315,7 @@ namespace UnityEngine.UI
             if (!IsActive())
             {
                 // XXX: As we already called unregister in OnDisable(), we should not call it again here.
-                // GraphicRegistry.UnregisterGraphicForCanvas(currentCanvas, this);
+                // RaycastableRegistry.UnregisterGraphicForCanvas(currentCanvas, this);
                 return;
             }
 
@@ -338,7 +334,7 @@ namespace UnityEngine.UI
             if (!canvasRenderer.cull && (m_VertsDirty || m_MaterialDirty))
             {
                 // When we were culled, we potentially skipped calls to <c>Rebuild</c>.
-                CanvasUpdateRegistry.RegisterCanvasElementForGraphicRebuild(this);
+                CanvasUpdateRegistry.QueueGraphic(this);
             }
         }
 
@@ -385,31 +381,27 @@ namespace UnityEngine.UI
         }
 
         /// <summary>
-        /// Rebuilds the graphic geometry and its material on the PreRender cycle.
+        /// Rebuilds the graphic geometry and its material on the Pre cycle.
         /// </summary>
-        /// <param name="update">The current step of the rendering CanvasUpdate cycle.</param>
+        /// <param name="timing">The current step of the rendering CanvasUpdate cycle.</param>
         /// <remarks>
         /// See CanvasUpdateRegistry for more details on the canvas update cycle.
         /// </remarks>
-        public virtual void Rebuild(CanvasUpdate update)
+        public virtual void Rebuild(GraphicRebuildTiming timing)
         {
-            if (canvasRenderer.cull)
-                return;
-
-            switch (update)
+            if (timing is GraphicRebuildTiming.Pre
+                && canvasRenderer.cull is false) // skip if culled
             {
-                case CanvasUpdate.PreRender:
-                    if (m_VertsDirty)
-                    {
-                        UpdateGeometry();
-                        m_VertsDirty = false;
-                    }
-                    if (m_MaterialDirty)
-                    {
-                        UpdateMaterial();
-                        m_MaterialDirty = false;
-                    }
-                    break;
+                if (m_VertsDirty)
+                {
+                    UpdateGeometry();
+                    m_VertsDirty = false;
+                }
+                if (m_MaterialDirty)
+                {
+                    UpdateMaterial();
+                    m_MaterialDirty = false;
+                }
             }
         }
 

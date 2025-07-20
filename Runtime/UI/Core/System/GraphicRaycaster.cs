@@ -1,4 +1,6 @@
-using JetBrains.Annotations;
+// ReSharper disable InconsistentNaming
+#nullable enable
+using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
 using UnityEngine.EventSystems;
@@ -13,8 +15,8 @@ namespace UnityEngine.UI
     [RequireComponent(typeof(CanvasRenderer))]
     public class GraphicRaycaster : BaseRaycaster
     {
-        [SerializeField, Required, ChildGameObjectsOnly, NotNull]
-        Canvas m_Canvas;
+        [SerializeField, Required, ChildGameObjectsOnly]
+        private Canvas m_Canvas = null!;
         public Canvas canvas => m_Canvas;
         public override Camera eventCamera => m_Canvas.worldCamera;
 
@@ -33,19 +35,19 @@ namespace UnityEngine.UI
         /// </summary>
         public override RaycastResultType Raycast(Vector2 screenPosition, out RaycastResult result)
         {
-            if (GraphicRegistry.TryGetRaycastableGraphicsForCanvas(m_Canvas, out var canvasGraphics) is false)
+            if (RaycastableRegistry.TryGetForCanvas(m_Canvas, out var canvasGraphics) is false)
             {
                 result = default;
                 return RaycastResultType.Miss;
             }
 
-            var camera = eventCamera; // Property can call Camera.main, so cache the reference
-            Assert.IsNotNull(camera);
+            var cam = eventCamera; // Property can call Camera.main, so cache the reference
+            Assert.IsNotNull(cam);
             Assert.AreNotEqual(RenderMode.ScreenSpaceOverlay, m_Canvas.renderMode);
 
-            var resultType = Raycast(camera, screenPosition, canvasGraphics, out var hitGraphic);
+            var resultType = Raycast(cam, screenPosition, canvasGraphics!, out var hitGraphic);
             result = resultType is RaycastResultType.Hit
-                ? new RaycastResult(hitGraphic, camera, screenPosition)
+                ? new RaycastResult(hitGraphic, cam, screenPosition)
                 : default;
             return resultType;
         }
@@ -56,10 +58,10 @@ namespace UnityEngine.UI
         /// <returns>
         /// Whether the raycast hits any graphics. Null if there's a blocking graphic that hasn't been initialized yet.
         /// </returns>
-        static RaycastResultType Raycast([NotNull] Camera eventCamera, Vector2 pointerPosition, IndexedSet<Graphic> foundGraphics, out Graphic result)
+        private static RaycastResultType Raycast(Camera eventCamera, Vector2 pointerPosition, ICollection<Graphic> foundGraphics, out Graphic? result)
         {
             // Necessary for the event system
-            Graphic maxDepthGraphic = null;
+            Graphic? maxDepthGraphic = null;
             int maxDepth = -1; // -1 means it hasn't been processed by the canvas, which means it isn't actually drawn
             foreach (var graphic in foundGraphics)
             {
@@ -89,7 +91,7 @@ namespace UnityEngine.UI
                     if (Hit(t, graphic, eventCamera, pointerPosition))
                     {
                         L.W("[GraphicRaycaster] Aborting raycast since the blocking Graphic is not initialized yet: " + graphic.name, graphic);
-                        result = default;
+                        result = null;
                         return RaycastResultType.Abort;
                     }
                 }
@@ -118,7 +120,7 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
-        void Reset() => TryGetComponent(out m_Canvas);
+        private void Reset() => TryGetComponent(out m_Canvas);
 #endif
     }
 }

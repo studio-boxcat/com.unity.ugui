@@ -18,7 +18,7 @@ namespace UnityEngine.UI
         IDragHandler,
         IEndDragHandler,
         IPointerClickHandler,
-        ICanvasElement,
+        IGraphicRebuildTarget,
         ILayoutElement
     {
         /// <summary>
@@ -1094,7 +1094,6 @@ namespace UnityEngine.UI
             m_BlinkCoroutine = null;
 
             DeactivateInputField();
-            CanvasUpdateRegistry.UnRegisterCanvasElementForRebuild(this);
 
             // Clear needs to be called otherwise sync never happens as the object is disabled.
             if (m_CachedInputRenderer != null)
@@ -2624,18 +2623,18 @@ namespace UnityEngine.UI
                 return;
 #endif
 
-            CanvasUpdateRegistry.RegisterCanvasElementForGraphicRebuild(this);
+            CanvasUpdateRegistry.QueueGraphic(this);
         }
 
         /// <summary>
         /// Rebuild the input fields geometry. (caret and highlight).
         /// </summary>
-        /// <param name="update">Which update loop we are in.</param>
-        public void Rebuild(CanvasUpdate update)
+        /// <param name="timing">Which update loop we are in.</param>
+        public void Rebuild(GraphicRebuildTiming timing)
         {
-            switch (update)
+            switch (timing)
             {
-                case CanvasUpdate.LatePreRender:
+                case GraphicRebuildTiming.Post:
                     UpdateGeometry();
                     break;
             }

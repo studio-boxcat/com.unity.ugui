@@ -3,135 +3,95 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
-    /// <summary>
-    /// Values of 'update' called on a Canvas update.
-    /// </summary>
-    /// <remarks> If modifying also modify m_CanvasUpdateProfilerStrings to match.</remarks>
-    public enum CanvasUpdate
+    public enum LayoutRebuildTiming { Pre, Post }
+
+    public enum GraphicRebuildTiming { Pre, Post }
+
+    public interface ILayoutRebuildTarget
     {
-        /// <summary>
-        /// Called before layout.
-        /// </summary>
-        Prelayout = 0,
-        /// <summary>
-        /// Called for layout.
-        /// </summary>
-        Layout = 1,
-        /// <summary>
-        /// Called after layout.
-        /// </summary>
-        PostLayout = 2,
-        /// <summary>
-        /// Called before rendering.
-        /// </summary>
-        PreRender = 3,
-        /// <summary>
-        /// Called late, before render.
-        /// </summary>
-        LatePreRender = 4,
-        /// <summary>
-        /// Max enum value. Always last.
-        /// </summary>
-        MaxUpdateValue = 5
+        void Rebuild(LayoutRebuildTiming timing);
     }
 
-    /// <summary>
-    /// This is an element that can live on a Canvas.
-    /// </summary>
-    public interface ICanvasElement
+    public interface IGraphicRebuildTarget
     {
-        /// <summary>
-        /// Get the transform associated with the ICanvasElement.
-        /// </summary>
-        Transform transform { get; }
-
-        /// <summary>
-        /// Used if the native representation has been destroyed.
-        /// </summary>
-        /// <returns>Return true if the element is considered destroyed.</returns>
-        bool IsDestroyed();
-
-        /// <summary>
-        /// Rebuild the element for the given stage.
-        /// </summary>
-        /// <param name="executing">The current CanvasUpdate stage being rebuild.</param>
-        void Rebuild(CanvasUpdate executing);
+        void Rebuild(GraphicRebuildTiming timing);
     }
 
     /// <summary>
     /// A place where CanvasElements can register themselves for rebuilding.
     /// </summary>
-    public class CanvasUpdateRegistry
+    public static class CanvasUpdateRegistry
     {
-        private static readonly CanvasUpdateRegistry instance = new();
+        private static bool _performingLayoutUpdate;
+        private static bool _performingGraphicUpdate;
 
-        private bool m_PerformingLayoutUpdate;
-        private bool m_PerformingGraphicUpdate;
+        private static readonly List<Component> _layoutRebuildQueue = new(); // ILayoutRebuildTarget or Transform.
+        private static readonly List<(Component, int Depth)> _layoutBuf = new();
+        private static readonly List<MonoBehaviour> _graphicRebuildQueue = new();
+        private static readonly List<MonoBehaviour> _graphicBuf = new();
 
-        private readonly IndexedSet<ICanvasElement> m_LayoutRebuildQueue = new();
-        private readonly IndexedSet<ICanvasElement> m_GraphicRebuildQueue = new();
+        static CanvasUpdateRegistry() => Canvas.willRenderCanvases += PerformUpdate;
 
-        private static readonly List<ICanvasElement> _canvasElementsBuf = new();
-        private static readonly List<(ICanvasElement Element, int Depth)> _canvasElementsBufForSort = new();
+        public static bool IsRebuildingLayout() => _performingLayoutUpdate;
+        public static bool IsRebuildingGraphic() => _performingGraphicUpdate;
 
-        // This list matches the CanvasUpdate enum above. Keep in sync
-        private static readonly string[] m_CanvasUpdateProfilerStrings = { "CanvasUpdate.Prelayout", "CanvasUpdate.Layout", "CanvasUpdate.PostLayout", "CanvasUpdate.PreRender", "CanvasUpdate.LatePreRender" };
-        private const string m_CullingUpdateProfilerString = "ClipperRegistry.Cull";
-
-        private CanvasUpdateRegistry()
+        private static void PerformUpdate()
         {
-            Canvas.willRenderCanvases += PerformUpdate;
-        }
+            // layout -> cull -> render
 
-        private void PerformUpdate()
-        {
             // Perform Layout Rebuild.
             UISystemProfilerApi.BeginSample(UISystemProfilerApi.SampleType.Layout);
 
-            m_PerformingLayoutUpdate = true;
+            // rebuild queue to buffer and then sort by depth.
+            // layout rebuild must be done in depth order.
+            _layoutBuf.Clear();
+            FlushAndSortByDepth(_layoutRebuildQueue, result: _layoutBuf);
 
-            _canvasElementsBuf.Clear();
-            m_LayoutRebuildQueue.Flush(_canvasElementsBuf);
-
-            _canvasElementsBufForSort.Clear();
-            foreach (var canvasElement in _canvasElementsBuf)
+            // rebuild the layout.
+            _performingLayoutUpdate = true;
+            for (var t = LayoutRebuildTiming.Pre; t <= LayoutRebuildTiming.Post; t++)
             {
-                if (canvasElement.IsDestroyed() == false)
-                    _canvasElementsBufForSort.Add((canvasElement, canvasElement.transform.CalcParentCount()));
-            }
-            _canvasElementsBufForSort.Sort((a, b) => a.Depth - b.Depth);
+                Profiling.Profiler.BeginSample(GetProfilerString_Layout(t));
 
-            for (var i = 0; i <= (int) CanvasUpdate.PostLayout; i++)
-            {
-                Profiling.Profiler.BeginSample(m_CanvasUpdateProfilerStrings[i]);
-
-                foreach (var rebuild in _canvasElementsBufForSort)
+                foreach (var (layout, _) in _layoutBuf) // element is guaranteed to be non-destroyed here.
                 {
                     try
                     {
-                        rebuild.Element.Rebuild((CanvasUpdate) i);
+                        if (layout is Transform trans) // most common case.
+                        {
+                            if (t is LayoutRebuildTiming.Pre)
+                                LayoutRebuilder.RebuildLayoutRootImmediate(trans);
+                        }
+                        else if (layout is ILayoutRebuildTarget target)
+                        {
+                            target.Rebuild(t);
+                        }
+                        else
+                        {
+                            throw new ArgumentException($"Unsupported type for layout rebuild: {layout.GetType()}. Expected ILayoutRebuildTarget or RectTransform.");
+                        }
                     }
                     catch (Exception e)
                     {
 #if DEBUG
-                        Debug.LogError($"Exception while rebuilding {rebuild.Element} for {m_CanvasUpdateProfilerStrings[i]}");
-                        Debug.LogException(e);
+                        L.E($"Exception while rebuilding {layout} for {GetProfilerString_Layout(t)}");
+                        L.E(e);
 #endif
                     }
                 }
                 Profiling.Profiler.EndSample();
             }
+            _performingLayoutUpdate = false;
 
-            LayoutRebuilder.AfterLayoutCompleted(_canvasElementsBuf);
-            m_PerformingLayoutUpdate = false;
             UISystemProfilerApi.EndSample(UISystemProfilerApi.SampleType.Layout);
 
 
             // now layout is complete do culling...
-            Profiling.Profiler.BeginSample(m_CullingUpdateProfilerString);
+            Profiling.Profiler.BeginSample("ClipperRegistry.Cull");
             ClipperRegistry.Cull();
             Profiling.Profiler.EndSample();
 
@@ -139,138 +99,147 @@ namespace UnityEngine.UI
             // Perform Graphic Rebuild.
             UISystemProfilerApi.BeginSample(UISystemProfilerApi.SampleType.Render);
 
-            m_PerformingGraphicUpdate = true;
+            _graphicBuf.Clear();
+            Flush(_graphicRebuildQueue, result: _graphicBuf);
 
-            _canvasElementsBuf.Clear();
-            m_GraphicRebuildQueue.Flush(_canvasElementsBuf);
-
-            for (var i = (int) CanvasUpdate.PreRender; i < (int) CanvasUpdate.MaxUpdateValue; i++)
+            _performingGraphicUpdate = true;
+            for (var t = GraphicRebuildTiming.Pre; t <= GraphicRebuildTiming.Post; t++)
             {
-                Profiling.Profiler.BeginSample(m_CanvasUpdateProfilerStrings[i]);
-                foreach (var element in _canvasElementsBuf)
+                Profiling.Profiler.BeginSample(GetProfilerString_Graphic(t));
+                // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
+                foreach (var graphic in _graphicBuf)
                 {
-                    if (element.IsDestroyed())
-                        continue;
-
                     try
                     {
-                        element.Rebuild((CanvasUpdate) i);
+                        ((IGraphicRebuildTarget) graphic).Rebuild(t);
                     }
                     catch (Exception e)
                     {
 #if DEBUG
-                        Debug.LogError($"Exception while rebuilding {element} for {m_CanvasUpdateProfilerStrings[i]}");
-                        Debug.LogException(e);
+                        L.E($"Exception while rebuilding {graphic} for {GetProfilerString_Graphic(t)}");
+                        L.E(e);
 #endif
                     }
                 }
                 Profiling.Profiler.EndSample();
             }
+            _performingGraphicUpdate = false;
 
-            m_PerformingGraphicUpdate = false;
             UISystemProfilerApi.EndSample(UISystemProfilerApi.SampleType.Render);
-        }
+            return;
 
-        /// <summary>
-        /// Try and add the given element to the layout rebuild list.
-        /// Will not return if successfully added.
-        /// </summary>
-        /// <param name="element">The element that is needing rebuilt.</param>
-        public static void RegisterCanvasElementForLayoutRebuild(ICanvasElement element)
-        {
-            instance.InternalRegisterCanvasElementForLayoutRebuild(element);
-        }
-
-        /// <summary>
-        /// Try and add the given element to the layout rebuild list.
-        /// </summary>
-        /// <param name="element">The element that is needing rebuilt.</param>
-        /// <returns>
-        /// True if the element was successfully added to the rebuilt list.
-        /// False if either already inside a Graphic Update loop OR has already been added to the list.
-        /// </returns>
-        public static bool TryRegisterCanvasElementForLayoutRebuild(ICanvasElement element)
-        {
-            return instance.InternalRegisterCanvasElementForLayoutRebuild(element);
-        }
-
-        private bool InternalRegisterCanvasElementForLayoutRebuild(ICanvasElement element)
-        {
-            /* TODO: this likely should be here but causes the error to show just resizing the game view (case 739376)
-            if (m_PerformingLayoutUpdate)
+            static void FlushAndSortByDepth(List<Component> source, List<(Component, int Depth)> result)
             {
-                Debug.LogError(string.Format("Trying to add {0} for layout rebuild while we are already inside a layout rebuild loop. This is not supported.", element));
-                return false;
-            }*/
+                Assert.IsTrue(result.IsEmpty(), "Result list should be empty before processing.");
 
-            return m_LayoutRebuildQueue.TryAdd(element);
-        }
+                // sort by GetInstanceID(), if the object is destroyed, use 0.
+                // It is always unique, and never has the value 0.
+                // https://docs.unity3d.com/6000.1/Documentation/ScriptReference/Object.GetInstanceID.html
+                source.Sort((a, b) =>
+                {
+                    var aId = a ? a.GetInstanceID() : 0;
+                    var bId = b ? b.GetInstanceID() : 0;
+                    return aId - bId;
+                });
 
-        /// <summary>
-        /// Try and add the given element to the rebuild list.
-        /// Will not return if successfully added.
-        /// </summary>
-        /// <param name="element">The element that is needing rebuilt.</param>
-        public static void RegisterCanvasElementForGraphicRebuild(ICanvasElement element)
-        {
-            instance.InternalRegisterCanvasElementForGraphicRebuild(element);
-        }
+                var lastId = 0; // 0 is invalid ID.
+                foreach (var item in source)
+                {
+                    if (!item) continue; // skip destroyed components.
+                    var id = item.GetInstanceID();
+                    if (id == lastId) continue; // skip duplicates.
+                    lastId = id; // update lastId to current.
 
-        private void InternalRegisterCanvasElementForGraphicRebuild(ICanvasElement element)
-        {
-            if (m_PerformingGraphicUpdate)
-                Debug.LogError($"Trying to add {element} for graphic rebuild while we are already inside a graphic rebuild loop. This is not supported.");
-            m_GraphicRebuildQueue.TryAdd(element);
-        }
+                    Transform t;
 
-        /// <summary>
-        /// Remove the given element from both the graphic and the layout rebuild lists.
-        /// </summary>
-        /// <param name="element"></param>
-        public static void UnRegisterCanvasElementForRebuild(ICanvasElement element)
-        {
-            instance.InternalUnRegisterCanvasElementForLayoutRebuild(element);
-            instance.InternalUnRegisterCanvasElementForGraphicRebuild(element);
-        }
+                    if (item is Transform t2)
+                    {
+                        // skip the inactive layout root.
+                        if (t2.gameObject.activeInHierarchy is false)
+                            continue;
 
-        private void InternalUnRegisterCanvasElementForLayoutRebuild(ICanvasElement element)
-        {
-            if (m_PerformingLayoutUpdate)
-            {
-                Debug.LogError($"Trying to remove {element} from rebuild list while we are already inside a rebuild loop. This is not supported.");
-                return;
+                        t = t2;
+                    }
+                    else
+                    {
+                        // skip disabled components.
+                        if (((MonoBehaviour) item).isActiveAndEnabled is false)
+                            continue;
+
+                        t = item.transform;
+                    }
+
+                    result.Add((item, t.CalcParentCount()));
+                }
+
+                result.Sort((a, b) => b.Depth - a.Depth);
+
+                source.Clear(); // flush the source list.
             }
 
-            m_LayoutRebuildQueue.TryRemove(element);
-        }
-
-        private void InternalUnRegisterCanvasElementForGraphicRebuild(ICanvasElement element)
-        {
-            if (m_PerformingGraphicUpdate)
+            static void Flush(List<MonoBehaviour> source, List<MonoBehaviour> result)
             {
-                Debug.LogError($"Trying to remove {element} from rebuild list while we are already inside a rebuild loop. This is not supported.");
-                return;
+                Assert.IsTrue(result.IsEmpty(), "Result list should be empty before processing.");
+
+                // sort by GetInstanceID(), if the object is destroyed, use 0.
+                // It is always unique, and never has the value 0.
+                // https://docs.unity3d.com/6000.1/Documentation/ScriptReference/Object.GetInstanceID.html
+                source.Sort((a, b) =>
+                {
+                    var aId = a ? a.GetInstanceID() : 0;
+                    var bId = b ? b.GetInstanceID() : 0;
+                    return aId - bId;
+                });
+
+                var lastId = 0; // 0 is invalid ID.
+                foreach (var item in source)
+                {
+                    if (!item) continue; // skip destroyed components.
+                    var id = item.GetInstanceID();
+                    if (id == lastId) continue; // skip duplicates.
+                    lastId = id; // update lastId to current.
+                    if (item.isActiveAndEnabled is false) continue; // skip disabled or never enabled components.
+                    result.Add(item);
+                }
+
+                source.Clear(); // flush the source list.
             }
 
-            m_GraphicRebuildQueue.TryRemove(element);
+            static string GetProfilerString_Layout(LayoutRebuildTiming t) => t switch
+            {
+                LayoutRebuildTiming.Pre => "CanvasUpdateRegistry.PreLayout",
+                LayoutRebuildTiming.Post => "CanvasUpdateRegistry.PostLayout",
+                _ => throw new ArgumentOutOfRangeException(nameof(t), t, null)
+            };
+
+            static string GetProfilerString_Graphic(GraphicRebuildTiming t) => t switch
+            {
+                GraphicRebuildTiming.Pre => "CanvasUpdateRegistry.PreRender",
+                GraphicRebuildTiming.Post => "CanvasUpdateRegistry.PostRender",
+                _ => throw new ArgumentOutOfRangeException(nameof(t), t, null)
+            };
         }
 
-        /// <summary>
-        /// Are graphics layouts currently being calculated..
-        /// </summary>
-        /// <returns>True if the rebuild loop is CanvasUpdate.Prelayout, CanvasUpdate.Layout or CanvasUpdate.PostLayout</returns>
-        public static bool IsRebuildingLayout()
+        public static void QueueLayout<TLayoutRebuildTarget>(TLayoutRebuildTarget target) where TLayoutRebuildTarget : MonoBehaviour, ILayoutRebuildTarget =>
+            DoQueueLayout(target);
+
+        internal static void QueueLayoutRoot(Transform target) => DoQueueLayout(target); // resolved layout root only.
+
+        private static void DoQueueLayout(Component target)
         {
-            return instance.m_PerformingLayoutUpdate;
+            if (_performingLayoutUpdate)
+                L.E($"[CanvasUpdateRegistry] Trying to add {target} for layout rebuild while we are already inside a rebuild loop.");
+
+            _layoutRebuildQueue.Add(target);
         }
 
-        /// <summary>
-        /// Are graphics currently being rebuild.
-        /// </summary>
-        /// <returns>True if the rebuild loop is CanvasUpdate.PreRender or CanvasUpdate.Render</returns>
-        public static bool IsRebuildingGraphics()
+        public static void QueueGraphic<TGraphicRebuildTarget>(TGraphicRebuildTarget target)
+            where TGraphicRebuildTarget : MonoBehaviour, IGraphicRebuildTarget
         {
-            return instance.m_PerformingGraphicUpdate;
+            if (_performingGraphicUpdate)
+                L.W($"[CanvasUpdateRegistry] Trying to add {target} for graphic rebuild while we are already inside a rebuild loop.");
+
+            _graphicRebuildQueue.Add(target);
         }
     }
 }

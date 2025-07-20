@@ -16,7 +16,7 @@ namespace UnityEngine.UI
     /// The anchors of the handle RectTransforms are driven by the Scrollbar. The handle can be a direct child of the GameObject with the Scrollbar, or intermediary RectTransforms can be placed in between for additional control.
     /// When a change to the scrollbar value occurs, a callback is sent to any registered listeners of onValueChanged.
     /// </remarks>
-    public class Scrollbar : Selectable, IBeginDragHandler, IDragHandler, IInitializePotentialDragHandler, ICanvasElement
+    public class Scrollbar : Selectable, IBeginDragHandler, IDragHandler, IInitializePotentialDragHandler
     {
         /// <summary>
         /// Setting that indicates one of four directions the scrollbar will travel.
@@ -66,9 +66,6 @@ namespace UnityEngine.UI
         /// The direction of the scrollbar from minimum to maximum value.
         /// </summary>
         public Direction direction { get { return m_Direction; } set { if (SetPropertyUtility.SetEnum(ref m_Direction, value)) UpdateVisuals(); } }
-
-        protected Scrollbar()
-        {}
 
         [Range(0f, 1f)]
         [SerializeField]
@@ -165,20 +162,9 @@ namespace UnityEngine.UI
                 // Update rects (in next update) since other things might affect them even if value didn't change.
                 m_DelayedUpdateVisuals = true;
             }
-
-            if (!UnityEditor.PrefabUtility.IsPartOfPrefabAsset(this) && !Application.isPlaying)
-                CanvasUpdateRegistry.RegisterCanvasElementForLayoutRebuild(this);
         }
 
 #endif // if UNITY_EDITOR
-
-        public virtual void Rebuild(CanvasUpdate executing)
-        {
-#if UNITY_EDITOR
-            if (executing == CanvasUpdate.Prelayout)
-                onValueChanged.Invoke(value);
-#endif
-        }
 
         protected override void OnEnable()
         {

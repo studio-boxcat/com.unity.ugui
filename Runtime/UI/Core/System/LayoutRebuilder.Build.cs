@@ -7,27 +7,33 @@ namespace UnityEngine.UI
 {
     public partial class LayoutRebuilder
     {
+        public static void ResolveLayoutRootAndRebuildImmediate(Transform t)
+        {
+            var layoutRoot = ResolveLayoutRoot(t);
+            if (layoutRoot is not null) RebuildLayoutRootImmediate(layoutRoot);
+        }
+
         /// <summary>
         /// Forces an immediate rebuild of the layout element and child layout elements affected by the calculations.
         /// </summary>
-        /// <param name="target">The layout element to perform the layout rebuild on.</param>
+        /// <param name="layoutRoot">The layout element to perform the layout rebuild on.</param>
         /// <remarks>
-        /// Normal use of the layout system should not use this method. Instead MarkLayoutForRebuild should be used instead, which triggers a delayed layout rebuild during the next layout pass. The delayed rebuild automatically handles objects in the entire layout hierarchy in the correct order, and prevents multiple recalculations for the same layout elements.
-        /// However, for special layout calculation needs, ::ref::ForceRebuildLayoutImmediate can be used to get the layout of a sub-tree resolved immediately. This can even be done from inside layout calculation methods such as ILayoutController.SetLayoutHorizontal orILayoutController.SetLayoutVertical. Usage should be restricted to cases where multiple layout passes are unavaoidable despite the extra cost in performance.
+        /// Normal use of the layout system should not use this method. Instead SetRootDirty should be used instead, which triggers a delayed layout rebuild during the next layout pass. The delayed rebuild automatically handles objects in the entire layout hierarchy in the correct order, and prevents multiple recalculations for the same layout elements.
+        /// However, for special layout calculation needs, ::ref::RebuildLayoutRootImmediate can be used to get the layout of a sub-tree resolved immediately. This can even be done from inside layout calculation methods such as ILayoutController.SetLayoutHorizontal orILayoutController.SetLayoutVertical. Usage should be restricted to cases where multiple layout passes are unavaoidable despite the extra cost in performance.
         /// </remarks>
-        public static void ForceRebuildLayoutImmediate(RectTransform target)
+        internal static void RebuildLayoutRootImmediate(Transform layoutRoot)
         {
-            // No need to calculate layout for inactive objects.
-            if (!target.gameObject.activeInHierarchy)
-            {
-                L.W("[LayoutRebuilder] Attempting calculate layout for inactive object: " + target.name, target);
-                return;
-            }
+#if DEBUG
+            if (!layoutRoot.gameObject.activeInHierarchy)
+                L.E("[LayoutRebuilder] Attempting calculate layout for inactive object: " + layoutRoot.name, layoutRoot);
+            if (layoutRoot.NoComponent<ILayoutController>())
+                L.E("[LayoutRebuilder] No ILayoutController on target: " + layoutRoot.name, layoutRoot);
+#endif
 
             var layoutCalcTargets = ListPool<ILayoutElement>.Get(); // calculate layout, dimensions, etc.
             var layoutControllers = ListPool<ILayoutController>.Get(); // controls rect transforms
-            CollectLayoutCalcTargets(target, layoutCalcTargets);
-            CollectLayoutControllers(target, layoutControllers);
+            CollectLayoutCalcTargets(layoutRoot, layoutCalcTargets); // child to parent order.
+            CollectLayoutControllers(layoutRoot, layoutControllers); // parent to child order. (ILayoutSelfController first).
 
             // Horizontal layout first.
             foreach (var layoutElement in layoutCalcTargets)
@@ -57,7 +63,7 @@ namespace UnityEngine.UI
             ListPool<ILayoutController>.Release(layoutControllers);
         }
 
-        private static void CollectLayoutCalcTargets(RectTransform t, List<ILayoutElement> result)
+        private static void CollectLayoutCalcTargets(Transform t, List<ILayoutElement> result)
         {
             Assert.IsTrue(t.gameObject.activeInHierarchy, "Target must be active in hierarchy: " + t.name);
 
@@ -69,8 +75,8 @@ namespace UnityEngine.UI
                 for (var i = 0; i < t.childCount; i++)
                 {
                     var c = t.GetChild(i);
-                    if (c is RectTransform child && c.gameObject.activeSelf) // only consider active children
-                        CollectLayoutCalcTargets(child, result);
+                    if (c.gameObject.activeSelf) // only consider active children
+                        CollectLayoutCalcTargets(c, result);
                 }
             }
 
@@ -85,7 +91,7 @@ namespace UnityEngine.UI
             }
         }
 
-        private static void CollectLayoutControllers(RectTransform t, List<ILayoutController> result)
+        private static void CollectLayoutControllers(Transform t, List<ILayoutController> result)
         {
             Assert.IsTrue(t.gameObject.activeInHierarchy, "Target must be active in hierarchy: " + t.name);
 
@@ -102,12 +108,12 @@ namespace UnityEngine.UI
             // Layout control needs to executed top down with parents being done before their children,
             // because the children rely on the sizes of the parents.
 
-            // First call layout controllers that may change their own RectTransform
+            // First call layout controllers that may change their own Transform
             for (var i = 0; i < count; i++)
                 if (components[i] is ILayoutSelfController selfController)
                     result.Add(selfController);
 
-            // Then call the remaining, such as layout groups that change their children, taking their own RectTransform size into account.
+            // Then call the remaining, such as layout groups that change their children, taking their own Transform size into account.
             for (var i = 0; i < count; i++)
             {
                 var comp = components[i];
@@ -127,8 +133,8 @@ namespace UnityEngine.UI
             for (var i = 0; i < t.childCount; i++)
             {
                 var c = t.GetChild(i);
-                if (c is RectTransform child && c.gameObject.activeSelf) // only consider active children
-                    CollectLayoutControllers(child, result);
+                if (c.gameObject.activeSelf) // only consider active children
+                    CollectLayoutControllers(c, result);
             }
         }
     }

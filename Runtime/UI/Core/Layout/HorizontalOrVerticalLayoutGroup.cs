@@ -286,7 +286,7 @@ namespace UnityEngine.UI
             }
 
             if (dirty)
-                LayoutRebuilder.MarkLayoutForRebuild(transform as RectTransform);
+                LayoutRebuilder.SetRootDirty(transform);
         }
 
 #endif

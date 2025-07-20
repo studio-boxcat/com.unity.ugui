@@ -62,7 +62,7 @@ namespace UnityEngine.UI
             // cleanest solution....
             // if we detect the font texture has changed and are in a rebuild loop
             // we just regenerate the verts for the new UV's
-            if (CanvasUpdateRegistry.IsRebuildingGraphics() || CanvasUpdateRegistry.IsRebuildingLayout())
+            if (CanvasUpdateRegistry.IsRebuildingGraphic() || CanvasUpdateRegistry.IsRebuildingLayout())
                 UpdateGeometry();
             else
                 SetVerticesDirty();

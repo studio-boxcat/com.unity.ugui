@@ -13,7 +13,7 @@ namespace UnityEngine.UI
     /// </remarks>
     [AddComponentMenu("UI/Toggle", 30)]
     [RequireComponent(typeof(RectTransform))]
-    public class Toggle : Selectable, IPointerClickHandler, ICanvasElement
+    public class Toggle : Selectable, IPointerClickHandler
     {
         [Serializable]
         public class ToggleEvent : UnityEvent<bool>
@@ -85,26 +85,6 @@ namespace UnityEngine.UI
         [Tooltip("Is the toggle currently on or off?")]
         [SerializeField]
         private bool m_IsOn;
-
-        protected Toggle()
-        {}
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            if (!UnityEditor.PrefabUtility.IsPartOfPrefabAsset(this) && !Application.isPlaying)
-                CanvasUpdateRegistry.RegisterCanvasElementForLayoutRebuild(this);
-        }
-
-#endif // if UNITY_EDITOR
-
-        public virtual void Rebuild(CanvasUpdate executing)
-        {
-#if UNITY_EDITOR
-            if (executing == CanvasUpdate.Prelayout)
-                onValueChanged.Invoke(m_IsOn);
-#endif
-        }
 
         protected void OnDestroy()
         {

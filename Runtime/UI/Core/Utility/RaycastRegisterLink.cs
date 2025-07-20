@@ -16,7 +16,7 @@ namespace UnityEngine.UI
                 var raycastable = graphic is { raycastTarget: true, isActiveAndEnabled: true };
                 if (raycastable is false)
                 {
-                    GraphicRegistry.UnregisterRaycastGraphicForCanvas(_canvas, graphic);
+                    RaycastableRegistry.Unregister(_canvas, graphic);
                     _canvas = null;
                 }
                 return;
@@ -24,13 +24,13 @@ namespace UnityEngine.UI
 
             if (_canvas is not null)
             {
-                GraphicRegistry.UnregisterRaycastGraphicForCanvas(_canvas, graphic);
+                RaycastableRegistry.Unregister(_canvas, graphic);
                 _canvas = null;
             }
 
             if (canvas is not null && graphic is { raycastTarget: true, isActiveAndEnabled: true })
             {
-                GraphicRegistry.RegisterRaycastGraphicForCanvas(canvas, graphic);
+                RaycastableRegistry.Register(canvas, graphic);
                 _canvas = canvas;
             }
         }
@@ -40,7 +40,7 @@ namespace UnityEngine.UI
             if (_canvas is null)
                 return;
 
-            GraphicRegistry.UnregisterRaycastGraphicForCanvas(_canvas, graphic);
+            RaycastableRegistry.Unregister(_canvas, graphic);
             _canvas = null;
         }
     }

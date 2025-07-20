@@ -102,7 +102,7 @@ namespace UnityEngine.UI
         void OnDisable()
         {
             m_Tracker.Clear();
-            LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
+            LayoutRebuilder.SetRootDirty(rectTransform);
         }
 
         /// <summary>
@@ -301,16 +301,7 @@ namespace UnityEngine.UI
             if (!IsActive())
                 return;
 
-            if (!CanvasUpdateRegistry.IsRebuildingLayout())
-                LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
-            else
-                StartCoroutine(DelayedSetDirty(rectTransform));
-        }
-
-        static IEnumerator DelayedSetDirty(RectTransform rectTransform)
-        {
-            yield return null;
-            LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
+            LayoutRebuilder.SetRootDirty(rectTransform);
         }
 
 #if UNITY_EDITOR

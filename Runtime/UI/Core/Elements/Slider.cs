@@ -15,7 +15,7 @@ namespace UnityEngine.UI
     /// The anchors of the fill and handle RectTransforms are driven by the Slider. The fill and handle can be direct children of the GameObject with the Slider, or intermediary RectTransforms can be placed in between for additional control.
     /// When a change to the slider value occurs, a callback is sent to any registered listeners of UI.Slider.onValueChanged.
     /// </remarks>
-    public class Slider : Selectable, IDragHandler, IInitializePotentialDragHandler, ICanvasElement
+    public class Slider : Selectable, IDragHandler, IInitializePotentialDragHandler
     {
         /// <summary>
         /// Setting that indicates one of four directions.
@@ -373,9 +373,6 @@ namespace UnityEngine.UI
         // Size of each step.
         float stepSize { get { return wholeNumbers ? 1 : (maxValue - minValue) * 0.1f; } }
 
-        protected Slider()
-        {}
-
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -392,19 +389,8 @@ namespace UnityEngine.UI
                 // Update rects in next update since other things might affect them even if value didn't change.
                 m_DelayedUpdateVisuals = true;
             }
-
-            if (!UnityEditor.PrefabUtility.IsPartOfPrefabAsset(this) && !Application.isPlaying)
-                CanvasUpdateRegistry.RegisterCanvasElementForLayoutRebuild(this);
         }
 #endif // if UNITY_EDITOR
-
-        public virtual void Rebuild(CanvasUpdate executing)
-        {
-#if UNITY_EDITOR
-            if (executing == CanvasUpdate.Prelayout)
-                onValueChanged.Invoke(value);
-#endif
-        }
 
         protected override void OnEnable()
         {
