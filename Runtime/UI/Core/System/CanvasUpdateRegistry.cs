@@ -37,7 +37,7 @@ namespace UnityEngine.UI
         public static bool IsRebuildingLayout() => _performingLayoutUpdate;
         public static bool IsRebuildingGraphic() => _performingGraphicUpdate;
 
-        private static void PerformUpdate()
+        public static void PerformUpdate()
         {
             // layout -> cull -> render
 

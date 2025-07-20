@@ -45,39 +45,42 @@ namespace UnityEngine.UI
         // field is never assigned warning
         private DrivenRectTransformTracker m_Tracker;
 
-        private void OnEnable() => SetDirty();
+        private bool _performingSetLayout;
 
-        private void OnDisable()
-        {
-            m_Tracker.Clear();
-            LayoutRebuilder.SetDirty(rectTransform);
-        }
+        private void OnEnable() => SetDirty();
+        private void OnDisable() => SetDirty();
+
+        private void SetDirty() => LayoutRebuilder.SetDirty(rectTransform);
 
         private void OnRectTransformDimensionsChange()
         {
-            SetDirty();
+            if (isActiveAndEnabled
+                && _performingSetLayout is false) // GetMinSize(), GetPreferredSize(), SetSizeWithCurrentAnchors() will invoke OnRectTransformDimensionsChange().
+            {
+                SetDirty();
+            }
         }
 
         private void HandleSelfFittingAlongAxis(int axis)
         {
             var fitting = axis == 0 ? m_HorizontalFit : m_VerticalFit;
-            if (fitting == FitMode.Unconstrained)
-            {
-                // Keep a reference to the tracked transform, but don't control its properties:
-                m_Tracker.Add(this, rectTransform, DrivenTransformProperties.None);
-                return;
-            }
+            if (fitting == FitMode.Unconstrained) return;
 
-            m_Tracker.Add(this, rectTransform, axis == 0 ? DrivenTransformProperties.SizeDeltaX : DrivenTransformProperties.SizeDeltaY);
+            _performingSetLayout = true;
+
+            var t = rectTransform;
+            m_Tracker.Add(this, t, axis == 0 ? DrivenTransformProperties.SizeDeltaX : DrivenTransformProperties.SizeDeltaY);
 
             // Set size to min or preferred size
             var size = fitting switch
             {
-                FitMode.MinSize => LayoutUtility.GetMinSize(m_Rect, axis),
-                FitMode.PreferredSize => LayoutUtility.GetPreferredSize(m_Rect, axis),
+                FitMode.MinSize => LayoutUtility.GetMinSize(t, axis),
+                FitMode.PreferredSize => LayoutUtility.GetPreferredSize(t, axis),
                 _ => throw new System.ArgumentOutOfRangeException(nameof(fitting), fitting, null)
             };
-            rectTransform.SetSizeWithCurrentAnchors((RectTransform.Axis) axis, size);
+            t.SetSizeWithCurrentAnchors((RectTransform.Axis) axis, size);
+
+            _performingSetLayout = false;
         }
 
         /// <summary>
@@ -85,7 +88,7 @@ namespace UnityEngine.UI
         /// </summary>
         void ILayoutController.SetLayoutHorizontal()
         {
-            m_Tracker.Clear();
+            m_Tracker.Clear(); // SetLayoutHorizontal is called before SetLayoutVertical.
             HandleSelfFittingAlongAxis(0);
         }
 
@@ -96,20 +99,5 @@ namespace UnityEngine.UI
         {
             HandleSelfFittingAlongAxis(1);
         }
-
-        private void SetDirty()
-        {
-            if (!IsActive())
-                return;
-
-            LayoutRebuilder.SetDirty(rectTransform);
-        }
-
-    #if UNITY_EDITOR
-        private void OnValidate()
-        {
-            SetDirty();
-        }
-    #endif
     }
 }
