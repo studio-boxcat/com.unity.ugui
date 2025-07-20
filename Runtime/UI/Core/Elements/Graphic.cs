@@ -15,7 +15,7 @@ namespace UnityEngine.UI
     [ExecuteAlways]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform), typeof(CanvasRenderer))]
-    public abstract class Graphic : UIBehaviour, IGraphicRebuildTarget
+    public abstract class Graphic : UIBehaviour
     {
         private static Material? s_DefaultUI;
         public static Material defaultGraphicMaterial => s_DefaultUI ??= Canvas.GetDefaultCanvasMaterial();
@@ -131,7 +131,7 @@ namespace UnityEngine.UI
             if (!IsActive())
                 return;
 
-            LayoutRebuilder.SetRootDirty(rectTransform);
+            LayoutRebuilder.SetDirty(rectTransform);
         }
 
         /// <summary>
@@ -187,7 +187,7 @@ namespace UnityEngine.UI
                 return;
 
             m_RaycastRegisterLink.TryUnlink(this);
-            LayoutRebuilder.SetRootDirty(rectTransform);
+            LayoutRebuilder.SetDirty(rectTransform);
         }
 
         protected virtual void OnTransformParentChanged()
@@ -304,7 +304,7 @@ namespace UnityEngine.UI
 
             canvasRenderer.Clear();
 
-            LayoutRebuilder.SetRootDirty(rectTransform);
+            LayoutRebuilder.SetDirty(rectTransform);
         }
 
         protected virtual void OnCanvasHierarchyChanged()
@@ -387,10 +387,9 @@ namespace UnityEngine.UI
         /// <remarks>
         /// See CanvasUpdateRegistry for more details on the canvas update cycle.
         /// </remarks>
-        public virtual void Rebuild(GraphicRebuildTiming timing)
+        public virtual void Rebuild()
         {
-            if (timing is GraphicRebuildTiming.Pre
-                && canvasRenderer.cull is false) // skip if culled
+            if (canvasRenderer.cull is false) // skip if culled
             {
                 if (m_VertsDirty)
                 {
