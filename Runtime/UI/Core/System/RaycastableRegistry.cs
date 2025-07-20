@@ -17,7 +17,7 @@ namespace UnityEngine.UI
         {
             Assert.IsTrue(graphic is { isActiveAndEnabled: true, raycastTarget: true });
 
-            var hashCode = canvas.GetHashCode();
+            var hashCode = canvas.GetInstanceID();
 
             if (_dict.TryGetValue(hashCode, out var graphics) == false)
             {
@@ -30,7 +30,7 @@ namespace UnityEngine.UI
 
         public static void Unregister(Canvas canvas, Graphic graphic)
         {
-            var hashCode = canvas.GetHashCode();
+            var hashCode = canvas.GetInstanceID();
 
             if (_dict.TryGetValue(hashCode, out var graphics) == false)
                 return;
@@ -41,7 +41,7 @@ namespace UnityEngine.UI
 
         public static bool TryGetForCanvas(Canvas canvas, out ICollection<Graphic>? graphics)
         {
-            if (_dict.TryGetValue(canvas.GetHashCode(), out var graphicsSet))
+            if (_dict.TryGetValue(canvas.GetInstanceID(), out var graphicsSet))
             {
                 graphics = graphicsSet;
                 return true;
