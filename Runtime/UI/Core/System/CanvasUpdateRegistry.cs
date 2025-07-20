@@ -132,20 +132,11 @@ namespace UnityEngine.UI
             {
                 Assert.IsTrue(result.IsEmpty(), "Result list should be empty before processing.");
 
-                // sort by GetInstanceID(), if the object is destroyed, use 0.
-                // It is always unique, and never has the value 0.
-                // https://docs.unity3d.com/6000.1/Documentation/ScriptReference/Object.GetInstanceID.html
-                source.Sort((a, b) =>
-                {
-                    var aId = a ? a.GetInstanceID() : 0;
-                    var bId = b ? b.GetInstanceID() : 0;
-                    return aId - bId;
-                });
+                PruneAndSort(source);
 
                 var lastId = 0; // 0 is invalid ID.
                 foreach (var item in source)
                 {
-                    if (!item) continue; // skip destroyed components.
                     var id = item.GetInstanceID();
                     if (id == lastId) continue; // skip duplicates.
                     lastId = id; // update lastId to current.
@@ -181,20 +172,11 @@ namespace UnityEngine.UI
             {
                 Assert.IsTrue(result.IsEmpty(), "Result list should be empty before processing.");
 
-                // sort by GetInstanceID(), if the object is destroyed, use 0.
-                // It is always unique, and never has the value 0.
-                // https://docs.unity3d.com/6000.1/Documentation/ScriptReference/Object.GetInstanceID.html
-                source.Sort((a, b) =>
-                {
-                    var aId = a ? a.GetInstanceID() : 0;
-                    var bId = b ? b.GetInstanceID() : 0;
-                    return aId - bId;
-                });
+                PruneAndSort(source);
 
                 var lastId = 0; // 0 is invalid ID.
                 foreach (var item in source)
                 {
-                    if (!item) continue; // skip destroyed components.
                     var id = item.GetInstanceID();
                     if (id == lastId) continue; // skip duplicates.
                     lastId = id; // update lastId to current.
@@ -203,6 +185,20 @@ namespace UnityEngine.UI
                 }
 
                 source.Clear(); // flush the source list.
+            }
+
+            static void PruneAndSort<T>(List<T> list) where T : Object
+            {
+                for (var i = list.Count - 1; i >= 0; i--)
+                {
+                    if (!list[i])
+                        list.RemoveAt(i);
+                }
+
+                // sort by GetInstanceID(), if the object is destroyed, use 0.
+                // It is always unique, and never has the value 0.
+                // https://docs.unity3d.com/6000.1/Documentation/ScriptReference/Object.GetInstanceID.html
+                list.Sort((a, b) => a.GetInstanceID() - b.GetInstanceID());
             }
 
             static string GetProfilerString_Layout(LayoutRebuildTiming t) => t switch
