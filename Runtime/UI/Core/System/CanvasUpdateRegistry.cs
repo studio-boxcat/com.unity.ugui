@@ -25,10 +25,10 @@ namespace UnityEngine.UI
         private static bool _performingLayoutUpdate;
         private static bool _performingGraphicUpdate;
 
-        private static readonly List<(Transform, int)> _layoutRebuildQueue = new(); // ILayoutRebuildTarget or Transform (layout node).
-        private static readonly List<(Graphic, int)> _graphicRebuildQueue = new();
-        private static readonly List<(Object, int)> _layoutRebuildCallbacks = new();
-        private static readonly List<(Object, int)> _graphicRebuildCallbacks = new();
+        private static readonly List<(Object, int)> _layoutRebuildQueue = new(); // ILayoutRebuildTarget or Transform (layout node).
+        private static readonly List<(Object, int)> _graphicRebuildQueue = new(); // Graphic
+        private static readonly List<(Object, int)> _layoutRebuildCallbacks = new(); // MonoBehaviour, IPostLayoutRebuildCallback
+        private static readonly List<(Object, int)> _graphicRebuildCallbacks = new(); // MonoBehaviour, IPostGraphicRebuildCallback
         private static readonly List<Object> _tempBuf = new();
         private static readonly HashSet<Transform> _visitedBuf = new(RefComparer.Instance);
 
@@ -154,57 +154,35 @@ namespace UnityEngine.UI
 
             return;
 
-            static void FlushLayoutRoot(List<(Transform, int)> source, List<Object> result)
+            static void FlushLayoutRoot(List<(Object, int)> source, List<Object> result)
             {
                 Assert.IsTrue(result.IsEmpty(), "Result list should be empty before processing.");
 
-                PruneDestroyedAndSortByInstanceID(source);
-
-                var orgCount = source.Count;
-                var lastId = 0; // 0 is invalid ID.
-                for (var index = 0; index < orgCount; index++)
-                {
-                    var (node, instanceID) = source[index];
-                    if (instanceID == lastId) continue; // skip duplicates.
-                    lastId = instanceID; // update lastId to current.
-                    if (!node) continue; // skip destroyed transforms.
-
-                    // even if the item is not active, we still need to resolve the layout root.
-                    // add the item to the source list again to be sorted by depth.
-                    source.Add((node, node.CalcParentCount()));
-                }
-
-                // remove the original items and then sort by depth.
-                source.RemoveRange(0, orgCount);
-                source.Sort((a, b) => b.Item2 - a.Item2); // descending order. more parent count (depth) = far from the root.
+                PruneDestroyedAndDedup(source);
 
                 // now it's time to resolve the layout root.
                 _visitedBuf.Clear();
                 foreach (var (node, _) in source)
                 {
-                    var root = LayoutRebuilder.ResolveUnvisitedLayoutRoot(node, _visitedBuf);
+                    var root = LayoutRebuilder.ResolveUnvisitedLayoutRoot((Transform) node, _visitedBuf);
                     if (root is null) continue; // already visited or no root found.
-                    if (root.gameObject.activeInHierarchy is false) continue; // skip inactive layout roots.
-                    result.Add(root);
+                    if (root.gameObject.activeInHierarchy) // skip inactive layout roots.
+                        result.Add(root);
                 }
 
                 source.Clear(); // clear the source list.
             }
 
-            static void FlushGraphic(List<(Graphic, int)> source, List<Object> result)
+            static void FlushGraphic(List<(Object, int)> source, List<Object> result)
             {
                 Assert.IsTrue(result.IsEmpty(), "Result list should be empty before processing.");
 
-                PruneDestroyedAndSortByInstanceID(source);
+                PruneDestroyedAndDedup(source);
 
-                var lastId = 0; // 0 is invalid ID.
-                foreach (var (graphic, instanceID) in source)
+                foreach (var (graphic, _) in source)
                 {
-                    if (instanceID == lastId) continue; // skip duplicates.
-                    lastId = instanceID; // update lastId to current.
-                    if (!graphic) continue; // skip destroyed graphics.
-                    if (graphic.isActiveAndEnabled is false) continue; // skip disabled or never enabled components.
-                    result.Add(graphic);
+                    if (((Graphic) graphic).isActiveAndEnabled) // skip disabled or never enabled components.
+                        result.Add(graphic);
                 }
 
                 source.Clear(); // flush the source list.
@@ -214,15 +192,12 @@ namespace UnityEngine.UI
             {
                 Assert.IsTrue(result.IsEmpty(), "Result list should be empty before processing.");
 
-                PruneDestroyedAndSortByInstanceID(source);
+                PruneDestroyedAndDedup(source);
 
-                var lastId = 0; // 0 is invalid ID.
-                foreach (var (callback, instanceID) in source)
+                foreach (var (callback, _) in source)
                 {
-                    if (instanceID == lastId) continue; // skip duplicates.
-                    lastId = instanceID; // update lastId to current.
-                    if (!callback) continue; // skip destroyed objects.
-                    result.Add(callback);
+                    if (((MonoBehaviour) callback).isActiveAndEnabled) // skip disabled or never enabled components.
+                        result.Add(callback);
                 }
 
                 source.Clear(); // flush the source list.
@@ -232,24 +207,49 @@ namespace UnityEngine.UI
             // XXX: Instance ID could be reused when the Edit mode exits, the same GameObject in the scene will have the same ID,
             // but the old one will be destroyed.
             // https://docs.unity3d.com/6000.1/Documentation/ScriptReference/Object.GetInstanceID.html
-            static void PruneDestroyedAndSortByInstanceID<TObject>(List<(TObject, int InstanceID)> list) where TObject : Object
+            static void PruneDestroyedAndDedup(List<(Object, int InstanceID)> list)
             {
-                var count = list.Count;
-                var offset = 0;
-                for (var i = 0; i < count; i++)
+                var orgCount = list.Count;
+
+                // remove destroyed objects
+                var destroyCount = 0;
+                for (var i = 0; i < orgCount; i++)
                 {
                     if (!list[i].Item1)
                     {
-                        offset++;
+                        destroyCount++;
                     }
-                    else if (offset is not 0)
+                    else if (destroyCount is not 0)
                     {
-                        list[i - offset] = list[i]; // move the item to the left.
+                        list[i - destroyCount] = list[i]; // move the item to the left.
+                    }
+                }
+                var curCount = orgCount - destroyCount;
+                list.Sort(0, curCount, ObjectInstanceIDPairComparer.Instance); // sort by instance ID.
+
+                // remove duplicates.
+                var dupCount = 0;
+                var lastID = 0; // 0 is invalid ID.
+                for (var i = 0; i < curCount; i++)
+                {
+                    var item = list[i];
+                    var curID = item.InstanceID;
+                    if (curID == lastID)
+                    {
+                        dupCount++; // skip duplicates.
+                    }
+                    else
+                    {
+                        lastID = curID; // update lastId to current.
+                        if (dupCount is not 0)
+                            list[i - dupCount] = item; // move the item to the left.
                     }
                 }
 
-                list.RemoveRange(count - offset, offset); // remove the last `offset` items.
-                list.Sort((a, b) => a.InstanceID - b.InstanceID);
+                // remove the tail.
+                curCount -= dupCount;
+                if (curCount != orgCount)
+                    list.RemoveRange(curCount, orgCount - curCount);
             }
         }
 
@@ -286,6 +286,12 @@ namespace UnityEngine.UI
                 L.W($"[CanvasUpdateRegistry] Trying to add {target} for graphic rebuild while we are already inside a rebuild loop.");
 
             _graphicRebuildCallbacks.Add((target, target.GetInstanceID()));
+        }
+
+        private class ObjectInstanceIDPairComparer : IComparer<(Object, int)>
+        {
+            public static readonly ObjectInstanceIDPairComparer Instance = new();
+            int IComparer<(Object, int)>.Compare((Object, int) x, (Object, int) y) => x.Item2 - y.Item2;
         }
     }
 }

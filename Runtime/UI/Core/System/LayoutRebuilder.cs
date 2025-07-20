@@ -26,22 +26,35 @@ namespace UnityEngine.UI
         // Case #3: has ILayoutController
         // p1
         //   target (ILayoutSelfController) *
-        internal static Transform? ResolveUnvisitedLayoutRoot(Transform t, HashSet<Transform>? visited)
+        internal static Transform? ResolveUnvisitedLayoutRoot(Transform t, HashSet<Transform>? visitedLayout)
         {
+            // note that we mark as visited only when the visiting Transform has ILayoutController.
+            // when it doesn't have ILayoutGroup, it could skip visiting the parent in the first place,
+            // and this will make skipping the grandparent in the future visits.
+
             // L.I("[LayoutRebuilder] ResolveUnvisitedLayoutRoot: " + t.name, t);
 
-            // skip if already visited.
-            if (visited?.Add(t) is false)
+            // skip if it's already visited ILayoutController.
+            if (visitedLayout?.Contains(t) is true)
                 return null;
 
             // find the topmost ILayoutGroup in the parent chain.
-            if (StopVisitOrClimbToTopMostGroupInParentChain(t, visited, out var topMostGroup))
+            if (StopVisitOrClimbToTopMostGroupInParentChain(t, visitedLayout, out var topMostGroup))
+            {
+                // mark self as visited if it has ILayoutController.
+                if (visitedLayout is not null && ComponentSearch.AnyEnabledComponent<ILayoutController>(t))
+                    visitedLayout.Add(t);
+
                 return topMostGroup;
+            }
 
             // if there is no ILayoutGroup in the parent chain,
             // check if the target itself is an ILayoutController. (ILayoutGroup or ILayoutSelfController)
             if (ComponentSearch.AnyEnabledComponent<ILayoutController>(t))
+            {
+                visitedLayout?.Add(t); // mark self as visited, we already know it has ILayoutController.
                 return t;
+            }
 
             return null;
 
@@ -56,12 +69,14 @@ namespace UnityEngine.UI
                 while (ptr is not null)
                 {
                     // already visited
-                    if (visited?.Add(ptr) is false)
+                    if (visited?.Contains(ptr) is true)
                         return true;
 
                     // will return false at the first parent in most cases
                     if (ComponentSearch.AnyEnabledComponent<ILayoutGroup>(ptr) is false)
                         return found is not null;
+
+                    visited?.Add(ptr); // mark as visited only if it has ILayoutGroup.
 
                     found = ptr;
                     ptr = ptr.parent; // climb up
@@ -200,7 +215,7 @@ namespace UnityEngine.UI
 
         public static void ResolveRootAndRebuildImmediate(Transform t)
         {
-            var layoutRoot = ResolveUnvisitedLayoutRoot(t, visited: null);
+            var layoutRoot = ResolveUnvisitedLayoutRoot(t, visitedLayout: null);
             if (layoutRoot is not null) RebuildRootImmediate(layoutRoot);
         }
     }
