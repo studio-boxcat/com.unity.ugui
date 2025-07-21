@@ -39,8 +39,8 @@ namespace UnityEngine.UI
                     m_StencilDepth = null;
                     SetMaterialDirty();
 
-                    if (value) ClipperRegistry.RegisterTarget(this);
-                    else ClipperRegistry.UnregisterTarget(this);
+                    if (value) ClipperRegistry.RegisterClippable(this);
+                    else ClipperRegistry.UnregisterClippable(this);
                 }
             }
         }
@@ -94,7 +94,7 @@ namespace UnityEngine.UI
             if (isMaskingGraphic)
                 MaskUtilities.NotifyStencilStateChanged(this);
 
-            if (maskable) ClipperRegistry.RegisterTarget(this);
+            if (maskable) ClipperRegistry.RegisterClippable(this);
         }
 
         protected override void OnDisable()
@@ -114,7 +114,7 @@ namespace UnityEngine.UI
             if (isMaskingGraphic)
                 MaskUtilities.NotifyStencilStateChanged(this);
 
-            if (maskable) ClipperRegistry.UnregisterTarget(this);
+            if (maskable) ClipperRegistry.UnregisterClippable(this);
         }
 
         protected override void OnTransformParentChanged()
@@ -134,7 +134,7 @@ namespace UnityEngine.UI
             if (!isActiveAndEnabled) return;
             m_StencilDepth = null;
             SetMaterialDirty();
-            if (maskable) ClipperRegistry.ReparentTarget(this);
+            if (maskable) ClipperRegistry.ReparentClippable(this);
         }
 
         /// <summary>

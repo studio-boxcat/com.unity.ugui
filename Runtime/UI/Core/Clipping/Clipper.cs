@@ -3,6 +3,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
 
@@ -78,15 +79,6 @@ namespace UnityEngine.UI
         private void OnEnable() => ClipperRegistry.RegisterClipper(this);
         private void OnDisable() => ClipperRegistry.UnregisterClipper(this);
 
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            // Dont allow negative softness.
-            m_Softness.x = Mathf.Max(0, m_Softness.x);
-            m_Softness.y = Mathf.Max(0, m_Softness.y);
-        }
-#endif
-
         public bool IsRaycastLocationValid(Vector2 sp, Camera eventCamera)
         {
             Assert.IsTrue(isActiveAndEnabled, "Can't check raycast for disabled mask.");
@@ -153,6 +145,28 @@ namespace UnityEngine.UI
 
 
 #if UNITY_EDITOR
+        [ShowInInspector, MultiLineProperty, HideLabel]
+        private string _infoMessage
+        {
+            get
+            {
+                var sb = SbPool.Rent();
+                sb.Append("Clippables: ");
+                var clippables = ClipperRegistry.GetCachedClippables(this);
+                sb.AppendLine(clippables is not null
+                    ? string.Join(", ", clippables.Select(c => ((Object) c).SafeName()))
+                    : "null");
+                return SbPool.Return(sb);
+            }
+        }
+
+        private void OnValidate()
+        {
+            // Dont allow negative softness.
+            m_Softness.x = Mathf.Max(0, m_Softness.x);
+            m_Softness.y = Mathf.Max(0, m_Softness.y);
+        }
+
         private void OnDrawGizmos()
         {
             if (UnityEditor.Selection.activeGameObject != gameObject)
@@ -183,8 +197,23 @@ namespace UnityEngine.UI
         void ISelfValidator.Validate(SelfValidationResult result)
         {
             // ReSharper disable once Unity.NoNullPropagation
-            if (transform.parent?.GetComponentInParent<Clipper>() is not null)
+            if (transform.parent?.GetComponentInParent<Clipper>(includeInactive: true) is not null)
                 result.AddError("Clipper nesting is not supported.");
+
+            var graphics = this.GetGraphicsInChildrenShared(includeInactive: true);
+            foreach (var graphic in graphics)
+            {
+                if (graphic is MaskableGraphic m)
+                {
+                    if (m.maskable is false)
+                        result.AddError($"Graphic '{graphic.name}' is not maskable but is a child of a Clippable.");
+                }
+                else
+                {
+                    if (graphic.TryGetComponent<Clippable>(out var c) is false || c.enabled is false)
+                        result.AddError($"Graphic '{graphic.name}' is not maskable and has no IClippable component, but is a child of a Clippable.");
+                }
+            }
         }
 #endif
     }

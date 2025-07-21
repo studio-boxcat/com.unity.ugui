@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
@@ -81,6 +82,43 @@ namespace UnityEngine.UI
             v.x *= num;
             v.y *= num;
             return v;
+        }
+
+        // It is always unique, and never has the value 0.
+        // XXX: Instance ID could be reused when the Edit mode exits, the same GameObject in the scene will have the same ID,
+        // but the old one will be destroyed.
+        // https://docs.unity3d.com/6000.1/Documentation/ScriptReference/Object.GetInstanceID.html
+        public static void PruneDestroyedAndDedup<TObject>(List<(TObject Object, int InstanceID)> list) where TObject : Object
+        {
+            // first remove destroyed objects
+            list.RemoveAll(item => !item.Object);
+
+            // sort for deduplication.
+            list.Sort(static (a, b) => a.InstanceID.CompareTo(b.InstanceID));
+
+            // remove duplicates.
+            var count = list.Count;
+            var dupCount = 0;
+            var lastID = 0; // 0 is invalid ID.
+            for (var i = 0; i < count; i++)
+            {
+                var item = list[i];
+                var curID = item.InstanceID;
+                if (curID == lastID)
+                {
+                    dupCount++; // skip duplicates.
+                }
+                else
+                {
+                    lastID = curID; // update lastId to current.
+                    if (dupCount is not 0)
+                        list[i - dupCount] = item; // move the item to the left.
+                }
+            }
+
+            // remove the tail.
+            if (dupCount is not 0)
+                list.RemoveRange(count - dupCount, dupCount);
         }
     }
 }

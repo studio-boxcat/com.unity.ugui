@@ -95,9 +95,20 @@ namespace UnityEngine.UI
 
 
             // now layout is complete do culling...
-            Profiling.Profiler.BeginSample("ClipperRegistry.Cull");
-            ClipperRegistry.Cull();
-            Profiling.Profiler.EndSample();
+            try
+            {
+                Profiling.Profiler.BeginSample("ClipperRegistry.Cull");
+                ClipperRegistry.Cull();
+            }
+            catch (Exception e)
+            {
+                L.E("Exception while culling clippers");
+                L.E(e);
+            }
+            finally
+            {
+                Profiling.Profiler.EndSample();
+            }
 
 
             // Perform Graphic Rebuild.
@@ -158,7 +169,7 @@ namespace UnityEngine.UI
             {
                 Assert.IsTrue(result.IsEmpty(), "Result list should be empty before processing.");
 
-                PruneDestroyedAndDedup(source);
+                CanvasUtils.PruneDestroyedAndDedup(source);
 
                 // now it's time to resolve the layout root.
                 _visitedBuf.Clear();
@@ -177,7 +188,7 @@ namespace UnityEngine.UI
             {
                 Assert.IsTrue(result.IsEmpty(), "Result list should be empty before processing.");
 
-                PruneDestroyedAndDedup(source);
+                CanvasUtils.PruneDestroyedAndDedup(source);
 
                 foreach (var (graphic, _) in source)
                 {
@@ -192,7 +203,7 @@ namespace UnityEngine.UI
             {
                 Assert.IsTrue(result.IsEmpty(), "Result list should be empty before processing.");
 
-                PruneDestroyedAndDedup(source);
+                CanvasUtils.PruneDestroyedAndDedup(source);
 
                 foreach (var (callback, _) in source)
                 {
@@ -201,55 +212,6 @@ namespace UnityEngine.UI
                 }
 
                 source.Clear(); // flush the source list.
-            }
-
-            // It is always unique, and never has the value 0.
-            // XXX: Instance ID could be reused when the Edit mode exits, the same GameObject in the scene will have the same ID,
-            // but the old one will be destroyed.
-            // https://docs.unity3d.com/6000.1/Documentation/ScriptReference/Object.GetInstanceID.html
-            static void PruneDestroyedAndDedup(List<(Object, int InstanceID)> list)
-            {
-                var orgCount = list.Count;
-
-                // remove destroyed objects
-                var destroyCount = 0;
-                for (var i = 0; i < orgCount; i++)
-                {
-                    if (!list[i].Item1)
-                    {
-                        destroyCount++;
-                    }
-                    else if (destroyCount is not 0)
-                    {
-                        list[i - destroyCount] = list[i]; // move the item to the left.
-                    }
-                }
-                var curCount = orgCount - destroyCount;
-                list.Sort(0, curCount, ObjectInstanceIDPairComparer.Instance); // sort by instance ID.
-
-                // remove duplicates.
-                var dupCount = 0;
-                var lastID = 0; // 0 is invalid ID.
-                for (var i = 0; i < curCount; i++)
-                {
-                    var item = list[i];
-                    var curID = item.InstanceID;
-                    if (curID == lastID)
-                    {
-                        dupCount++; // skip duplicates.
-                    }
-                    else
-                    {
-                        lastID = curID; // update lastId to current.
-                        if (dupCount is not 0)
-                            list[i - dupCount] = item; // move the item to the left.
-                    }
-                }
-
-                // remove the tail.
-                curCount -= dupCount;
-                if (curCount != orgCount)
-                    list.RemoveRange(curCount, orgCount - curCount);
             }
         }
 
@@ -286,12 +248,6 @@ namespace UnityEngine.UI
                 L.W($"[CanvasUpdateRegistry] Trying to add {target} for graphic rebuild while we are already inside a rebuild loop.");
 
             _graphicRebuildCallbacks.Add((target, target.GetInstanceID()));
-        }
-
-        private class ObjectInstanceIDPairComparer : IComparer<(Object, int)>
-        {
-            public static readonly ObjectInstanceIDPairComparer Instance = new();
-            int IComparer<(Object, int)>.Compare((Object, int) x, (Object, int) y) => x.Item2 - y.Item2;
         }
     }
 }
