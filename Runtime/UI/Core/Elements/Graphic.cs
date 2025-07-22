@@ -270,7 +270,7 @@ namespace UnityEngine.UI
         ///
         /// Bear in mind that Unity tries to batch UI elements together to improve performance, so its ideal to work with atlas to reduce the number of draw calls.
         /// </remarks>
-        public virtual Texture? mainTexture => s_WhiteTexture;
+        public virtual Texture mainTexture => s_WhiteTexture!;
 
         /// <summary>
         /// Mark the Graphic and the canvas as having been changed.
@@ -383,7 +383,6 @@ namespace UnityEngine.UI
         /// <summary>
         /// Rebuilds the graphic geometry and its material on the Pre cycle.
         /// </summary>
-        /// <param name="timing">The current step of the rendering CanvasUpdate cycle.</param>
         /// <remarks>
         /// See CanvasUpdateRegistry for more details on the canvas update cycle.
         /// </remarks>
