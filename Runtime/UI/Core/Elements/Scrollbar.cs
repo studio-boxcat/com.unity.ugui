@@ -140,31 +140,11 @@ namespace UnityEngine.UI
         float stepSize { get { return (m_NumberOfSteps > 1) ? 1f / (m_NumberOfSteps - 1) : 0.1f; } }
 
         // field is never assigned warning
-        #pragma warning disable 649
-        private DrivenRectTransformTracker m_Tracker;
-        #pragma warning restore 649
         private Coroutine m_PointerDownRepeat;
         private bool isPointerDownAndNotDragging = false;
 
         // This "delayed" mechanism is required for case 1037681.
         private bool m_DelayedUpdateVisuals = false;
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            m_Size = Mathf.Clamp01(m_Size);
-
-            //This can be invoked before OnEnabled is called. So we shouldn't be accessing other objects, before OnEnable is called.
-            if (IsActive())
-            {
-                UpdateCachedReferences();
-                Set(m_Value, false);
-                // Update rects (in next update) since other things might affect them even if value didn't change.
-                m_DelayedUpdateVisuals = true;
-            }
-        }
-
-#endif // if UNITY_EDITOR
 
         protected override void OnEnable()
         {
@@ -173,12 +153,6 @@ namespace UnityEngine.UI
             Set(m_Value, false);
             // Update rects since they need to be initialized correctly.
             UpdateVisuals();
-        }
-
-        protected override void OnDisable()
-        {
-            m_Tracker.Clear();
-            base.OnDisable();
         }
 
         /// <summary>
@@ -243,14 +217,12 @@ namespace UnityEngine.UI
         private void UpdateVisuals()
         {
 #if UNITY_EDITOR
-            if (!Application.isPlaying)
+            if (Editing.Yes(this))
                 UpdateCachedReferences();
 #endif
-            m_Tracker.Clear();
 
             if (m_ContainerRect != null)
             {
-                m_Tracker.Add(this, m_HandleRect, DrivenTransformProperties.Anchors);
                 Vector2 anchorMin = Vector2.zero;
                 Vector2 anchorMax = Vector2.one;
 
@@ -437,5 +409,25 @@ namespace UnityEngine.UI
             if (reverseValue != oldReverse)
                 RectTransformUtility.FlipLayoutOnAxis(transform as RectTransform, (int)axis, true, true);
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            m_Size = Mathf.Clamp01(m_Size);
+
+            //This can be invoked before OnEnabled is called. So we shouldn't be accessing other objects, before OnEnable is called.
+            if (IsActive())
+            {
+                UpdateCachedReferences();
+                Set(m_Value, false);
+                // Update rects (in next update) since other things might affect them even if value didn't change.
+                m_DelayedUpdateVisuals = true;
+            }
+
+            DrivenRectTransManager.Clear(this);
+            if (m_HandleRect)
+                DrivenRectTransManager.Set(this, m_HandleRect, DrivenTransformProperties.Anchors);
+        }
+#endif
     }
 }

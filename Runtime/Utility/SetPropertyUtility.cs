@@ -77,9 +77,9 @@ namespace UnityEngine
             return true;
         }
 
-        public static bool SetEnum<T>(ref T currentValue, T newValue) where T : Enum
+        public static bool SetEnum<T>(ref T currentValue, T newValue) where T : struct, Enum
         {
-            if (EqualityComparer<T>.Default.Equals(currentValue, newValue))
+            if (EnumUtils.Equals(currentValue, newValue))
                 return false;
 
             currentValue = newValue;

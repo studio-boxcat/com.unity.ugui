@@ -117,18 +117,6 @@ namespace UnityEngine.UI
         /// </summary>
         public int constraintCount { get { return m_ConstraintCount; } set { SetPropertyUtility.SetValue(ref m_ConstraintCount, Mathf.Max(1, value)); } }
 
-        protected GridLayoutGroup()
-        {}
-
-        #if UNITY_EDITOR
-        protected override void OnValidate()
-        {
-            base.OnValidate();
-            constraintCount = constraintCount;
-        }
-
-        #endif
-
         /// <summary>
         /// Called by the layout system to calculate the horizontal layout size.
         /// Also see ILayoutElement
@@ -218,12 +206,6 @@ namespace UnityEngine.UI
                 for (int i = 0; i < rectChildrenCount; i++)
                 {
                     RectTransform rect = rectChildren[i];
-
-                    m_Tracker.Add(this, rect,
-                        DrivenTransformProperties.Anchors |
-                        DrivenTransformProperties.AnchoredPosition |
-                        DrivenTransformProperties.SizeDelta);
-
                     rect.anchorMin = Vector2.up;
                     rect.anchorMax = Vector2.up;
                     rect.sizeDelta = cellSize;
@@ -347,5 +329,14 @@ namespace UnityEngine.UI
                 SetChildAlongAxis(rectChildren[i], 1, startOffset.y + (cellSize[1] + spacing[1]) * positionY, cellSize[1]);
             }
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            DrivenRectTransManager.Clear(this);
+            DrivenRectTransManager.SetChildren(this, transform,
+                GetDrivenProps(x: true, y: true, size: true));
+        }
+#endif
     }
 }

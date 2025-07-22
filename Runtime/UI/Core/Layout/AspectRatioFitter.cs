@@ -1,3 +1,7 @@
+#nullable enable
+
+using System;
+
 namespace UnityEngine.UI
 {
     [AddComponentMenu("Layout/Aspect Ratio Fitter", 142)]
@@ -51,7 +55,7 @@ namespace UnityEngine.UI
         public float aspectRatio { get { return m_AspectRatio; } set { if (SetPropertyUtility.SetValue(ref m_AspectRatio, value)) SetDirty(); } }
 
         [System.NonSerialized]
-        private RectTransform m_Rect;
+        private RectTransform? m_Rect;
 
         // This "delayed" mechanism is required for case 1014834.
         private bool m_DelayedSetDirty = false;
@@ -59,26 +63,11 @@ namespace UnityEngine.UI
         //Does the gameobject has a parent for reference to enable FitToParent/EnvelopeParent modes.
         private bool m_DoesParentExist = false;
 
-        private RectTransform rectTransform
-        {
-            get
-            {
-                if (m_Rect == null)
-                    m_Rect = GetComponent<RectTransform>();
-                return m_Rect;
-            }
-        }
-
-        // field is never assigned warning
-        #pragma warning disable 649
-        private DrivenRectTransformTracker m_Tracker;
-        #pragma warning restore 649
-
-        protected AspectRatioFitter() {}
+        private RectTransform rectTransform => m_Rect ??= this.GetRectTransform();
 
         protected virtual void OnEnable()
         {
-            m_DoesParentExist = rectTransform.parent ? true : false;
+            m_DoesParentExist = rectTransform.parent;
             SetDirty();
         }
 
@@ -91,13 +80,12 @@ namespace UnityEngine.UI
 
         protected virtual void OnDisable()
         {
-            m_Tracker.Clear();
             LayoutRebuilder.SetDirty(rectTransform);
         }
 
         protected virtual void OnTransformParentChanged()
         {
-            m_DoesParentExist = rectTransform.parent ? true : false;
+            m_DoesParentExist = rectTransform.parent;
             SetDirty();
         }
 
@@ -127,8 +115,6 @@ namespace UnityEngine.UI
             if (!IsActive() || !IsComponentValidOnObject())
                 return;
 
-            m_Tracker.Clear();
-
             switch (m_AspectMode)
             {
 #if UNITY_EDITOR
@@ -142,13 +128,11 @@ namespace UnityEngine.UI
 #endif
                 case AspectMode.HeightControlsWidth:
                 {
-                    m_Tracker.Add(this, rectTransform, DrivenTransformProperties.SizeDeltaX);
                     rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, rectTransform.rect.height * m_AspectRatio);
                     break;
                 }
                 case AspectMode.WidthControlsHeight:
                 {
-                    m_Tracker.Add(this, rectTransform, DrivenTransformProperties.SizeDeltaY);
                     rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, rectTransform.rect.width / m_AspectRatio);
                     break;
                 }
@@ -157,12 +141,6 @@ namespace UnityEngine.UI
                 {
                     if (!DoesParentExists())
                         break;
-
-                    m_Tracker.Add(this, rectTransform,
-                        DrivenTransformProperties.Anchors |
-                        DrivenTransformProperties.AnchoredPosition |
-                        DrivenTransformProperties.SizeDeltaX |
-                        DrivenTransformProperties.SizeDeltaY);
 
                     rectTransform.anchorMin = Vector2.zero;
                     rectTransform.anchorMax = Vector2.one;
@@ -197,16 +175,6 @@ namespace UnityEngine.UI
         }
 
         /// <summary>
-        /// Method called by the layout system. Has no effect
-        /// </summary>
-        public virtual void SetLayoutHorizontal() {}
-
-        /// <summary>
-        /// Method called by the layout system. Has no effect
-        /// </summary>
-        public virtual void SetLayoutVertical() {}
-
-        /// <summary>
         /// Mark the AspectRatioFitter as dirty.
         /// </summary>
         protected void SetDirty()
@@ -237,13 +205,29 @@ namespace UnityEngine.UI
             return m_DoesParentExist;
         }
 
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
         protected virtual void OnValidate()
         {
             m_AspectRatio = Mathf.Clamp(m_AspectRatio, 0.001f, 1000f);
             m_DelayedSetDirty = true;
-        }
 
-    #endif
+            var props = m_AspectMode switch
+            {
+                AspectMode.None => default,
+                AspectMode.HeightControlsWidth => DrivenTransformProperties.SizeDeltaX,
+                AspectMode.WidthControlsHeight => DrivenTransformProperties.SizeDeltaY,
+                AspectMode.FitInParent or AspectMode.EnvelopeParent =>
+                    DrivenTransformProperties.Anchors |
+                    DrivenTransformProperties.AnchoredPosition |
+                    DrivenTransformProperties.SizeDeltaX |
+                    DrivenTransformProperties.SizeDeltaY,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+
+            DrivenRectTransManager.Clear(this);
+            if (props is not DrivenTransformProperties.None)
+                DrivenRectTransManager.SetSelf(this, props);
+        }
+#endif
     }
 }

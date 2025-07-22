@@ -145,7 +145,7 @@ namespace UnityEngine.UI
             // If the target is a layout group, we need to recurse to children.
             // Layout calculations needs to executed bottom up with children being done before their parents,
             // because the parent calculated sizes rely on the sizes of the children.
-            if (t.HasComponent(typeof(ILayoutGroup)))
+            if (ComponentSearch.AnyEnabledComponent<ILayoutGroup>(t))
             {
                 for (var i = 0; i < t.childCount; i++)
                 {
@@ -155,15 +155,10 @@ namespace UnityEngine.UI
                 }
             }
 
-            // If there are no controllers on the target we can skip this entire sub-tree
+            // If there are no controllers (ILayoutGroup) on the target we can skip this entire sub-tree
             // We don't need to consider controllers on children deeper in the sub-tree either,
             // since they will be their own roots.
-            using (CompBuf.GetEnabledComponents(t, typeof(ILayoutElement), out var elems))
-            {
-                // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
-                foreach (ILayoutElement elem in elems)
-                    result.Add(elem);
-            }
+            ComponentSearch.AppendEnabledComponents(t, result);
         }
 
         private static void CollectLayoutControllers(Transform t, List<ILayoutController> result)
@@ -201,6 +196,7 @@ namespace UnityEngine.UI
                     && ReferenceEquals(scrollRect.content, t))
                     continue;
 
+                // Assert.IsTrue(comp is ILayoutController, "Component must implement ILayoutController: " + comp.GetType().Name);
                 result.Add((ILayoutController) comp);
             }
 

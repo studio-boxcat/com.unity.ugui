@@ -4,18 +4,15 @@ namespace UnityEngine.UI
     /// <summary>
     /// Layout class for arranging child elements side by side.
     /// </summary>
-    public class HorizontalLayoutGroup : HorizontalOrVerticalLayoutGroup
+    public sealed class HorizontalLayoutGroup : HorizontalOrVerticalLayoutGroup
     {
-        protected HorizontalLayoutGroup()
-        {}
-
         /// <summary>
         /// Called by the layout system. Also see ILayoutElement
         /// </summary>
         public override void CalculateLayoutInputHorizontal()
         {
             base.CalculateLayoutInputHorizontal();
-            CalcAlongAxis(0, false);
+            CalcAlongAxis(0, isVertical: false);
         }
 
         /// <summary>
@@ -23,7 +20,7 @@ namespace UnityEngine.UI
         /// </summary>
         public override void CalculateLayoutInputVertical()
         {
-            CalcAlongAxis(1, false);
+            CalcAlongAxis(1, isVertical: false);
         }
 
         /// <summary>
@@ -31,7 +28,7 @@ namespace UnityEngine.UI
         /// </summary>
         public override void SetLayoutHorizontal()
         {
-            SetChildrenAlongAxis(0, false);
+            SetChildrenAlongAxis(0, isVertical: false);
         }
 
         /// <summary>
@@ -39,7 +36,16 @@ namespace UnityEngine.UI
         /// </summary>
         public override void SetLayoutVertical()
         {
-            SetChildrenAlongAxis(1, false);
+            SetChildrenAlongAxis(1, isVertical: false);
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            DrivenRectTransManager.Clear(this);
+            DrivenRectTransManager.SetChildren(this, transform,
+                GetDrivenProps(x: true, y: false, size: m_ChildControlWidth));
+        }
+#endif
     }
 }

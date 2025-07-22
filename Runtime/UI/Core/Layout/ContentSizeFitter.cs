@@ -1,4 +1,5 @@
 // ReSharper disable InconsistentNaming
+
 #nullable enable
 using Sirenix.OdinInspector;
 
@@ -42,9 +43,6 @@ namespace UnityEngine.UI
         private RectTransform? m_Rect;
         private RectTransform rectTransform => m_Rect ??= (RectTransform) transform;
 
-        // field is never assigned warning
-        private DrivenRectTransformTracker m_Tracker;
-
         private bool _performingSetLayout;
 
         private void OnEnable() => SetDirty();
@@ -69,7 +67,6 @@ namespace UnityEngine.UI
             _performingSetLayout = true;
 
             var t = rectTransform;
-            m_Tracker.Add(this, t, axis == 0 ? DrivenTransformProperties.SizeDeltaX : DrivenTransformProperties.SizeDeltaY);
 
             // Set size to min or preferred size
             var size = fitting switch
@@ -88,7 +85,6 @@ namespace UnityEngine.UI
         /// </summary>
         void ILayoutController.SetLayoutHorizontal()
         {
-            m_Tracker.Clear(); // SetLayoutHorizontal is called before SetLayoutVertical.
             HandleSelfFittingAlongAxis(0);
         }
 
@@ -99,5 +95,18 @@ namespace UnityEngine.UI
         {
             HandleSelfFittingAlongAxis(1);
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            var props = DrivenTransformProperties.None;
+            if (m_HorizontalFit != FitMode.Unconstrained)
+                props |= DrivenTransformProperties.SizeDeltaX;
+            if (m_VerticalFit != FitMode.Unconstrained)
+                props |= DrivenTransformProperties.SizeDeltaY;
+            DrivenRectTransManager.Clear(this);
+            DrivenRectTransManager.SetSelf(this, props);
+        }
+#endif
     }
 }

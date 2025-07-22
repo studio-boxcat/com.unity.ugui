@@ -31,7 +31,7 @@ namespace UnityEngine.UI
         /// </summary>
         public bool childForceExpandHeight { get { return m_ChildForceExpandHeight; } set { SetPropertyUtility.SetValue(ref m_ChildForceExpandHeight, value); } }
 
-        [SerializeField] protected bool m_ChildControlWidth = true;
+        [SerializeField] protected bool m_ChildControlWidth = false;
 
         /// <summary>
         /// Returns true if the Layout Group controls the widths of its children. Returns false if children control their own widths.
@@ -43,7 +43,7 @@ namespace UnityEngine.UI
         /// </remarks>
         public bool childControlWidth { get { return m_ChildControlWidth; } set { SetPropertyUtility.SetValue(ref m_ChildControlWidth, value); } }
 
-        [SerializeField] protected bool m_ChildControlHeight = true;
+        [SerializeField] protected bool m_ChildControlHeight = false;
 
         /// <summary>
         /// Returns true if the Layout Group controls the heights of its children. Returns false if children control their own heights.
@@ -54,20 +54,6 @@ namespace UnityEngine.UI
         /// If set to true, the heights of the children are automatically driven by the layout group according to their respective minimum, preferred, and flexible heights. This is useful if the heights of the children should change depending on how much space is available.In this case the height of each child cannot be set manually in the RectTransform, but the minimum, preferred and flexible height for each child can be controlled by adding a LayoutElement component to it.
         /// </remarks>
         public bool childControlHeight { get { return m_ChildControlHeight; } set { SetPropertyUtility.SetValue(ref m_ChildControlHeight, value); } }
-
-        [SerializeField] protected bool m_ChildScaleWidth = false;
-
-        /// <summary>
-        /// Whether to use the x scale of each child when calculating its width.
-        /// </summary>
-        public bool childScaleWidth { get { return m_ChildScaleWidth; } set { SetPropertyUtility.SetValue(ref m_ChildScaleWidth, value); } }
-
-        [SerializeField] protected bool m_ChildScaleHeight = false;
-
-        /// <summary>
-        /// Whether to use the y scale of each child when calculating its height.
-        /// </summary>
-        public bool childScaleHeight { get { return m_ChildScaleHeight; } set { SetPropertyUtility.SetValue(ref m_ChildScaleHeight, value); } }
 
         /// <summary>
         /// Whether the order of children objects should be sorted in reverse.
@@ -89,7 +75,6 @@ namespace UnityEngine.UI
         {
             float combinedPadding = (axis == 0 ? padding.horizontal : padding.vertical);
             bool controlSize = (axis == 0 ? m_ChildControlWidth : m_ChildControlHeight);
-            bool useScale = (axis == 0 ? m_ChildScaleWidth : m_ChildScaleHeight);
             bool childForceExpandSize = (axis == 0 ? m_ChildForceExpandWidth : m_ChildForceExpandHeight);
 
             float totalMin = combinedPadding;
@@ -103,14 +88,6 @@ namespace UnityEngine.UI
                 RectTransform child = rectChildren[i];
                 float min, preferred, flexible;
                 GetChildSizes(child, axis, controlSize, childForceExpandSize, out min, out preferred, out flexible);
-
-                if (useScale)
-                {
-                    float scaleFactor = child.localScale[axis];
-                    min *= scaleFactor;
-                    preferred *= scaleFactor;
-                    flexible *= scaleFactor;
-                }
 
                 if (alongOtherAxis)
                 {
@@ -146,7 +123,6 @@ namespace UnityEngine.UI
         {
             float size = rectTransform.rect.size[axis];
             bool controlSize = (axis == 0 ? m_ChildControlWidth : m_ChildControlHeight);
-            bool useScale = (axis == 0 ? m_ChildScaleWidth : m_ChildScaleHeight);
             bool childForceExpandSize = (axis == 0 ? m_ChildForceExpandWidth : m_ChildForceExpandHeight);
             float alignmentOnAxis = GetAlignmentOnAxis(axis);
 
@@ -163,18 +139,17 @@ namespace UnityEngine.UI
                     RectTransform child = rectChildren[i];
                     float min, preferred, flexible;
                     GetChildSizes(child, axis, controlSize, childForceExpandSize, out min, out preferred, out flexible);
-                    float scaleFactor = useScale ? child.localScale[axis] : 1f;
 
                     float requiredSpace = Mathf.Clamp(innerSize, min, flexible > 0 ? size : preferred);
-                    float startOffset = GetStartOffset(axis, requiredSpace * scaleFactor);
+                    float startOffset = GetStartOffset(axis, requiredSpace);
                     if (controlSize)
                     {
-                        SetChildAlongAxisWithScale(child, axis, startOffset, requiredSpace, scaleFactor);
+                        SetChildAlongAxis(child, axis, startOffset, requiredSpace);
                     }
                     else
                     {
                         float offsetInCell = (requiredSpace - child.sizeDelta[axis]) * alignmentOnAxis;
-                        SetChildAlongAxisWithScale(child, axis, startOffset + offsetInCell, scaleFactor);
+                        SetChildAlongAxis(child, axis, startOffset + offsetInCell);
                     }
                 }
             }
@@ -201,20 +176,19 @@ namespace UnityEngine.UI
                     RectTransform child = rectChildren[i];
                     float min, preferred, flexible;
                     GetChildSizes(child, axis, controlSize, childForceExpandSize, out min, out preferred, out flexible);
-                    float scaleFactor = useScale ? child.localScale[axis] : 1f;
 
                     float childSize = Mathf.Lerp(min, preferred, minMaxLerp);
                     childSize += flexible * itemFlexibleMultiplier;
                     if (controlSize)
                     {
-                        SetChildAlongAxisWithScale(child, axis, pos, childSize, scaleFactor);
+                        SetChildAlongAxis(child, axis, pos, childSize);
                     }
                     else
                     {
                         float offsetInCell = (childSize - child.sizeDelta[axis]) * alignmentOnAxis;
-                        SetChildAlongAxisWithScale(child, axis, pos + offsetInCell, scaleFactor);
+                        SetChildAlongAxis(child, axis, pos + offsetInCell);
                     }
-                    pos += childSize * scaleFactor + spacing;
+                    pos += childSize + spacing;
                 }
             }
         }
@@ -238,57 +212,5 @@ namespace UnityEngine.UI
             if (childForceExpand)
                 flexible = Mathf.Max(flexible, 1);
         }
-
-#if UNITY_EDITOR
-        protected virtual void Reset()
-        {
-            // For new added components we want these to be set to false,
-            // so that the user's sizes won't be overwritten before they
-            // have a chance to turn these settings off.
-            // However, for existing components that were added before this
-            // feature was introduced, we want it to be on be default for
-            // backwardds compatibility.
-            // Hence their default value is on, but we set to off in reset.
-            m_ChildControlWidth = false;
-            m_ChildControlHeight = false;
-        }
-
-        private int m_Capacity = 10;
-        private Vector2[] m_Sizes = new Vector2[10];
-
-        protected virtual void Update()
-        {
-            if (Application.isPlaying)
-                return;
-
-            int count = transform.childCount;
-
-            if (count > m_Capacity)
-            {
-                if (count > m_Capacity * 2)
-                    m_Capacity = count;
-                else
-                    m_Capacity *= 2;
-
-                m_Sizes = new Vector2[m_Capacity];
-            }
-
-            // If children size change in editor, update layout (case 945680 - Child GameObjects in a Horizontal/Vertical Layout Group don't display their correct position in the Editor)
-            bool dirty = false;
-            for (int i = 0; i < count; i++)
-            {
-                RectTransform t = transform.GetChild(i) as RectTransform;
-                if (t != null && t.sizeDelta != m_Sizes[i])
-                {
-                    dirty = true;
-                    m_Sizes[i] = t.sizeDelta;
-                }
-            }
-
-            if (dirty)
-                LayoutRebuilder.SetDirty(transform);
-        }
-
-#endif
     }
 }

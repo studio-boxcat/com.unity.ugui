@@ -4,18 +4,15 @@ namespace UnityEngine.UI
     /// <summary>
     /// Layout child layout elements below each other.
     /// </summary>
-    public class VerticalLayoutGroup : HorizontalOrVerticalLayoutGroup
+    public sealed class VerticalLayoutGroup : HorizontalOrVerticalLayoutGroup
     {
-        protected VerticalLayoutGroup()
-        {}
-
         /// <summary>
         /// Called by the layout system. Also see ILayoutElement
         /// </summary>
         public override void CalculateLayoutInputHorizontal()
         {
             base.CalculateLayoutInputHorizontal();
-            CalcAlongAxis(0, true);
+            CalcAlongAxis(0, isVertical: true);
         }
 
         /// <summary>
@@ -23,7 +20,7 @@ namespace UnityEngine.UI
         /// </summary>
         public override void CalculateLayoutInputVertical()
         {
-            CalcAlongAxis(1, true);
+            CalcAlongAxis(1, isVertical: true);
         }
 
         /// <summary>
@@ -31,7 +28,7 @@ namespace UnityEngine.UI
         /// </summary>
         public override void SetLayoutHorizontal()
         {
-            SetChildrenAlongAxis(0, true);
+            SetChildrenAlongAxis(0, isVertical: true);
         }
 
         /// <summary>
@@ -39,7 +36,16 @@ namespace UnityEngine.UI
         /// </summary>
         public override void SetLayoutVertical()
         {
-            SetChildrenAlongAxis(1, true);
+            SetChildrenAlongAxis(1, isVertical: true);
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            DrivenRectTransManager.Clear(this);
+            DrivenRectTransManager.SetChildren(this, transform,
+                GetDrivenProps(x: false, y: true, size: m_ChildControlHeight));
+        }
+#endif
     }
 }
