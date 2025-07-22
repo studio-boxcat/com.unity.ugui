@@ -203,6 +203,9 @@ namespace UnityEngine.UI
             var graphics = this.GetGraphicsInChildrenShared(includeInactive: true);
             foreach (var graphic in graphics)
             {
+                if (graphic.gameObject.RefEq(gameObject))
+                    continue; // Skip self
+
                 if (graphic is MaskableGraphic m)
                 {
                     if (m.maskable is false)
