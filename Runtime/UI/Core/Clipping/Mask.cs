@@ -2,7 +2,7 @@
 
 #nullable enable
 using System;
-using UnityEngine.Assertions;
+using Sirenix.OdinInspector;
 
 namespace UnityEngine.UI
 {
@@ -21,7 +21,8 @@ namespace UnityEngine.UI
         [NonSerialized] private RectTransform? m_RectTransform;
         public RectTransform rectTransform => m_RectTransform ??= (RectTransform) transform;
 
-        [SerializeField] private bool m_ShowMaskGraphic = true;
+        [SerializeField, OnValueChanged("SetMaterialDirty")]
+        private bool m_ShowMaskGraphic = true;
 
         /// <summary>
         /// Show the graphic that is associated with the Mask render area.
@@ -72,14 +73,7 @@ namespace UnityEngine.UI
             MaskUtilities.NotifyStencilStateChanged(this);
         }
 
-#if UNITY_EDITOR
-        protected virtual void OnValidate()
-        {
-            if (!IsActive()) return;
-            graphic.SetMaterialDirty();
-            MaskUtilities.NotifyStencilStateChanged(this);
-        }
-#endif
+        private void SetMaterialDirty() => graphic.SetMaterialDirty();
 
         /// Stencil calculation time!
         public virtual Material GetModifiedMaterial(Material baseMaterial)
