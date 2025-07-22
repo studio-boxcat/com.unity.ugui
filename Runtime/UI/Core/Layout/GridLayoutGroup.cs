@@ -333,9 +333,8 @@ namespace UnityEngine.UI
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            DrivenRectTransManager.Clear(this);
-            DrivenRectTransManager.SetChildren(this, transform,
-                GetDrivenProps(x: true, y: true, size: true));
+            if (DrivenRectTransManager.Reset(this, out var tracker))
+                tracker.SetChildren(transform, GetDrivenProps(x: true, y: true, size: true));
         }
 #endif
     }

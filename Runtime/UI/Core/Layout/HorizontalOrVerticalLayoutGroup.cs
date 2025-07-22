@@ -16,21 +16,6 @@ namespace UnityEngine.UI
         /// </summary>
         public float spacing { get => m_Spacing; set => SetPropertyUtility.SetValue(ref m_Spacing, value); }
 
-        [SerializeField] protected bool m_ChildForceExpandWidth = true;
-
-        /// <summary>
-        /// Whether to force the children to expand to fill additional available horizontal space.
-        /// </summary>
-        public bool childForceExpandWidth { get => m_ChildForceExpandWidth; set => SetPropertyUtility.SetValue(ref m_ChildForceExpandWidth, value);
-        }
-
-        [SerializeField] protected bool m_ChildForceExpandHeight = true;
-
-        /// <summary>
-        /// Whether to force the children to expand to fill additional available vertical space.
-        /// </summary>
-        public bool childForceExpandHeight { get { return m_ChildForceExpandHeight; } set { SetPropertyUtility.SetValue(ref m_ChildForceExpandHeight, value); } }
-
         [SerializeField] protected bool m_ChildControlWidth = false;
 
         /// <summary>
@@ -75,7 +60,6 @@ namespace UnityEngine.UI
         {
             float combinedPadding = (axis == 0 ? padding.horizontal : padding.vertical);
             bool controlSize = (axis == 0 ? m_ChildControlWidth : m_ChildControlHeight);
-            bool childForceExpandSize = (axis == 0 ? m_ChildForceExpandWidth : m_ChildForceExpandHeight);
 
             float totalMin = combinedPadding;
             float totalPreferred = combinedPadding;
@@ -87,7 +71,7 @@ namespace UnityEngine.UI
             {
                 RectTransform child = rectChildren[i];
                 float min, preferred, flexible;
-                GetChildSizes(child, axis, controlSize, childForceExpandSize, out min, out preferred, out flexible);
+                GetChildSizes(child, axis, controlSize, out min, out preferred, out flexible);
 
                 if (alongOtherAxis)
                 {
@@ -123,7 +107,6 @@ namespace UnityEngine.UI
         {
             float size = rectTransform.rect.size[axis];
             bool controlSize = (axis == 0 ? m_ChildControlWidth : m_ChildControlHeight);
-            bool childForceExpandSize = (axis == 0 ? m_ChildForceExpandWidth : m_ChildForceExpandHeight);
             float alignmentOnAxis = GetAlignmentOnAxis(axis);
 
             bool alongOtherAxis = (isVertical ^ (axis == 1));
@@ -138,7 +121,7 @@ namespace UnityEngine.UI
                 {
                     RectTransform child = rectChildren[i];
                     float min, preferred, flexible;
-                    GetChildSizes(child, axis, controlSize, childForceExpandSize, out min, out preferred, out flexible);
+                    GetChildSizes(child, axis, controlSize, out min, out preferred, out flexible);
 
                     float requiredSpace = Mathf.Clamp(innerSize, min, flexible > 0 ? size : preferred);
                     float startOffset = GetStartOffset(axis, requiredSpace);
@@ -175,7 +158,7 @@ namespace UnityEngine.UI
                 {
                     RectTransform child = rectChildren[i];
                     float min, preferred, flexible;
-                    GetChildSizes(child, axis, controlSize, childForceExpandSize, out min, out preferred, out flexible);
+                    GetChildSizes(child, axis, controlSize, out min, out preferred, out flexible);
 
                     float childSize = Mathf.Lerp(min, preferred, minMaxLerp);
                     childSize += flexible * itemFlexibleMultiplier;
@@ -193,7 +176,7 @@ namespace UnityEngine.UI
             }
         }
 
-        private void GetChildSizes([NotNull] RectTransform child, int axis, bool controlSize, bool childForceExpand,
+        private static void GetChildSizes([NotNull] RectTransform child, int axis, bool controlSize,
             out float min, out float preferred, out float flexible)
         {
             if (!controlSize)
@@ -208,9 +191,25 @@ namespace UnityEngine.UI
                 preferred = LayoutUtility.GetPreferredSize(child, axis);
                 flexible = LayoutUtility.GetFlexibleSize(child, axis);
             }
-
-            if (childForceExpand)
-                flexible = Mathf.Max(flexible, 1);
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (DrivenRectTransManager.Reset(this, out var tracker))
+            {
+                var controlSize = this switch
+                {
+                    HorizontalLayoutGroup => m_ChildControlWidth,
+                    VerticalLayoutGroup => m_ChildControlHeight,
+                    _ => throw new System.NotSupportedException("Unsupported layout group type.")
+                };
+
+                // track both x and y axis for legacy compatibility
+                tracker.SetChildren(transform,
+                    GetDrivenProps(x: true, y: true, size: controlSize));
+            }
+        }
+#endif
     }
 }

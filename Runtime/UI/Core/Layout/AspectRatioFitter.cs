@@ -224,9 +224,11 @@ namespace UnityEngine.UI
                 _ => throw new ArgumentOutOfRangeException()
             };
 
-            DrivenRectTransManager.Clear(this);
-            if (props is not DrivenTransformProperties.None)
-                DrivenRectTransManager.SetSelf(this, props);
+            if (DrivenRectTransManager.Reset(this, out var tracker))
+            {
+                if (props is not DrivenTransformProperties.None)
+                    tracker.SetSelf(props);
+            }
         }
 #endif
     }

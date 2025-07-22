@@ -424,9 +424,8 @@ namespace UnityEngine.UI
                 m_DelayedUpdateVisuals = true;
             }
 
-            DrivenRectTransManager.Clear(this);
-            if (m_HandleRect)
-                DrivenRectTransManager.Set(this, m_HandleRect, DrivenTransformProperties.Anchors);
+            if (m_HandleRect && DrivenRectTransManager.Reset(this, out var t))
+                t.Set(m_HandleRect, DrivenTransformProperties.Anchors);
         }
 #endif
     }

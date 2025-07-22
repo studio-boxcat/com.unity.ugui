@@ -38,14 +38,5 @@ namespace UnityEngine.UI
         {
             SetChildrenAlongAxis(1, isVertical: false);
         }
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            DrivenRectTransManager.Clear(this);
-            DrivenRectTransManager.SetChildren(this, transform,
-                GetDrivenProps(x: true, y: false, size: m_ChildControlWidth));
-        }
-#endif
     }
 }

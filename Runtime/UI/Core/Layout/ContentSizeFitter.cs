@@ -99,13 +99,15 @@ namespace UnityEngine.UI
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            var props = DrivenTransformProperties.None;
-            if (m_HorizontalFit != FitMode.Unconstrained)
-                props |= DrivenTransformProperties.SizeDeltaX;
-            if (m_VerticalFit != FitMode.Unconstrained)
-                props |= DrivenTransformProperties.SizeDeltaY;
-            DrivenRectTransManager.Clear(this);
-            DrivenRectTransManager.SetSelf(this, props);
+            if (DrivenRectTransManager.Reset(this, out var tracker))
+            {
+                var props = DrivenTransformProperties.None;
+                if (m_HorizontalFit != FitMode.Unconstrained)
+                    props |= DrivenTransformProperties.SizeDeltaX;
+                if (m_VerticalFit != FitMode.Unconstrained)
+                    props |= DrivenTransformProperties.SizeDeltaY;
+                tracker.SetSelf(props);
+            }
         }
 #endif
     }

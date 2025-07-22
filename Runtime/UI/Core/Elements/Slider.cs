@@ -650,11 +650,13 @@ namespace UnityEngine.UI
                 m_DelayedUpdateVisuals = true;
             }
 
-            DrivenRectTransManager.Clear(this);
-            if (m_FillRect)
-                DrivenRectTransManager.Set(this, m_FillRect, DrivenTransformProperties.Anchors);
-            if (m_HandleRect)
-                DrivenRectTransManager.Set(this, m_HandleRect, DrivenTransformProperties.Anchors);
+            if (DrivenRectTransManager.Reset(this, out var tracker))
+            {
+                if (m_FillRect)
+                    tracker.Set(m_FillRect, DrivenTransformProperties.Anchors);
+                if (m_HandleRect)
+                    tracker.Set(m_HandleRect, DrivenTransformProperties.Anchors);
+            }
         }
 #endif // if UNITY_EDITOR
     }
