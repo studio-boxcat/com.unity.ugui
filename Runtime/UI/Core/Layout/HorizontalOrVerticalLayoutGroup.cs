@@ -1,4 +1,5 @@
 using JetBrains.Annotations;
+using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
@@ -198,16 +199,14 @@ namespace UnityEngine.UI
         {
             if (DrivenRectTransManager.Reset(this, out var tracker))
             {
-                var controlSize = this switch
-                {
-                    HorizontalLayoutGroup => m_ChildControlWidth,
-                    VerticalLayoutGroup => m_ChildControlHeight,
-                    _ => throw new System.NotSupportedException("Unsupported layout group type.")
-                };
-
-                // track both x and y axis for legacy compatibility
-                tracker.SetChildren(transform,
-                    GetDrivenProps(x: true, y: true, size: controlSize));
+                Assert.IsTrue(this is HorizontalLayoutGroup or VerticalLayoutGroup,
+                    "HorizontalOrVerticalLayoutGroup should only be used as a base class for HorizontalLayoutGroup and VerticalLayoutGroup.");
+                var props = BaseDrivenProperties;
+                if (m_ChildControlWidth && this is HorizontalLayoutGroup)
+                    props |= DrivenTransformProperties.SizeDeltaX;
+                if (m_ChildControlHeight && this is VerticalLayoutGroup)
+                    props |= DrivenTransformProperties.SizeDeltaY;
+                tracker.SetChildren(transform, props);
             }
         }
 #endif

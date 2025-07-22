@@ -260,24 +260,10 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
-        protected static DrivenTransformProperties GetDrivenProps(bool x, bool y, bool size)
-        {
-            var props = DrivenTransformProperties.Anchors;
-
-            if (x)
-            {
-                props |= DrivenTransformProperties.AnchoredPositionX;
-                if (size) props |= DrivenTransformProperties.SizeDeltaX;
-            }
-
-            if (y)
-            {
-                props |= DrivenTransformProperties.AnchoredPositionY;
-                if (size) props |= DrivenTransformProperties.SizeDeltaY;
-            }
-
-            return props;
-        }
+        protected const DrivenTransformProperties BaseDrivenProperties =
+            DrivenTransformProperties.Anchors
+            // track both x and y axis for legacy compatibility
+            | DrivenTransformProperties.AnchoredPosition;
 #endif
     }
 }

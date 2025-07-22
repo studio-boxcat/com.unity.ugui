@@ -334,7 +334,10 @@ namespace UnityEngine.UI
         private void OnValidate()
         {
             if (DrivenRectTransManager.Reset(this, out var tracker))
-                tracker.SetChildren(transform, GetDrivenProps(x: true, y: true, size: true));
+            {
+                const DrivenTransformProperties props = BaseDrivenProperties | DrivenTransformProperties.SizeDelta;
+                tracker.SetChildren(transform, props);
+            }
         }
 #endif
     }
