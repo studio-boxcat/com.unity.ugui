@@ -1,3 +1,4 @@
+#nullable enable
 using System.Collections.Generic;
 using UnityEngine.Assertions;
 
@@ -12,6 +13,25 @@ namespace UnityEngine.UI
         {
             return c.TryGetComponent(out Canvas canvas)
                    && ((canvas.enabled && canvas.overrideSorting) || canvas.isRootCanvas);
+        }
+
+        public static Camera? ResolveWorldCamera(Graphic g)
+        {
+            Assert.IsTrue(g, "Graphic is null.");
+
+            if (!g.canvas)
+            {
+                L.E("[SoftMask] No canvas found for the graphic: " + g);
+                return null;
+            }
+
+            var cam = g.canvas.worldCamera;
+#if UNITY_EDITOR
+            if (!cam && g.canvas.rootCanvas.name == "Prefab Mode in Context")
+                cam = Camera.current; // camera is not exists for prefab stage.
+#endif
+            if (!cam) L.E("[SoftMask] No camera found for the graphic: " + g);
+            return cam;
         }
 
         public static Rect BoundingRect(RectTransform rectTransform, Canvas canvas)
