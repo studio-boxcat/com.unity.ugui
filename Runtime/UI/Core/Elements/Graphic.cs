@@ -230,7 +230,13 @@ namespace UnityEngine.UI
             }
         }
 
-        private void CacheCanvas() => m_Canvas = ComponentSearch.NearestUpwards_GOAnyAndCompEnabled<Canvas>(this);
+        private void CacheCanvas()
+        {
+            m_Canvas = ComponentSearch.NearestUpwards_GOAnyAndCompEnabled<Canvas>(this);
+#if DEBUG
+            if (!m_Canvas) L.E("[Graphic] No canvas found for the graphic: " + this);
+#endif
+        }
 
         /// <summary>
         /// A reference to the CanvasRenderer populated by this Graphic.
