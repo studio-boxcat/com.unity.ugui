@@ -192,7 +192,7 @@ namespace UnityEngine.UI
 
         private static void RestoreCullState(Graphic g)
         {
-            L.I($"[ClipperRegistry] Restoring cull state for {g}");
+            // L.I($"[ClipperRegistry] Restoring cull state for {g}");
             g.SetClipRect(new Rect(), validRect: false);
             g.UpdateCull(cull: false);
         }

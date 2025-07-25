@@ -234,7 +234,8 @@ namespace UnityEngine.UI
         {
             m_Canvas = ComponentSearch.NearestUpwards_GOAnyAndCompEnabled<Canvas>(this);
 #if DEBUG
-            if (!m_Canvas) L.E("[Graphic] No canvas found for the graphic: " + this);
+            if (!m_Canvas && Editing.No(this))
+                L.E("[Graphic] No canvas found for the graphic: " + this);
 #endif
         }
 
