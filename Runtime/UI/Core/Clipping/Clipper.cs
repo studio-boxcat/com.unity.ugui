@@ -209,7 +209,7 @@ namespace UnityEngine.UI
                 if (graphic is MaskableGraphic m)
                 {
                     if (m.maskable is false)
-                        result.AddError($"Graphic '{graphic.name}' is not maskable but is a child of a Clippable.");
+                        result.AddWarning($"Graphic '{graphic.name}' is not maskable but is a child of a Clippable.");
                 }
                 else
                 {
