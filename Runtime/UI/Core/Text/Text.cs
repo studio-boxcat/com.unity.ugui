@@ -12,7 +12,8 @@ namespace UnityEngine.UI
         private FontData m_FontData;
 
         [SerializeField, PropertyOrder(-1)]
-        protected string m_Text = string.Empty;
+        [OnValueChanged("SetVerticesDirty"), OnValueChanged("SetLayoutDirty")]
+        private string m_Text = string.Empty;
 
         private TextGenerator m_TextCache;
         private TextGenerator m_TextCacheForLayout;
@@ -504,6 +505,8 @@ namespace UnityEngine.UI
         {
             if (_fontUpdateLink.IsTracking())
                 _fontUpdateLink.Update(m_FontData.font);
+            SetVerticesDirty();
+            SetLayoutDirty();
         }
 #endif // if UNITY_EDITOR
     }

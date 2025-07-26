@@ -97,6 +97,12 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
+        private void Reset()
+        {
+            m_HorizontalFit = FitMode.PreferredSize;
+            m_VerticalFit = FitMode.Unconstrained;
+        }
+
         private void OnValidate()
         {
             if (DrivenRectTransManager.Reset(this, out var tracker))
