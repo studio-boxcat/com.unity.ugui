@@ -43,8 +43,8 @@ namespace UnityEngine.UI
             var result = _clippables.Remove(c, out var clipper);
             Assert.IsTrue(result, "Clippable was not registered in ClipperRegistry. Clippable should be registered before it is unregistered.");
 
-            // XXX: no need to set dirty.
-            // _dirtyClippables.Add(c);
+            // set dirty to restore cull state in Cull().
+            _dirtyClippables.Add(c);
 
             // unregister from the Clipper immediately. it's the different part between Clippable and Clipper.
             if (clipper is not null // clippable has been resolved and has a clipper.
