@@ -1,3 +1,4 @@
+// ReSharper disable InconsistentNaming
 using System.Collections.Generic;
 
 namespace UnityEngine.UI
@@ -40,14 +41,14 @@ namespace UnityEngine.UI
         {
             rectChildren.Clear();
 
-            for (var i = 0; i < rectTransform.childCount; i++)
+            var t = rectTransform;
+            for (var i = 0; i < t.childCount; i++)
             {
-                var rect = rectTransform.GetChild(i) as RectTransform;
-                if (rect is null || !rect.gameObject.activeInHierarchy)
-                    continue;
-                if (rect.TryGetComponent(out LayoutIgnorer _))
-                    continue;
-                rectChildren.Add(rect);
+                var c = t.GetChild(i);
+                if (c is not RectTransform rt) continue; // only RectTransform children are considered.
+                if (!c.gameObject.activeSelf) continue; // direct child, active self is enough.
+                if (c.HasComponent<LayoutIgnorer>()) continue;
+                rectChildren.Add(rt);
             }
         }
 
@@ -90,12 +91,12 @@ namespace UnityEngine.UI
 
         // Implementation
 
-        void OnEnable()
+        private void OnEnable()
         {
             SetDirty();
         }
 
-        void OnDisable()
+        private void OnDisable()
         {
             LayoutRebuilder.SetDirty(rectTransform);
         }
@@ -103,7 +104,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// Callback for when properties have been changed by animation.
         /// </summary>
-        void OnDidApplyAnimationProperties()
+        private void OnDidApplyAnimationProperties()
         {
             SetDirty();
         }
@@ -186,16 +187,12 @@ namespace UnityEngine.UI
         /// <param name="rect">The RectTransform of the child layout element.</param>
         /// <param name="axis">The axis to set the position and size along. 0 is horizontal and 1 is vertical.</param>
         /// <param name="pos">The position from the left side or top.</param>
-        protected void SetChildAlongAxis(RectTransform rect, int axis, float pos)
+        protected static void SetChildAlongAxis(RectTransform rect, int axis, float pos)
         {
-            if (rect == null)
-                return;
-
             // Inlined rect.SetInsetAndSizeFromParentEdge(...) and refactored code in order to multiply desired size by scaleFactor.
             // sizeDelta must stay the same but the size used in the calculation of the position must be scaled by the scaleFactor.
 
-            rect.anchorMin = Vector2.up;
-            rect.anchorMax = Vector2.up;
+            rect.anchorMin = rect.anchorMax = new Vector2(0, 1);
 
             Vector2 anchoredPosition = rect.anchoredPosition;
             anchoredPosition[axis] = (axis == 0) ? (pos + rect.sizeDelta[axis] * rect.pivot[axis]) : (-pos - rect.sizeDelta[axis] * (1f - rect.pivot[axis]));
@@ -209,16 +206,12 @@ namespace UnityEngine.UI
         /// <param name="axis">The axis to set the position and size along. 0 is horizontal and 1 is vertical.</param>
         /// <param name="pos">The position from the left side or top.</param>
         /// <param name="size">The size.</param>
-        protected void SetChildAlongAxis(RectTransform rect, int axis, float pos, float size)
+        protected static void SetChildAlongAxis(RectTransform rect, int axis, float pos, float size)
         {
-            if (rect == null)
-                return;
-
             // Inlined rect.SetInsetAndSizeFromParentEdge(...) and refactored code in order to multiply desired size by scaleFactor.
             // sizeDelta must stay the same but the size used in the calculation of the position must be scaled by the scaleFactor.
 
-            rect.anchorMin = Vector2.up;
-            rect.anchorMax = Vector2.up;
+            rect.anchorMin = rect.anchorMax = new Vector2(0, 1);
 
             Vector2 sizeDelta = rect.sizeDelta;
             sizeDelta[axis] = size;
@@ -229,7 +222,7 @@ namespace UnityEngine.UI
             rect.anchoredPosition = anchoredPosition;
         }
 
-        void OnRectTransformDimensionsChange()
+        private void OnRectTransformDimensionsChange()
         {
             if (IsRootLayoutGroup(rectTransform))
                 SetDirty();
@@ -243,7 +236,7 @@ namespace UnityEngine.UI
             }
         }
 
-        void OnTransformChildrenChanged()
+        private void OnTransformChildrenChanged()
         {
             SetDirty();
         }
@@ -251,7 +244,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// Mark the LayoutGroup as dirty.
         /// </summary>
-        void SetDirty()
+        private void SetDirty()
         {
             if (!IsActive())
                 return;
