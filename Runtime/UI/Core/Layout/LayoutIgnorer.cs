@@ -2,6 +2,7 @@
 
 namespace UnityEngine.UI
 {
+    [ExecuteAlways]
     [DisallowMultipleComponent]
     public class LayoutIgnorer : MonoBehaviour
     {
