@@ -2641,8 +2641,8 @@ namespace UnityEngine.UI
 
             if (m_CachedInputRenderer == null && m_TextComponent != null)
             {
-                GameObject go = new GameObject(transform.name + " Input Caret", typeof(RectTransform), typeof(CanvasRenderer));
-                go.hideFlags = HideFlags.DontSave;
+                GameObject go = transform.NewGraphicChildBase();
+                go.SetDontSave();
                 go.transform.SetParent(m_TextComponent.transform.parent);
                 go.transform.SetAsFirstSibling();
                 go.layer = gameObject.layer;
