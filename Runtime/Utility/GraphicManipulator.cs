@@ -1,9 +1,8 @@
 #nullable enable
 
 using System.Collections.Generic;
-using UnityEngine.UI;
 
-namespace UnityEngine
+namespace UnityEngine.UI
 {
     public static class GraphicManipulator
     {

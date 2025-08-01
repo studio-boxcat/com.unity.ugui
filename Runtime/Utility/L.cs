@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics;
 
-namespace UnityEngine
+namespace UnityEngine.UI
 {
     internal static class L
     {
