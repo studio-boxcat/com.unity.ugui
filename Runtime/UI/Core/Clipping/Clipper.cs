@@ -200,6 +200,7 @@ namespace UnityEngine.UI
             if (transform.parent?.GetComponentInParent<Clipper>(includeInactive: true) is not null)
                 result.AddError("Clipper nesting is not supported.");
 
+            /*
             var graphics = this.GetGraphicsInChildrenShared(includeInactive: true);
             foreach (var graphic in graphics)
             {
@@ -217,6 +218,7 @@ namespace UnityEngine.UI
                         result.AddError($"Graphic '{graphic.name}' is not maskable and has no IClippable component, but is a child of a Clippable.");
                 }
             }
+            */
         }
 #endif
     }
