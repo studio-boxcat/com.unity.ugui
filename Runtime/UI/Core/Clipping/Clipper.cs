@@ -76,8 +76,21 @@ namespace UnityEngine.UI
             return _canvasCache!;
         }
 
-        private void OnEnable() => ClipperRegistry.RegisterClipper(this);
-        private void OnDisable() => ClipperRegistry.UnregisterClipper(this);
+        private void OnEnable()
+        {
+#if UNITY_EDITOR
+            EnabledMemory.Mark(this);
+#endif
+            ClipperRegistry.RegisterClipper(this);
+        }
+
+        private void OnDisable()
+        {
+#if UNITY_EDITOR
+            if (!EnabledMemory.Erase(this)) return;
+#endif
+            ClipperRegistry.UnregisterClipper(this);
+        }
 
         public bool IsRaycastLocationValid(Vector2 sp, Camera eventCamera)
         {
@@ -142,7 +155,7 @@ namespace UnityEngine.UI
 
         private void OnTransformParentChanged() => _canvasCache = null;
         private void OnCanvasHierarchyChanged() => _canvasCache = null;
-
+        private void OnDidApplyAnimationProperties() => MarkNeedClip();
 
 #if UNITY_EDITOR
         [ShowInInspector, MultiLineProperty, HideLabel]

@@ -14,8 +14,21 @@ namespace UnityEngine.UI
         [SerializeField, Required, ChildGameObjectsOnly, HideIf("@m_Graphic")]
         private Graphic m_Graphic = null!;
 
-        private void OnEnable() => ClipperRegistry.RegisterClippable(this);
-        private void OnDisable() => ClipperRegistry.UnregisterClippable(this);
+        private void OnEnable()
+        {
+#if UNITY_EDITOR
+            EnabledMemory.Mark(this);
+#endif
+            ClipperRegistry.RegisterClippable(this);
+        }
+
+        private void OnDisable()
+        {
+#if UNITY_EDITOR
+            if (!EnabledMemory.Erase(this)) return;
+#endif
+            ClipperRegistry.UnregisterClippable(this);
+        }
 
         private void OnTransformParentChanged()
         {
