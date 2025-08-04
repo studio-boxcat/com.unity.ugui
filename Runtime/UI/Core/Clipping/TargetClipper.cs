@@ -47,6 +47,12 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
+        private void Reset() => _targets = Array.Empty<Graphic>();
+
+        // ReSharper disable once Unity.DuplicateShortcut
+        [ContextMenu("Collect _c")]
+        private void Collect() => _targets = GetComponentsInChildren<Graphic>(true);
+
         void ISelfValidator.Validate(SelfValidationResult result)
         {
             foreach (var graphic in _targets)
