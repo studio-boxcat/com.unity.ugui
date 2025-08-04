@@ -15,6 +15,18 @@ namespace UnityEngine.UI
                    && ((canvas.enabled && canvas.overrideSorting) || canvas.isRootCanvas);
         }
 
+        public static Vector2 ResolveCanvasSize(this Graphic g)
+        {
+            var canvas = g.canvas;
+            Assert.IsTrue(canvas, "Graphic is not attached to a canvas.");
+            return canvas.rootCanvas.GetRectTransform().sizeDelta;
+        }
+
+        public static bool ResolveRootCanvas(this Transform t, out Canvas canvas)
+        {
+            return t.root.TryGetComponent(out canvas);
+        }
+
         public static Camera? ResolveWorldCamera(Graphic g)
         {
             Assert.IsTrue(g, "Graphic is null.");
