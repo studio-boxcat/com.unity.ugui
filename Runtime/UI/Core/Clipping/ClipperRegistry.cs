@@ -190,7 +190,7 @@ namespace UnityEngine.UI
             throw new System.InvalidOperationException();
         }
 
-        private static void RestoreCullState(Graphic g)
+        internal static void RestoreCullState(Graphic g)
         {
             // L.I($"[ClipperRegistry] Restoring cull state for {g}");
             g.SetClipRect(new Rect(), validRect: false);

@@ -32,6 +32,12 @@ namespace UnityEngine.UI
         [NonSerialized] private RectTransform? _rectTransform;
         public RectTransform rectTransform => _rectTransform ??= GetComponent<RectTransform>();
 
+        private void OnDisable()
+        {
+            foreach (var g in _targets)
+                ClipperRegistry.RestoreCullState(g);
+        }
+
         private void Update()
         {
             var canvas = _targets[0].canvas;

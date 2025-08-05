@@ -6,7 +6,7 @@ using Sirenix.OdinInspector;
 namespace UnityEngine.UI
 {
     [ExecuteAlways]
-    internal class Clippable : MonoBehaviour, IClippable
+    public class Clippable : MonoBehaviour, IClippable
 #if UNITY_EDITOR
         , ISelfValidator
 #endif
