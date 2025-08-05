@@ -144,7 +144,7 @@ namespace UnityEngine.UI
             SetLayoutInputForAxis(
                 padding.horizontal + (cellSize.x + spacing.x) * minColumns - spacing.x,
                 padding.horizontal + (cellSize.x + spacing.x) * preferredColumns - spacing.x,
-                -1, 0);
+                0);
         }
 
         /// <summary>
@@ -170,7 +170,7 @@ namespace UnityEngine.UI
             }
 
             float minSpace = padding.vertical + (cellSize.y + spacing.y) * minRows - spacing.y;
-            SetLayoutInputForAxis(minSpace, minSpace, -1, 1);
+            SetLayoutInputForAxis(minSpace, minSpace, 1);
         }
 
         /// <summary>

@@ -33,7 +33,6 @@ namespace UnityEngine.UI
 
         private Vector2 m_TotalMinSize = Vector2.zero;
         private Vector2 m_TotalPreferredSize = Vector2.zero;
-        private Vector2 m_TotalFlexibleSize = Vector2.zero;
 
         protected readonly List<RectTransform> rectChildren = new();
 
@@ -65,11 +64,6 @@ namespace UnityEngine.UI
         float ILayoutElement.preferredWidth => GetTotalPreferredSize(0);
 
         /// <summary>
-        /// See LayoutElement.flexibleWidth
-        /// </summary>
-        float ILayoutElement.flexibleWidth => GetTotalFlexibleSize(0);
-
-        /// <summary>
         /// See LayoutElement.minHeight
         /// </summary>
         float ILayoutElement.minHeight => GetTotalMinSize(1);
@@ -78,11 +72,6 @@ namespace UnityEngine.UI
         /// See LayoutElement.preferredHeight
         /// </summary>
         float ILayoutElement.preferredHeight => GetTotalPreferredSize(1);
-
-        /// <summary>
-        /// See LayoutElement.flexibleHeight
-        /// </summary>
-        float ILayoutElement.flexibleHeight => GetTotalFlexibleSize(1);
 
         // ILayoutController Interface
 
@@ -130,16 +119,6 @@ namespace UnityEngine.UI
         }
 
         /// <summary>
-        /// The flexible size for the layout group on the given axis.
-        /// </summary>
-        /// <param name="axis">The axis index. 0 is horizontal and 1 is vertical.</param>
-        /// <returns>The flexible size</returns>
-        protected float GetTotalFlexibleSize(int axis)
-        {
-            return m_TotalFlexibleSize[axis];
-        }
-
-        /// <summary>
         /// Returns the calculated position of the first child layout element along the given axis.
         /// </summary>
         /// <param name="axis">The axis index. 0 is horizontal and 1 is vertical.</param>
@@ -172,13 +151,11 @@ namespace UnityEngine.UI
         /// </summary>
         /// <param name="totalMin">The min size for the layout group.</param>
         /// <param name="totalPreferred">The preferred size for the layout group.</param>
-        /// <param name="totalFlexible">The flexible size for the layout group.</param>
         /// <param name="axis">The axis to set sizes for. 0 is horizontal and 1 is vertical.</param>
-        protected void SetLayoutInputForAxis(float totalMin, float totalPreferred, float totalFlexible, int axis)
+        protected void SetLayoutInputForAxis(float totalMin, float totalPreferred, int axis)
         {
             m_TotalMinSize[axis] = totalMin;
             m_TotalPreferredSize[axis] = totalPreferred;
-            m_TotalFlexibleSize[axis] = totalFlexible;
         }
 
         /// <summary>

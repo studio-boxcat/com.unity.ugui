@@ -28,10 +28,8 @@ namespace UnityEngine.UI
 
         float minWidth => -1;
         float preferredWidth => -1;
-        float flexibleWidth => -1;
         float minHeight => -1;
         float preferredHeight => -1;
-        float flexibleHeight => -1;
         int layoutPriority => 0;
     }
 
