@@ -7,17 +7,11 @@ namespace UnityEngine.UI
     [ExecuteAlways]
     public sealed class LayoutElement : UIBehaviour, ILayoutElement
     {
-        [SerializeField, HorizontalGroup("Min")]
-        float m_MinWidth = -1;
-        [SerializeField, HorizontalGroup("Min")]
-        float m_MinHeight = -1;
         [SerializeField, HorizontalGroup("Preferred")]
         float m_PreferredWidth = -1;
         [SerializeField, HorizontalGroup("Preferred")]
         float m_PreferredHeight = -1;
 
-        public float minWidth => m_MinWidth;
-        public float minHeight => m_MinHeight;
         public float preferredWidth
         {
             get => m_PreferredWidth;

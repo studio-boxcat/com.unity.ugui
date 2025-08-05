@@ -2,6 +2,7 @@
 
 #nullable enable
 using Sirenix.OdinInspector;
+using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
@@ -18,20 +19,16 @@ namespace UnityEngine.UI
         /// <summary>
         /// The size fit modes avaliable to use.
         /// </summary>
-        internal enum FitMode
+        internal enum FitMode : byte
         {
             /// <summary>
             /// Don't perform any resizing.
             /// </summary>
-            Unconstrained,
-            /// <summary>
-            /// Resize to the minimum size of the content.
-            /// </summary>
-            MinSize,
+            Unconstrained = 0,
             /// <summary>
             /// Resize to the preferred size of the content.
             /// </summary>
-            PreferredSize
+            PreferredSize = 2,
         }
 
         [SerializeField, OnValueChanged(nameof(SetDirty))]
@@ -69,12 +66,9 @@ namespace UnityEngine.UI
             var t = rectTransform;
 
             // Set size to min or preferred size
-            var size = fitting switch
-            {
-                FitMode.MinSize => LayoutUtility.GetMinSize(t, axis),
-                FitMode.PreferredSize => LayoutUtility.GetPreferredSize(t, axis),
-                _ => throw new System.ArgumentOutOfRangeException(nameof(fitting), fitting, null)
-            };
+            Assert.IsTrue(fitting is FitMode.PreferredSize,
+                $"ContentSizeFitter only supports FitMode.PreferredSize for axis {axis}. Current fitting mode is {fitting}.");
+            var size = LayoutUtility.GetPreferredSize(t, axis);
             t.SetSizeWithCurrentAnchors((RectTransform.Axis) axis, size);
 
             _performingSetLayout = false;

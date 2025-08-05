@@ -31,7 +31,6 @@ namespace UnityEngine.UI
         [System.NonSerialized] private RectTransform m_Rect;
         protected RectTransform rectTransform => m_Rect ??= (RectTransform) transform;
 
-        private Vector2 m_TotalMinSize = Vector2.zero;
         private Vector2 m_TotalPreferredSize = Vector2.zero;
 
         protected readonly List<RectTransform> rectChildren = new();
@@ -54,19 +53,9 @@ namespace UnityEngine.UI
         public abstract void CalculateLayoutInputVertical();
 
         /// <summary>
-        /// See LayoutElement.minWidth
-        /// </summary>
-        float ILayoutElement.minWidth => GetTotalMinSize(0);
-
-        /// <summary>
         /// See LayoutElement.preferredWidth
         /// </summary>
         float ILayoutElement.preferredWidth => GetTotalPreferredSize(0);
-
-        /// <summary>
-        /// See LayoutElement.minHeight
-        /// </summary>
-        float ILayoutElement.minHeight => GetTotalMinSize(1);
 
         /// <summary>
         /// See LayoutElement.preferredHeight
@@ -96,16 +85,6 @@ namespace UnityEngine.UI
         private void OnDidApplyAnimationProperties()
         {
             SetDirty();
-        }
-
-        /// <summary>
-        /// The min size for the layout group on the given axis.
-        /// </summary>
-        /// <param name="axis">The axis index. 0 is horizontal and 1 is vertical.</param>
-        /// <returns>The min size</returns>
-        protected float GetTotalMinSize(int axis)
-        {
-            return m_TotalMinSize[axis];
         }
 
         /// <summary>
@@ -149,12 +128,10 @@ namespace UnityEngine.UI
         /// <summary>
         /// Used to set the calculated layout properties for the given axis.
         /// </summary>
-        /// <param name="totalMin">The min size for the layout group.</param>
         /// <param name="totalPreferred">The preferred size for the layout group.</param>
         /// <param name="axis">The axis to set sizes for. 0 is horizontal and 1 is vertical.</param>
-        protected void SetLayoutInputForAxis(float totalMin, float totalPreferred, int axis)
+        protected void SetLayoutInputForAxis(float totalPreferred, int axis)
         {
-            m_TotalMinSize[axis] = totalMin;
             m_TotalPreferredSize[axis] = totalPreferred;
         }
 

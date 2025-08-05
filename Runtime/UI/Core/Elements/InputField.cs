@@ -3243,21 +3243,17 @@ namespace UnityEngine.UI
         }
 
         /// <summary>
-        /// See ILayoutElement.minWidth.
-        /// </summary>
-        public float minWidth => 5;
-
-        /// <summary>
         /// Get the displayed with of all input characters.
         /// </summary>
         public float preferredWidth
         {
             get
             {
-                if (textComponent == null)
-                    return 0;
+                const float minWidth = 5;
+                if (textComponent == null) return minWidth;
                 var settings = textComponent.GetGenerationSettings(Vector2.zero);
-                return textComponent.cachedTextGeneratorForLayout.GetPreferredWidth(m_Text, settings) / textComponent.pixelsPerUnit;
+                var w = textComponent.cachedTextGeneratorForLayout.GetPreferredWidth(m_Text, settings) / textComponent.pixelsPerUnit;
+                return Mathf.Max(w, minWidth);
             }
         }
 

@@ -1,4 +1,5 @@
-using JetBrains.Annotations;
+// ReSharper disable InconsistentNaming
+#nullable enable
 using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
@@ -62,7 +63,6 @@ namespace UnityEngine.UI
             float combinedPadding = (axis == 0 ? padding.horizontal : padding.vertical);
             bool controlSize = (axis == 0 ? m_ChildControlWidth : m_ChildControlHeight);
 
-            float totalMin = combinedPadding;
             float totalPreferred = combinedPadding;
 
             bool alongOtherAxis = (isVertical ^ (axis == 1));
@@ -70,28 +70,24 @@ namespace UnityEngine.UI
             for (int i = 0; i < rectChildrenCount; i++)
             {
                 RectTransform child = rectChildren[i];
-                float min, preferred;
-                GetChildSizes(child, axis, controlSize, out min, out preferred);
+                float preferred;
+                GetChildSizes(child, axis, controlSize, out preferred);
 
                 if (alongOtherAxis)
                 {
-                    totalMin = Mathf.Max(min + combinedPadding, totalMin);
                     totalPreferred = Mathf.Max(preferred + combinedPadding, totalPreferred);
                 }
                 else
                 {
-                    totalMin += min + spacing;
                     totalPreferred += preferred + spacing;
                 }
             }
 
             if (!alongOtherAxis && rectChildren.Count > 0)
             {
-                totalMin -= spacing;
                 totalPreferred -= spacing;
             }
-            totalPreferred = Mathf.Max(totalMin, totalPreferred);
-            SetLayoutInputForAxis(totalMin, totalPreferred, axis);
+            SetLayoutInputForAxis(totalPreferred, axis);
         }
 
         /// <summary>
@@ -116,10 +112,10 @@ namespace UnityEngine.UI
                 for (int i = startIndex; m_ReverseArrangement ? i >= endIndex : i < endIndex; i += increment)
                 {
                     RectTransform child = rectChildren[i];
-                    float min, preferred;
-                    GetChildSizes(child, axis, controlSize, out min, out preferred);
+                    float preferred;
+                    GetChildSizes(child, axis, controlSize, out preferred);
 
-                    float requiredSpace = Mathf.Clamp(innerSize, min, preferred);
+                    float requiredSpace = Mathf.Clamp(innerSize, 0, preferred);
                     float startOffset = GetStartOffset(axis, requiredSpace);
                     if (controlSize)
                     {
@@ -142,17 +138,13 @@ namespace UnityEngine.UI
                     pos = GetStartOffset(axis, GetTotalPreferredSize(axis) - (axis == 0 ? padding.horizontal : padding.vertical));
                 }
 
-                float minMaxLerp = 0;
-                if (GetTotalMinSize(axis) != GetTotalPreferredSize(axis))
-                    minMaxLerp = Mathf.Clamp01((size - GetTotalMinSize(axis)) / (GetTotalPreferredSize(axis) - GetTotalMinSize(axis)));
-
                 for (int i = startIndex; m_ReverseArrangement ? i >= endIndex : i < endIndex; i += increment)
                 {
                     RectTransform child = rectChildren[i];
-                    float min, preferred;
-                    GetChildSizes(child, axis, controlSize, out min, out preferred);
+                    float preferred;
+                    GetChildSizes(child, axis, controlSize, out preferred);
 
-                    float childSize = Mathf.Lerp(min, preferred, minMaxLerp);
+                    float childSize = preferred;
                     if (controlSize)
                     {
                         SetChildAlongAxis(child, axis, pos, childSize);
@@ -167,19 +159,12 @@ namespace UnityEngine.UI
             }
         }
 
-        private static void GetChildSizes([NotNull] RectTransform child, int axis, bool controlSize,
-            out float min, out float preferred)
+        private static void GetChildSizes(RectTransform child, int axis, bool controlSize,
+            out float preferred)
         {
-            if (!controlSize)
-            {
-                min = child.sizeDelta[axis];
-                preferred = min;
-            }
-            else
-            {
-                min = LayoutUtility.GetMinSize(child, axis);
-                preferred = LayoutUtility.GetPreferredSize(child, axis);
-            }
+            preferred = controlSize
+                ? LayoutUtility.GetPreferredSize(child, axis)
+                : child.sizeDelta[axis];
         }
 
 #if UNITY_EDITOR

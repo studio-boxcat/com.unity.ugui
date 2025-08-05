@@ -26,9 +26,7 @@ namespace UnityEngine.UI
         /// </summary>
         void CalculateLayoutInputVertical() { }
 
-        float minWidth => -1;
         float preferredWidth => -1;
-        float minHeight => -1;
         float preferredHeight => -1;
         int layoutPriority => 0;
     }

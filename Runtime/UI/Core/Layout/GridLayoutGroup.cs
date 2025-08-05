@@ -125,24 +125,21 @@ namespace UnityEngine.UI
         {
             base.CalculateLayoutInputHorizontal();
 
-            int minColumns = 0;
             int preferredColumns = 0;
             if (m_Constraint == Constraint.FixedColumnCount)
             {
-                minColumns = preferredColumns = m_ConstraintCount;
+                preferredColumns = m_ConstraintCount;
             }
             else if (m_Constraint == Constraint.FixedRowCount)
             {
-                minColumns = preferredColumns = Mathf.CeilToInt(rectChildren.Count / (float)m_ConstraintCount - 0.001f);
+                preferredColumns = Mathf.CeilToInt(rectChildren.Count / (float)m_ConstraintCount - 0.001f);
             }
             else
             {
-                minColumns = 1;
                 preferredColumns = Mathf.CeilToInt(Mathf.Sqrt(rectChildren.Count));
             }
 
             SetLayoutInputForAxis(
-                padding.horizontal + (cellSize.x + spacing.x) * minColumns - spacing.x,
                 padding.horizontal + (cellSize.x + spacing.x) * preferredColumns - spacing.x,
                 0);
         }
@@ -170,7 +167,7 @@ namespace UnityEngine.UI
             }
 
             float minSpace = padding.vertical + (cellSize.y + spacing.y) * minRows - spacing.y;
-            SetLayoutInputForAxis(minSpace, minSpace, 1);
+            SetLayoutInputForAxis(minSpace, 1);
         }
 
         /// <summary>
