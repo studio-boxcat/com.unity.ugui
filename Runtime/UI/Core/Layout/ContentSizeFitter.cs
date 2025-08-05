@@ -16,25 +16,10 @@ namespace UnityEngine.UI
     [RequireComponent(typeof(RectTransform))]
     public sealed class ContentSizeFitter : UIBehaviour, ILayoutSelfController
     {
-        /// <summary>
-        /// The size fit modes avaliable to use.
-        /// </summary>
-        internal enum FitMode : byte
-        {
-            /// <summary>
-            /// Don't perform any resizing.
-            /// </summary>
-            Unconstrained = 0,
-            /// <summary>
-            /// Resize to the preferred size of the content.
-            /// </summary>
-            PreferredSize = 2,
-        }
-
         [SerializeField, OnValueChanged(nameof(SetDirty))]
-        private FitMode m_HorizontalFit = FitMode.Unconstrained;
+        private bool m_HorizontalFit = true;
         [SerializeField, OnValueChanged(nameof(SetDirty))]
-        private FitMode m_VerticalFit = FitMode.Unconstrained;
+        private bool m_VerticalFit;
 
         [System.NonSerialized]
         private RectTransform? m_Rect;
@@ -59,15 +44,13 @@ namespace UnityEngine.UI
         private void HandleSelfFittingAlongAxis(int axis)
         {
             var fitting = axis == 0 ? m_HorizontalFit : m_VerticalFit;
-            if (fitting == FitMode.Unconstrained) return;
+            if (fitting is false) return;
 
             _performingSetLayout = true;
 
             var t = rectTransform;
 
-            // Set size to min or preferred size
-            Assert.IsTrue(fitting is FitMode.PreferredSize,
-                $"ContentSizeFitter only supports FitMode.PreferredSize for axis {axis}. Current fitting mode is {fitting}.");
+            // Set size to preferred size
             var size = LayoutUtility.GetPreferredSize(t, axis);
             t.SetSizeWithCurrentAnchors((RectTransform.Axis) axis, size);
 
@@ -91,21 +74,13 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
-        private void Reset()
-        {
-            m_HorizontalFit = FitMode.PreferredSize;
-            m_VerticalFit = FitMode.Unconstrained;
-        }
-
         private void OnValidate()
         {
             if (DrivenRectTransManager.Reset(this, out var tracker))
             {
                 var props = DrivenTransformProperties.None;
-                if (m_HorizontalFit != FitMode.Unconstrained)
-                    props |= DrivenTransformProperties.SizeDeltaX;
-                if (m_VerticalFit != FitMode.Unconstrained)
-                    props |= DrivenTransformProperties.SizeDeltaY;
+                if (m_HorizontalFit) props |= DrivenTransformProperties.SizeDeltaX;
+                if (m_VerticalFit) props |= DrivenTransformProperties.SizeDeltaY;
                 tracker.SetSelf(props);
             }
         }
