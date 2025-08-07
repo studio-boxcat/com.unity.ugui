@@ -15,23 +15,38 @@ namespace UnityEngine.UI
             {
                 if (!sceneView.drawGizmos)
                     return;
-                if (!_active)
-                    return;
+                var mode = _mode;
+                if (mode is 0) return; // disabled
 
                 foreach (var transform in Selection.transforms)
                 {
-                    if (transform.TryGetComponent(out Graphic graphic) == false)
-                        continue;
-                    if (graphic.raycastTarget == false)
-                        continue;
-                    if (EditorGUIUtility.IsGizmosAllowedForObject(graphic) == false)
-                        continue;
-                    DrawRaycastRect(graphic);
+                    var main = transform.GetComponent<Graphic>(); // can be null.
+
+                    if (mode is 1) // enabled
+                    {
+                        if (main is null) continue;
+                        ProcessRaycastArea(main, true);
+                    }
+                    else // deep
+                    {
+                        var children = transform.GetGraphicsInChildrenShared();
+                        foreach (var g in children)
+                            ProcessRaycastArea(g, g.RefEq(main));
+                    }
                 }
             };
+            return;
+
+            static void ProcessRaycastArea(Graphic g, bool main)
+            {
+                if (g.raycastTarget is false) return;
+                if (EditorGUIUtility.IsGizmosAllowedForObject(g) is false) return;
+                var rect = DrawRect(g);
+                if (main) DrawHandle(g, rect);
+            }
         }
 
-        private static void DrawRaycastRect(Graphic graphic)
+        private static Rect DrawRect(Graphic graphic)
         {
             var t = graphic.rectTransform;
             var padding = graphic.raycastPadding; // Store initial padding for handle positioning
@@ -46,15 +61,21 @@ namespace UnityEngine.UI
                 new[] { p0, p1, p2, p3 },
                 Handles.UIColliderHandleColor.WithAlpha(0.15f),
                 Handles.UIColliderHandleColor);
+            return rect;
+        }
 
+        private static void DrawHandle(Graphic graphic, Rect rect)
+        {
             // Handle size based on scene view camera distance
-            var handleSize = HandleUtility.GetHandleSize(p0) * 0.04f;
+            var handleSize = HandleUtility.GetHandleSize(default) * 0.03f;
             if (handleSize == 0) handleSize = 0.02f; // Default small size
 
             Handles.color = Handles.UIColliderHandleColor;
 
+            var t = graphic.rectTransform;
             var ltw = t.localToWorldMatrix;
             var wtl = t.worldToLocalMatrix;
+            var padding = graphic.raycastPadding; // Store initial padding for handle positioning
             var changed = ProcessHandle(Side.L, rect, ltw, wtl, ref padding, handleSize)
                           || ProcessHandle(Side.R, rect, ltw, wtl, ref padding, handleSize)
                           || ProcessHandle(Side.B, rect, ltw, wtl, ref padding, handleSize)
@@ -111,14 +132,19 @@ namespace UnityEngine.UI
             }
         }
 
-        private static EditorPrefBool? _activePref;
-        private static bool _active => _activePref ??= new EditorPrefBool("G0HmzQzL", true); // random key
+        private static EditorPrefInt? _modePref;
+        private static int _mode => _modePref ??= new EditorPrefInt("G0HmzQzL", 1); // 0: disabled, 1: enabled, 2: enabled (deep)
 
-        [MenuItem(MenuPath.UI + "Toggle Raycast Area")]
-        private static void ToggleRaycastArea()
+        [MenuItem(MenuPath.UI + "Hide Raycast Area")]
+        private static void HideRaycastArea() => SetMode(0);
+        [MenuItem(MenuPath.UI + "Show Raycast Area")]
+        private static void ShowRaycastArea() => SetMode(1);
+        [MenuItem(MenuPath.UI + "Show Raycast Area (Deep)")]
+        private static void ShowRaycastAreaDeep() => SetMode(2);
+
+        private static void SetMode(int value)
         {
-            var oldActive = _active;
-            _activePref!.Value = !oldActive; // _activePref will be created by the getter if it doesn't exist
+            _modePref!.Value = value;
             SceneView.RepaintAll(); // Force all SceneViews to repaint
         }
     }
