@@ -33,24 +33,6 @@ namespace UnityEngine.UI
         }
 
         /// <summary>
-        /// The grid axis we are looking at.
-        /// </summary>
-        /// <remarks>
-        /// As the storage is a [][] we make access easier by passing a axis.
-        /// </remarks>
-        public enum Axis
-        {
-            /// <summary>
-            /// Horizontal axis
-            /// </summary>
-            Horizontal = 0,
-            /// <summary>
-            /// Vertical axis.
-            /// </summary>
-            Vertical = 1
-        }
-
-        /// <summary>
         /// Constraint type on either the number of columns or rows.
         /// </summary>
         public enum Constraint
@@ -76,7 +58,7 @@ namespace UnityEngine.UI
         /// </summary>
         public Corner startCorner { get { return m_StartCorner; } set { SetPropertyUtility.SetEnum(ref m_StartCorner, value); } }
 
-        [SerializeField] protected Axis m_StartAxis = Axis.Horizontal;
+        [SerializeField] protected Axis m_StartAxis = Axis.X;
 
         /// <summary>
         /// Which axis should cells be placed along first
@@ -141,7 +123,7 @@ namespace UnityEngine.UI
 
             SetLayoutInputForAxis(
                 padding.horizontal + (cellSize.x + spacing.x) * preferredColumns - spacing.x,
-                0);
+                Axis.X);
         }
 
         /// <summary>
@@ -167,7 +149,7 @@ namespace UnityEngine.UI
             }
 
             float minSpace = padding.vertical + (cellSize.y + spacing.y) * minRows - spacing.y;
-            SetLayoutInputForAxis(minSpace, 1);
+            SetLayoutInputForAxis(minSpace, Axis.Y);
         }
 
         /// <summary>
@@ -210,8 +192,7 @@ namespace UnityEngine.UI
                 return;
             }
 
-            float width = rectTransform.rect.size.x;
-            float height = rectTransform.rect.size.y;
+            var (width, height) = rectTransform.rect.size;
 
             int cellCountX = 1;
             int cellCountY = 1;
@@ -246,7 +227,7 @@ namespace UnityEngine.UI
             int cornerY = (int)startCorner / 2;
 
             int cellsPerMainAxis, actualCellCountX, actualCellCountY;
-            if (startAxis == Axis.Horizontal)
+            if (startAxis.IsX())
             {
                 cellsPerMainAxis = cellCountX;
                 actualCellCountX = Mathf.Clamp(cellCountX, 1, rectChildrenCount);
@@ -272,8 +253,8 @@ namespace UnityEngine.UI
                 actualCellCountY * cellSize.y + (actualCellCountY - 1) * spacing.y
             );
             Vector2 startOffset = new Vector2(
-                GetStartOffset(0, requiredSpace.x),
-                GetStartOffset(1, requiredSpace.y)
+                GetStartOffset(width, Axis.X, requiredSpace.x),
+                GetStartOffset(height, Axis.Y, requiredSpace.y)
             );
 
             // Fixes case 1345471 - Makes sure the constraint column / row amount is always respected
@@ -290,7 +271,7 @@ namespace UnityEngine.UI
             {
                 int positionX;
                 int positionY;
-                if (startAxis == Axis.Horizontal)
+                if (startAxis.IsX())
                 {
                     if (m_Constraint == Constraint.FixedRowCount && rectChildrenCount - i <= childrenToMove)
                     {
@@ -322,8 +303,8 @@ namespace UnityEngine.UI
                 if (cornerY == 1)
                     positionY = actualCellCountY - 1 - positionY;
 
-                SetChildAlongAxis(rectChildren[i], 0, startOffset.x + (cellSize[0] + spacing[0]) * positionX, cellSize[0]);
-                SetChildAlongAxis(rectChildren[i], 1, startOffset.y + (cellSize[1] + spacing[1]) * positionY, cellSize[1]);
+                SetChildAlongAxis(rectChildren[i], Axis.X, startOffset.x + (cellSize.x + spacing.x) * positionX, cellSize.x);
+                SetChildAlongAxis(rectChildren[i], Axis.Y, startOffset.y + (cellSize.y + spacing.y) * positionY, cellSize.y);
             }
         }
 

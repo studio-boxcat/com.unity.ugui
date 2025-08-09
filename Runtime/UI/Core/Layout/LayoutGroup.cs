@@ -55,12 +55,12 @@ namespace UnityEngine.UI
         /// <summary>
         /// See LayoutElement.preferredWidth
         /// </summary>
-        float ILayoutElement.preferredWidth => GetTotalPreferredSize(0);
+        float ILayoutElement.preferredWidth => GetTotalPreferredSize(Axis.X);
 
         /// <summary>
         /// See LayoutElement.preferredHeight
         /// </summary>
-        float ILayoutElement.preferredHeight => GetTotalPreferredSize(1);
+        float ILayoutElement.preferredHeight => GetTotalPreferredSize(Axis.Y);
 
         // ILayoutController Interface
 
@@ -92,9 +92,9 @@ namespace UnityEngine.UI
         /// </summary>
         /// <param name="axis">The axis index. 0 is horizontal and 1 is vertical.</param>
         /// <returns>The preferred size.</returns>
-        protected float GetTotalPreferredSize(int axis)
+        protected float GetTotalPreferredSize(Axis axis)
         {
-            return m_TotalPreferredSize[axis];
+            return m_TotalPreferredSize[axis.Idx()];
         }
 
         /// <summary>
@@ -103,10 +103,9 @@ namespace UnityEngine.UI
         /// <param name="axis">The axis index. 0 is horizontal and 1 is vertical.</param>
         /// <param name="requiredSpaceWithoutPadding">The total space required on the given axis for all the layout elements including spacing and excluding padding.</param>
         /// <returns>The position of the first child along the given axis.</returns>
-        protected float GetStartOffset(int axis, float requiredSpaceWithoutPadding)
+        protected float GetStartOffset(float availableSpace, Axis axis, float requiredSpaceWithoutPadding)
         {
             float requiredSpace = requiredSpaceWithoutPadding + (axis == 0 ? padding.horizontal : padding.vertical);
-            float availableSpace = rectTransform.rect.size[axis];
             float surplusSpace = availableSpace - requiredSpace;
             float alignmentOnAxis = GetAlignmentOnAxis(axis);
             return (axis == 0 ? padding.left : padding.top) + surplusSpace * alignmentOnAxis;
@@ -117,12 +116,11 @@ namespace UnityEngine.UI
         /// </summary>
         /// <param name="axis">The axis to get alignment along. 0 is horizontal and 1 is vertical.</param>
         /// <returns>The alignment as a fraction where 0 is left/top, 0.5 is middle, and 1 is right/bottom.</returns>
-        protected float GetAlignmentOnAxis(int axis)
+        protected float GetAlignmentOnAxis(Axis axis)
         {
-            if (axis == 0)
-                return ((int) childAlignment % 3) * 0.5f;
-            else
-                return ((int) childAlignment / 3) * 0.5f;
+            return axis.IsX()
+                ? ((int) childAlignment % 3) * 0.5f
+                : ((int) childAlignment / 3) * 0.5f;
         }
 
         /// <summary>
@@ -130,9 +128,9 @@ namespace UnityEngine.UI
         /// </summary>
         /// <param name="totalPreferred">The preferred size for the layout group.</param>
         /// <param name="axis">The axis to set sizes for. 0 is horizontal and 1 is vertical.</param>
-        protected void SetLayoutInputForAxis(float totalPreferred, int axis)
+        protected void SetLayoutInputForAxis(float totalPreferred, Axis axis)
         {
-            m_TotalPreferredSize[axis] = totalPreferred;
+            m_TotalPreferredSize[axis.Idx()] = totalPreferred;
         }
 
         /// <summary>
@@ -141,15 +139,16 @@ namespace UnityEngine.UI
         /// <param name="rect">The RectTransform of the child layout element.</param>
         /// <param name="axis">The axis to set the position and size along. 0 is horizontal and 1 is vertical.</param>
         /// <param name="pos">The position from the left side or top.</param>
-        protected static void SetChildAlongAxis(RectTransform rect, int axis, float pos)
+        protected static void SetChildAlongAxis(RectTransform rect, Axis axis, float pos)
         {
             // Inlined rect.SetInsetAndSizeFromParentEdge(...) and refactored code in order to multiply desired size by scaleFactor.
             // sizeDelta must stay the same but the size used in the calculation of the position must be scaled by the scaleFactor.
 
             rect.anchorMin = rect.anchorMax = new Vector2(0, 1);
 
-            Vector2 anchoredPosition = rect.anchoredPosition;
-            anchoredPosition[axis] = (axis == 0) ? (pos + rect.sizeDelta[axis] * rect.pivot[axis]) : (-pos - rect.sizeDelta[axis] * (1f - rect.pivot[axis]));
+            var anchoredPosition = rect.anchoredPosition;
+            if (axis.IsX()) anchoredPosition.x = pos + rect.sizeDelta.x * rect.pivot.x;
+            else anchoredPosition.y = -pos - rect.sizeDelta.y * (1f - rect.pivot.y);
             rect.anchoredPosition = anchoredPosition;
         }
 
@@ -160,7 +159,7 @@ namespace UnityEngine.UI
         /// <param name="axis">The axis to set the position and size along. 0 is horizontal and 1 is vertical.</param>
         /// <param name="pos">The position from the left side or top.</param>
         /// <param name="size">The size.</param>
-        protected static void SetChildAlongAxis(RectTransform rect, int axis, float pos, float size)
+        protected static void SetChildAlongAxis(RectTransform rect, Axis axis, float pos, float size)
         {
             // Inlined rect.SetInsetAndSizeFromParentEdge(...) and refactored code in order to multiply desired size by scaleFactor.
             // sizeDelta must stay the same but the size used in the calculation of the position must be scaled by the scaleFactor.
@@ -168,11 +167,19 @@ namespace UnityEngine.UI
             rect.anchorMin = rect.anchorMax = new Vector2(0, 1);
 
             Vector2 sizeDelta = rect.sizeDelta;
-            sizeDelta[axis] = size;
-            rect.sizeDelta = sizeDelta;
-
             Vector2 anchoredPosition = rect.anchoredPosition;
-            anchoredPosition[axis] = (axis == 0) ? (pos + size * rect.pivot[axis]) : (-pos - size * (1f - rect.pivot[axis]));
+
+            if (axis.IsX())
+            {
+                sizeDelta.x = size;
+                anchoredPosition.x = pos + size * rect.pivot.x;
+            }
+            else
+            {
+                sizeDelta.y = size;
+                anchoredPosition.y = -pos - size * (1f - rect.pivot.y);
+            }
+            rect.sizeDelta = sizeDelta;
             rect.anchoredPosition = anchoredPosition;
         }
 

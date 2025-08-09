@@ -1,75 +1,63 @@
 #nullable enable
 
+using System;
+
 namespace UnityEngine.UI
 {
+    public enum Axis : byte
+    {
+        X = 0,
+        Y = 1
+    }
+
     /// <summary>
     /// Utility functions for querying layout elements for their minimum, preferred, and flexible sizes.
     /// </summary>
     public static class LayoutUtility
     {
-        /// <summary>
-        /// Returns the preferred size of the layout element.
-        /// </summary>
-        /// <param name="rect">The RectTransform of the layout element to query.</param>
-        /// <param name="axis">The axis to query. This can be 0 or 1.</param>
-        /// <remarks>
-        /// All components on the GameObject that implement the ILayoutElement are queried. The one with the highest priority which has a value for this setting is used. If multiple componets have this setting and have the same priority, the maximum value out of those is used.
-        /// </remarks>
-        public static float GetPreferredSize(RectTransform rect, int axis)
-        {
-            return axis == 0 ? GetPreferredWidth(rect) : GetPreferredHeight(rect);
-        }
+        public static int Idx(this Axis axis) => (int) axis;
+        public static bool IsX(this Axis axis) => axis == Axis.X;
+        public static bool IsY(this Axis axis) => axis == Axis.Y;
 
-        /// <summary>
-        /// Returns the preferred width of the layout element.
-        /// </summary>
-        /// <param name="rect">The RectTransform of the layout element to query.</param>
-        /// <returns>
-        /// All components on the GameObject that implement the ILayoutElement are queried. The one with the highest priority which has a value for this setting is used. If multiple componets have this setting and have the same priority, the maximum value out of those is used.
-        /// </returns>
-        public static float GetPreferredWidth(RectTransform rect)
-        {
-            return GetLayoutProperty(rect, e => e.preferredWidth);
-        }
+        public static bool Select(this Axis axis, bool x, bool y) => axis.IsX() ? x : y;
+        public static int Select(this Axis axis, int x, int y) => axis.IsX() ? x : y;
+        public static float Select(this Axis axis, float x, float y) => axis.IsX() ? x : y;
+        public static int SelectHorizontalOrVertical(this Axis axis, RectOffset r) => axis.IsX() ? r.horizontal : r.vertical;
 
-        /// <summary>
-        /// Returns the preferred height of the layout element.
-        /// </summary>
-        /// <param name="rect">The RectTransform of the layout element to query.</param>
-        /// <remarks>
-        /// All components on the GameObject that implement the ILayoutElement are queried. The one with the highest priority which has a value for this setting is used. If multiple componets have this setting and have the same priority, the maximum value out of those is used.
-        /// </remarks>
-        public static float GetPreferredHeight(RectTransform rect)
-        {
-            return GetLayoutProperty(rect, e => e.preferredHeight);
-        }
+        public static float CalcPreferredSize(RectTransform rect, Axis axis) => GetLayoutProperty(rect, axis);
+        public static float CalcPreferredWidth(RectTransform rect) => GetLayoutProperty(rect, Axis.X);
+        public static float CalcPreferredHeight(RectTransform rect) => GetLayoutProperty(rect, Axis.Y);
 
-        /// <summary>
-        /// Gets a calculated layout property for the layout element with the given RectTransform.
-        /// </summary>
-        /// <param name="rect">The RectTransform of the layout element to get a property for.</param>
-        /// <param name="property">The property to calculate.</param>
-        /// <returns>The calculated value of the layout property.</returns>
-        public static float GetLayoutProperty(RectTransform rect, System.Func<ILayoutElement, float> property)
+        private static float GetLayoutProperty(RectTransform rect, Axis axis)
         {
-            if (!rect)
-                return 0;
-            var value = 0f; // default 0.
-            var maxPriority = int.MinValue;
-
             using var _ = CompBuf.GetComponents(rect, typeof(ILayoutElement), out var components);
 
-            // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
-            foreach (ILayoutElement layoutComp in components)
+            var count = components.Count;
+            // no layout elements, return 0.
+            if (count is 0) return 0;
+
+            // only one layout element, return its property value.
+            if (count is 1)
             {
-                if (layoutComp is Behaviour {isActiveAndEnabled: false})
+                var layoutComp = (ILayoutElement) components[0];
+                if (layoutComp is Behaviour { enabled: false }) // only check for enabled, not isActiveAndEnabled.
+                    return 0f;
+                return GetValue(layoutComp, axis);
+            }
+
+            var value = 0f; // default 0.
+            var maxPriority = int.MinValue;
+            for (var i = 0; i < count; i++)
+            {
+                var layoutComp = (ILayoutElement) components[i];
+                if (layoutComp is Behaviour { enabled: false }) // only check for enabled, not isActiveAndEnabled.
                     continue;
 
-                int priority = layoutComp.layoutPriority;
+                var priority = layoutComp.layoutPriority;
                 // If this layout components has lower priority than a previously used, ignore it.
                 if (priority < maxPriority)
                     continue;
-                float curValue = property(layoutComp);
+                float curValue = GetValue(layoutComp, axis);
                 // If this layout property is set to a negative value, it means it should be ignored.
                 if (curValue < 0)
                     continue;
@@ -91,6 +79,16 @@ namespace UnityEngine.UI
             }
 
             return value;
+
+            static float GetValue(ILayoutElement e, Axis axis)
+            {
+                return axis switch
+                {
+                    Axis.X => e.preferredWidth,
+                    Axis.Y => e.preferredHeight,
+                    _ => throw new ArgumentOutOfRangeException(nameof(axis), "Axis must be either 0 (width) or 1 (height).")
+                };
+            }
         }
     }
 }

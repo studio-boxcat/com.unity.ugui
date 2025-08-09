@@ -58,20 +58,19 @@ namespace UnityEngine.UI
         /// </summary>
         /// <param name="axis">The axis to calculate for. 0 is horizontal and 1 is vertical.</param>
         /// <param name="isVertical">Is this group a vertical group?</param>
-        protected void CalcAlongAxis(int axis, bool isVertical)
+        protected void CalcAlongAxis(Axis axis, bool isVertical)
         {
-            float combinedPadding = (axis == 0 ? padding.horizontal : padding.vertical);
-            bool controlSize = (axis == 0 ? m_ChildControlWidth : m_ChildControlHeight);
+            float combinedPadding = axis.SelectHorizontalOrVertical(padding);
+            bool controlSize = axis.Select(m_ChildControlWidth, m_ChildControlHeight);
 
             float totalPreferred = combinedPadding;
 
-            bool alongOtherAxis = (isVertical ^ (axis == 1));
+            bool alongOtherAxis = (isVertical ^ axis.IsY());
             var rectChildrenCount = rectChildren.Count;
             for (int i = 0; i < rectChildrenCount; i++)
             {
                 RectTransform child = rectChildren[i];
-                float preferred;
-                GetChildSizes(child, axis, controlSize, out preferred);
+                float preferred = GetChildSizes(child, axis, controlSize);
 
                 if (alongOtherAxis)
                 {
@@ -95,35 +94,35 @@ namespace UnityEngine.UI
         /// </summary>
         /// <param name="axis">The axis to handle. 0 is horizontal and 1 is vertical.</param>
         /// <param name="isVertical">Is this group a vertical group?</param>
-        protected void SetChildrenAlongAxis(int axis, bool isVertical)
+        protected void SetChildrenAlongAxis(Axis axis, bool isVertical)
         {
-            float size = rectTransform.rect.size[axis];
-            bool controlSize = (axis == 0 ? m_ChildControlWidth : m_ChildControlHeight);
+            var rect = rectTransform.rect;
+            float size = rect.size[axis.Idx()];
+            bool controlSize = axis.Select(m_ChildControlWidth, m_ChildControlHeight);
             float alignmentOnAxis = GetAlignmentOnAxis(axis);
 
-            bool alongOtherAxis = (isVertical ^ (axis == 1));
+            bool alongOtherAxis = (isVertical ^ axis.IsY());
             int startIndex = m_ReverseArrangement ? rectChildren.Count - 1 : 0;
             int endIndex = m_ReverseArrangement ? 0 : rectChildren.Count;
             int increment = m_ReverseArrangement ? -1 : 1;
             if (alongOtherAxis)
             {
-                float innerSize = size - (axis == 0 ? padding.horizontal : padding.vertical);
+                float innerSize = size - axis.SelectHorizontalOrVertical(padding);
 
                 for (int i = startIndex; m_ReverseArrangement ? i >= endIndex : i < endIndex; i += increment)
                 {
                     RectTransform child = rectChildren[i];
-                    float preferred;
-                    GetChildSizes(child, axis, controlSize, out preferred);
+                    float preferred = GetChildSizes(child, axis, controlSize);
 
                     float requiredSpace = Mathf.Clamp(innerSize, 0, preferred);
-                    float startOffset = GetStartOffset(axis, requiredSpace);
+                    float startOffset = GetStartOffset(size, axis, requiredSpace);
                     if (controlSize)
                     {
                         SetChildAlongAxis(child, axis, startOffset, requiredSpace);
                     }
                     else
                     {
-                        float offsetInCell = (requiredSpace - child.sizeDelta[axis]) * alignmentOnAxis;
+                        float offsetInCell = (requiredSpace - child.sizeDelta[axis.Idx()]) * alignmentOnAxis;
                         SetChildAlongAxis(child, axis, startOffset + offsetInCell);
                     }
                 }
@@ -135,14 +134,13 @@ namespace UnityEngine.UI
 
                 if (surplusSpace > 0)
                 {
-                    pos = GetStartOffset(axis, GetTotalPreferredSize(axis) - (axis == 0 ? padding.horizontal : padding.vertical));
+                    pos = GetStartOffset(size, axis, GetTotalPreferredSize(axis) - axis.SelectHorizontalOrVertical(padding));
                 }
 
                 for (int i = startIndex; m_ReverseArrangement ? i >= endIndex : i < endIndex; i += increment)
                 {
                     RectTransform child = rectChildren[i];
-                    float preferred;
-                    GetChildSizes(child, axis, controlSize, out preferred);
+                    float preferred = GetChildSizes(child, axis, controlSize);
 
                     float childSize = preferred;
                     if (controlSize)
@@ -151,7 +149,7 @@ namespace UnityEngine.UI
                     }
                     else
                     {
-                        float offsetInCell = (childSize - child.sizeDelta[axis]) * alignmentOnAxis;
+                        float offsetInCell = (childSize - child.sizeDelta[axis.Idx()]) * alignmentOnAxis;
                         SetChildAlongAxis(child, axis, pos + offsetInCell);
                     }
                     pos += childSize + spacing;
@@ -159,12 +157,11 @@ namespace UnityEngine.UI
             }
         }
 
-        private static void GetChildSizes(RectTransform child, int axis, bool controlSize,
-            out float preferred)
+        private static float GetChildSizes(RectTransform child, Axis axis, bool controlSize)
         {
-            preferred = controlSize
-                ? LayoutUtility.GetPreferredSize(child, axis)
-                : child.sizeDelta[axis];
+            return controlSize
+                ? LayoutUtility.CalcPreferredSize(child, axis)
+                : child.sizeDelta[axis.Idx()];
         }
 
 #if UNITY_EDITOR

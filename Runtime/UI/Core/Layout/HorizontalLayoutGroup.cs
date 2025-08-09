@@ -1,9 +1,6 @@
 namespace UnityEngine.UI
 {
     [AddComponentMenu("Layout/Horizontal Layout Group", 150)]
-    /// <summary>
-    /// Layout class for arranging child elements side by side.
-    /// </summary>
     public sealed class HorizontalLayoutGroup : HorizontalOrVerticalLayoutGroup
     {
         /// <summary>
@@ -12,31 +9,11 @@ namespace UnityEngine.UI
         public override void CalculateLayoutInputHorizontal()
         {
             base.CalculateLayoutInputHorizontal();
-            CalcAlongAxis(0, isVertical: false);
+            CalcAlongAxis(Axis.X, isVertical: false);
         }
 
-        /// <summary>
-        /// Called by the layout system. Also see ILayoutElement
-        /// </summary>
-        public override void CalculateLayoutInputVertical()
-        {
-            CalcAlongAxis(1, isVertical: false);
-        }
-
-        /// <summary>
-        /// Called by the layout system. Also see ILayoutElement
-        /// </summary>
-        public override void SetLayoutHorizontal()
-        {
-            SetChildrenAlongAxis(0, isVertical: false);
-        }
-
-        /// <summary>
-        /// Called by the layout system. Also see ILayoutElement
-        /// </summary>
-        public override void SetLayoutVertical()
-        {
-            SetChildrenAlongAxis(1, isVertical: false);
-        }
+        public override void CalculateLayoutInputVertical() => CalcAlongAxis(Axis.Y, isVertical: false);
+        public override void SetLayoutHorizontal() => SetChildrenAlongAxis(Axis.X, isVertical: false);
+        public override void SetLayoutVertical() => SetChildrenAlongAxis(Axis.Y, isVertical: false);
     }
 }

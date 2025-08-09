@@ -4,12 +4,12 @@ namespace UnityEngine.UI
     ///   A component is treated as a layout element by the auto layout system if it implements ILayoutElement.
     /// </summary>
     /// <remarks>
-    /// The layout system will invoke CalculateLayoutInputHorizontal before querying minWidth, preferredWidth, and flexibleWidth. It can potentially save performance if these properties are cached when CalculateLayoutInputHorizontal is invoked, so they don't need to be recalculated every time the properties are queried.
+    /// The layout system will invoke CalculateLayoutInputHorizontal before querying preferredWidth. It can potentially save performance if these properties are cached when CalculateLayoutInputHorizontal is invoked, so they don't need to be recalculated every time the properties are queried.
     ///
-    /// The layout system will invoke CalculateLayoutInputVertical before querying minHeight, preferredHeight, and flexibleHeight.It can potentially save performance if these properties are cached when CalculateLayoutInputVertical is invoked, so they don't need to be recalculated every time the properties are queried.
+    /// The layout system will invoke CalculateLayoutInputVertical before querying preferredHeight. It can potentially save performance if these properties are cached when CalculateLayoutInputVertical is invoked, so they don't need to be recalculated every time the properties are queried.
     ///
-    /// The minWidth, preferredWidth, and flexibleWidth properties should not rely on any properties of the RectTransform of the layout element, otherwise the behavior will be non-deterministic.
-    /// The minHeight, preferredHeight, and flexibleHeight properties may rely on horizontal aspects of the RectTransform, such as the width or the X component of the position.
+    /// The preferredWidth property should not rely on any properties of the RectTransform of the layout element, otherwise the behavior will be non-deterministic.
+    /// The preferredHeight property may rely on horizontal aspects of the RectTransform, such as the width or the X component of the position.
     /// Any properties of the RectTransforms on child layout elements may always be relied on.
     /// </remarks>
     public interface ILayoutElement
@@ -40,8 +40,8 @@ namespace UnityEngine.UI
     ///
     /// The layout system will first invoke SetLayoutHorizontal and then SetLayoutVertical.
     ///
-    /// In the SetLayoutHorizontal call it is valid to call LayoutUtility.GetMinWidth, LayoutUtility.GetPreferredWidth, and LayoutUtility.GetFlexibleWidth on the RectTransform of itself or any of its children.
-    /// In the SetLayoutVertical call it is valid to call LayoutUtility.GetMinHeight, LayoutUtility.GetPreferredHeight, and LayoutUtility.GetFlexibleHeight on the RectTransform of itself or any of its children.
+    /// In the SetLayoutHorizontal call it is valid to call LayoutUtility.CalcPreferredWidth on the RectTransform of itself or any of its children.
+    /// In the SetLayoutVertical call it is valid to call LayoutUtility.CalcPreferredHeight on the RectTransform of itself or any of its children.
     ///
     /// The component may use this information to determine the width and height to use for its own RectTransform or the RectTransforms of its children.
     /// </remarks>

@@ -491,14 +491,8 @@ namespace UnityEngine.UI
             UpdateVisuals();
         }
 
-        enum Axis
-        {
-            Horizontal = 0,
-            Vertical = 1
-        }
-
-        Axis axis { get { return (m_Direction == Direction.LeftToRight || m_Direction == Direction.RightToLeft) ? Axis.Horizontal : Axis.Vertical; } }
-        bool reverseValue { get { return m_Direction == Direction.RightToLeft || m_Direction == Direction.TopToBottom; } }
+        Axis axis => m_Direction is Direction.LeftToRight or Direction.RightToLeft ? Axis.X : Axis.Y;
+        bool reverseValue => m_Direction is Direction.RightToLeft or Direction.TopToBottom;
 
         // Force-update the slider. Useful if you've changed the properties and want it to update visually.
         private void UpdateVisuals()

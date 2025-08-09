@@ -2,7 +2,6 @@
 
 #nullable enable
 using Sirenix.OdinInspector;
-using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
@@ -35,15 +34,15 @@ namespace UnityEngine.UI
         private void OnRectTransformDimensionsChange()
         {
             if (isActiveAndEnabled
-                && _performingSetLayout is false) // GetMinSize(), GetPreferredSize(), SetSizeWithCurrentAnchors() will invoke OnRectTransformDimensionsChange().
+                && _performingSetLayout is false) // CalcPreferredSize(), SetSizeWithCurrentAnchors() will invoke OnRectTransformDimensionsChange().
             {
                 SetDirty();
             }
         }
 
-        private void HandleSelfFittingAlongAxis(int axis)
+        private void HandleSelfFittingAlongAxis(Axis axis)
         {
-            var fitting = axis == 0 ? m_HorizontalFit : m_VerticalFit;
+            var fitting = axis.Select(m_HorizontalFit, m_VerticalFit);
             if (fitting is false) return;
 
             _performingSetLayout = true;
@@ -51,27 +50,14 @@ namespace UnityEngine.UI
             var t = rectTransform;
 
             // Set size to preferred size
-            var size = LayoutUtility.GetPreferredSize(t, axis);
+            var size = LayoutUtility.CalcPreferredSize(t, axis);
             t.SetSizeWithCurrentAnchors((RectTransform.Axis) axis, size);
 
             _performingSetLayout = false;
         }
 
-        /// <summary>
-        /// Calculate and apply the horizontal component of the size to the RectTransform
-        /// </summary>
-        void ILayoutController.SetLayoutHorizontal()
-        {
-            HandleSelfFittingAlongAxis(0);
-        }
-
-        /// <summary>
-        /// Calculate and apply the vertical component of the size to the RectTransform
-        /// </summary>
-        void ILayoutController.SetLayoutVertical()
-        {
-            HandleSelfFittingAlongAxis(1);
-        }
+        void ILayoutController.SetLayoutHorizontal() => HandleSelfFittingAlongAxis(Axis.X);
+        void ILayoutController.SetLayoutVertical() => HandleSelfFittingAlongAxis(Axis.Y);
 
 #if UNITY_EDITOR
         private void OnValidate()
