@@ -42,7 +42,7 @@ namespace UnityEngine.UI
                 var layoutComp = (ILayoutElement) components[0];
                 if (layoutComp is Behaviour { enabled: false }) // only check for enabled, not isActiveAndEnabled.
                     return 0f;
-                return GetValue(layoutComp, axis);
+                return GetValue(layoutComp, axis).LB0();
             }
 
             var value = 0f; // default 0.
