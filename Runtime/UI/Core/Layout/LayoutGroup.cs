@@ -70,15 +70,8 @@ namespace UnityEngine.UI
 
         // Implementation
 
-        private void OnEnable()
-        {
-            SetLayoutDirty();
-        }
-
-        private void OnDisable()
-        {
-            LayoutRebuilder.SetDirty(rectTransform);
-        }
+        private void OnEnable() => SetLayoutDirty();
+        private void OnDisable() => SetLayoutDirty();
 
         /// <summary>
         /// Callback for when properties have been changed by animation.
