@@ -29,7 +29,8 @@ namespace UnityEngine.UI
         private static readonly List<(Object, int)> _graphicRebuildQueue = new(); // Graphic
         private static readonly List<(Object, int)> _layoutRebuildCallbacks = new(); // MonoBehaviour, IPostLayoutRebuildCallback
         private static readonly List<(Object, int)> _graphicRebuildCallbacks = new(); // MonoBehaviour, IPostGraphicRebuildCallback
-        private static readonly List<Object> _tempBuf = new();
+        private static readonly List<Object> _tempBuf1 = new();
+        private static readonly List<Object> _tempBuf2 = new();
         private static readonly HashSet<Transform> _visitedBuf = new(RefComparer.Instance);
 
         static CanvasUpdateRegistry() => Canvas.willRenderCanvases += PerformUpdate;
@@ -47,12 +48,20 @@ namespace UnityEngine.UI
                 _performingLayoutUpdate = true;
                 UISystemProfilerApi.BeginSample(UISystemProfilerApi.SampleType.Layout);
 
+                // collect the layout roots and callbacks first to avoid corruption of the queue while processing.
+                _tempBuf1.Clear();
+                _tempBuf2.Clear();
                 if (_layoutRebuildQueue.NotEmpty())
+                    FlushLayoutRoot(_layoutRebuildQueue, result: _tempBuf1);
+                if (_layoutRebuildCallbacks.NotEmpty())
+                    FlushCallbacks(_layoutRebuildCallbacks, result: _tempBuf2);
+                Assert.IsTrue(_layoutRebuildQueue.IsEmpty());
+                Assert.IsTrue(_layoutRebuildCallbacks.IsEmpty());
+
+                if (_tempBuf1.NotEmpty())
                 {
-                    _tempBuf.Clear();
-                    FlushLayoutRoot(_layoutRebuildQueue, result: _tempBuf);
                     // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
-                    foreach (Transform layoutRoot in _tempBuf) // element is guaranteed to be non-destroyed here.
+                    foreach (Transform layoutRoot in _tempBuf1) // element is guaranteed to be non-destroyed here.
                     {
                         try
                         {
@@ -68,12 +77,10 @@ namespace UnityEngine.UI
                     }
                 }
 
-                if (_layoutRebuildCallbacks.NotEmpty())
+                if (_tempBuf2.NotEmpty())
                 {
-                    _tempBuf.Clear();
-                    FlushCallbacks(_layoutRebuildCallbacks, result: _tempBuf);
                     // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
-                    foreach (IPostLayoutRebuildCallback callback in _tempBuf)
+                    foreach (IPostLayoutRebuildCallback callback in _tempBuf2)
                     {
                         try
                         {
@@ -117,12 +124,18 @@ namespace UnityEngine.UI
                 _performingGraphicUpdate = true;
                 UISystemProfilerApi.BeginSample(UISystemProfilerApi.SampleType.Render);
 
+                // collect the graphics and callbacks first to avoid corruption of the queue while processing.
+                _tempBuf1.Clear();
+                _tempBuf2.Clear();
                 if (_graphicRebuildQueue.NotEmpty())
+                    FlushGraphic(_graphicRebuildQueue, result: _tempBuf1);
+                if (_graphicRebuildCallbacks.NotEmpty())
+                    FlushCallbacks(_graphicRebuildCallbacks, result: _tempBuf2);
+
+                if (_tempBuf1.NotEmpty())
                 {
-                    _tempBuf.Clear();
-                    FlushGraphic(_graphicRebuildQueue, result: _tempBuf);
                     // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
-                    foreach (Graphic graphic in _tempBuf)
+                    foreach (Graphic graphic in _tempBuf1)
                     {
                         try
                         {
@@ -138,12 +151,10 @@ namespace UnityEngine.UI
                     }
                 }
 
-                if (_graphicRebuildCallbacks.NotEmpty())
+                if (_tempBuf2.NotEmpty())
                 {
-                    _tempBuf.Clear();
-                    FlushCallbacks(_graphicRebuildCallbacks, result: _tempBuf);
                     // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
-                    foreach (IPostGraphicRebuildCallback callback in _tempBuf)
+                    foreach (IPostGraphicRebuildCallback callback in _tempBuf2)
                     {
                         try
                         {
@@ -218,7 +229,7 @@ namespace UnityEngine.UI
         internal static void QueueLayoutNode(Transform target)
         {
             if (_performingLayoutUpdate)
-                L.E($"[CanvasUpdateRegistry] Trying to add {target} for layout rebuild while we are already inside a rebuild loop.");
+                L.W($"[CanvasUpdateRegistry] Trying to add {target} for layout rebuild while we are already inside a rebuild loop.");
 
             // root will be resolved by LayoutRebuilder.
             _layoutRebuildQueue.Add((target, target.GetInstanceID()));
@@ -236,7 +247,7 @@ namespace UnityEngine.UI
             where TLayoutRebuildTarget : MonoBehaviour, IPostLayoutRebuildCallback
         {
             if (_performingLayoutUpdate)
-                L.E($"[CanvasUpdateRegistry] Trying to add {target} for layout rebuild while we are already inside a rebuild loop.");
+                L.W($"[CanvasUpdateRegistry] Trying to add {target} for layout rebuild while we are already inside a rebuild loop.");
 
             _layoutRebuildCallbacks.Add((target, target.GetInstanceID()));
         }

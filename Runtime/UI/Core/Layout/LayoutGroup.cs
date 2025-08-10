@@ -1,4 +1,5 @@
 // ReSharper disable InconsistentNaming
+
 using System.Collections.Generic;
 
 namespace UnityEngine.UI
@@ -71,7 +72,7 @@ namespace UnityEngine.UI
 
         private void OnEnable()
         {
-            SetDirty();
+            SetLayoutDirty();
         }
 
         private void OnDisable()
@@ -84,7 +85,8 @@ namespace UnityEngine.UI
         /// </summary>
         private void OnDidApplyAnimationProperties()
         {
-            SetDirty();
+            if (isActiveAndEnabled)
+                SetLayoutDirty();
         }
 
         /// <summary>
@@ -185,8 +187,12 @@ namespace UnityEngine.UI
 
         private void OnRectTransformDimensionsChange()
         {
-            if (IsRootLayoutGroup(rectTransform))
-                SetDirty();
+            if (isActiveAndEnabled
+                && CanvasUpdateRegistry.IsRebuildingLayout() is false
+                && IsRootLayoutGroup(rectTransform))
+            {
+                SetLayoutDirty();
+            }
             return;
 
             static bool IsRootLayoutGroup(Transform transform)
@@ -199,19 +205,14 @@ namespace UnityEngine.UI
 
         private void OnTransformChildrenChanged()
         {
-            SetDirty();
+            if (isActiveAndEnabled)
+                SetLayoutDirty();
         }
 
         /// <summary>
         /// Mark the LayoutGroup as dirty.
         /// </summary>
-        private void SetDirty()
-        {
-            if (!IsActive())
-                return;
-
-            LayoutRebuilder.SetDirty(rectTransform);
-        }
+        private void SetLayoutDirty() => LayoutRebuilder.SetDirty(rectTransform);
 
 #if UNITY_EDITOR
         protected const DrivenTransformProperties BaseDrivenProperties =
