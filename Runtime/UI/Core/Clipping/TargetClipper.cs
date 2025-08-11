@@ -38,7 +38,8 @@ namespace UnityEngine.UI
                 ClipperRegistry.RestoreCullState(g);
         }
 
-        private void Update()
+        // before CanvasRenderer render.
+        private void LateUpdate()
         {
             var canvas = _targets[0].canvas;
             var clipRect = CanvasUtils.BoundingRect(
