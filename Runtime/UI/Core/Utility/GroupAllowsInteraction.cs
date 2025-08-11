@@ -11,7 +11,7 @@ namespace UnityEngine.UI
         public bool IsInteractable(Component component)
         {
             if (_valid) return _interactable;
-            Reevaluate(component.transform);
+            Reevaluate(component);
             return _interactable;
         }
 
