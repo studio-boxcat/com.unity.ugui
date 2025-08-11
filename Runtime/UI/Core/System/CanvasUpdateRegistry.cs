@@ -60,6 +60,8 @@ namespace UnityEngine.UI
 
                 if (_tempBuf1.NotEmpty())
                 {
+                    L.I($"[CanvasUpdateRegistry] Rebuilding Layout Roots: {_tempBuf1.Count.Strm()}");
+
                     // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
                     foreach (Transform layoutRoot in _tempBuf1) // element is guaranteed to be non-destroyed here.
                     {
@@ -79,6 +81,8 @@ namespace UnityEngine.UI
 
                 if (_tempBuf2.NotEmpty())
                 {
+                    L.I($"[CanvasUpdateRegistry] Executing PostLayoutRebuildCallbacks: {_tempBuf2.Count.Strm()}");
+
                     // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
                     foreach (IPostLayoutRebuildCallback callback in _tempBuf2)
                     {

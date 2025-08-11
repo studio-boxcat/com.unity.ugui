@@ -96,7 +96,7 @@ namespace UnityEngine.UI
         /// </remarks>
         internal static void RebuildRootImmediate(Transform layoutRoot)
         {
-            L.I("[LayoutRebuilder] RebuildRootImmediate: " + layoutRoot.BuildPath(), layoutRoot);
+            // L.I("[LayoutRebuilder] RebuildRootImmediate: " + layoutRoot.BuildPath(), layoutRoot);
 
 #if DEBUG
             if (!layoutRoot.gameObject.activeInHierarchy)
