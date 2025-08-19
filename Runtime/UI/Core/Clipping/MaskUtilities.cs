@@ -1,6 +1,4 @@
 #nullable enable
-using UnityEngine.Pool;
-
 namespace UnityEngine.UI
 {
     /// <summary>
@@ -8,21 +6,22 @@ namespace UnityEngine.UI
     /// </summary>
     public static class MaskUtilities
     {
+        private static readonly ListPool<IMaskable> _maskablePool = new();
+
         /// <summary>
         /// Notify all IMaskable under the given component that they need to recalculate masking.
         /// </summary>
         /// <param name="root">The object thats changed for whose children should be notified.</param>
         public static void NotifyStencilStateChanged(Component root)
         {
-            var components = ListPool<IMaskable>.Get();
-            root.GetComponentsInChildren(components);
+            using var _ = _maskablePool.Rent(out var comps);
+            root.GetComponentsInChildren(comps);
             var rootGO = root.gameObject;
-            foreach (var comp in components)
+            foreach (var comp in comps)
             {
                 if (rootGO.RefEq(comp.gameObject)) continue; // skip self.
                 comp.RecalculateMasking();
             }
-            ListPool<IMaskable>.Release(components);
         }
 
         /// <summary>

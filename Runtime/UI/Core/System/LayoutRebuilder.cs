@@ -1,7 +1,6 @@
 #nullable enable
 using System.Collections.Generic;
 using UnityEngine.Assertions;
-using UnityEngine.Pool;
 
 namespace UnityEngine.UI
 {
@@ -86,6 +85,9 @@ namespace UnityEngine.UI
             }
         }
 
+        private static readonly ListPool<ILayoutElement> _elemPool = new();
+        private static readonly ListPool<ILayoutController> _ctrlPool = new();
+
         /// <summary>
         /// Forces an immediate rebuild of the layout element and child layout elements affected by the calculations.
         /// </summary>
@@ -105,40 +107,37 @@ namespace UnityEngine.UI
                 L.E("[LayoutRebuilder] No ILayoutController on target: " + layoutRoot.name, layoutRoot);
 #endif
 
-            var layoutCalcTargets = ListPool<ILayoutElement>.Get(); // calculate layout, dimensions, etc.
-            var layoutControllers = ListPool<ILayoutController>.Get(); // controls rect transforms
-            CollectLayoutCalcTargets(layoutRoot, layoutCalcTargets); // child to parent order.
-            CollectLayoutControllers(layoutRoot, layoutControllers); // parent to child order. (ILayoutSelfController first).
+            using var d0 = _elemPool.Rent(out var elems); // calculate layout, dimensions, etc.
+            using var d1 = _ctrlPool.Rent(out var ctrls); // controls rect transforms
+            CollectElements(layoutRoot, elems); // child to parent order.
+            CollectControllers(layoutRoot, ctrls); // parent to child order. (ILayoutSelfController first).
 
             // Horizontal layout first.
-            foreach (var layoutElement in layoutCalcTargets)
+            foreach (var elem in elems)
             {
                 // L.I("[LayoutRebuilder] CalculateLayoutInputHorizontal: " + layoutElement, (Object) layoutElement);
-                layoutElement.CalculateLayoutInputHorizontal();
+                elem.CalculateLayoutInputHorizontal();
             }
-            foreach (var layoutController in layoutControllers)
+            foreach (var ctrl in ctrls)
             {
                 // L.I("[LayoutRebuilder] SetLayoutHorizontal: " + layoutController, (Object) layoutController);
-                layoutController.SetLayoutHorizontal();
+                ctrl.SetLayoutHorizontal();
             }
 
             // Then vertical layout.
-            foreach (var layoutElement in layoutCalcTargets)
+            foreach (var elem in elems)
             {
                 // L.I("[LayoutRebuilder] CalculateLayoutInputVertical: " + layoutElement, (Object) layoutElement);
-                layoutElement.CalculateLayoutInputVertical();
+                elem.CalculateLayoutInputVertical();
             }
-            foreach (var layoutController in layoutControllers)
+            foreach (var ctrl in ctrls)
             {
                 // L.I("[LayoutRebuilder] SetLayoutVertical: " + layoutController, (Object) layoutController);
-                layoutController.SetLayoutVertical();
+                ctrl.SetLayoutVertical();
             }
-
-            ListPool<ILayoutElement>.Release(layoutCalcTargets);
-            ListPool<ILayoutController>.Release(layoutControllers);
         }
 
-        private static void CollectLayoutCalcTargets(Transform t, List<ILayoutElement> result)
+        private static void CollectElements(Transform t, List<ILayoutElement> result)
         {
             Assert.IsTrue(t.gameObject.activeInHierarchy, "Target must be active in hierarchy: " + t.name);
 
@@ -151,7 +150,7 @@ namespace UnityEngine.UI
                 {
                     var c = t.GetChild(i);
                     if (c.gameObject.activeSelf) // only consider active children
-                        CollectLayoutCalcTargets(c, result);
+                        CollectElements(c, result);
                 }
             }
 
@@ -161,7 +160,7 @@ namespace UnityEngine.UI
             ComponentSearch.AppendEnabledComponents(t, result);
         }
 
-        private static void CollectLayoutControllers(Transform t, List<ILayoutController> result)
+        private static void CollectControllers(Transform t, List<ILayoutController> result)
         {
             Assert.IsTrue(t.gameObject.activeInHierarchy, "Target must be active in hierarchy: " + t.name);
 
@@ -205,7 +204,7 @@ namespace UnityEngine.UI
             {
                 var c = t.GetChild(i);
                 if (c.gameObject.activeSelf) // only consider active children
-                    CollectLayoutControllers(c, result);
+                    CollectControllers(c, result);
             }
         }
 

@@ -9,22 +9,31 @@ namespace UnityEngine.UI
     /// </summary>
     public static class CanvasUtils
     {
-        public static bool IsRenderRoot(Component c)
-        {
-            return c.TryGetComponent(out Canvas canvas)
-                   && ((canvas.enabled && canvas.overrideSorting) || canvas.isRootCanvas);
-        }
+        public static bool IsRenderRoot(Canvas c) =>
+            c is { enabled: true, overrideSorting: true } || c.isRootCanvas;
 
-        public static Vector2 ResolveCanvasSize(this Graphic g)
-        {
-            var canvas = g.canvas;
-            Assert.IsTrue(canvas, "Graphic is not attached to a canvas.");
-            return canvas.rootCanvas.GetRectTransform().sizeDelta;
-        }
+        public static bool IsRenderRoot(Component c) =>
+            c.TryGetComponent(out Canvas canvas) && IsRenderRoot(canvas);
 
         public static bool ResolveRootCanvas(this Transform t, out Canvas canvas)
         {
             return t.root.TryGetComponent(out canvas);
+        }
+
+        public static Canvas? ResolveRenderRoot(this Graphic g)
+        {
+            var canvas = g.canvas; // nearest canvas.
+
+            while (canvas is not null && IsRenderRoot(canvas) is false)
+            {
+                var t = canvas.transform.parent;
+                canvas = ComponentSearch.NearestUpwards_GOAnyAndCompEnabled<Canvas>(t);
+            }
+
+            if (canvas is null)
+                L.E($"[CanvasUtils] No render root canvas found for the graphic: {g}");
+
+            return canvas;
         }
 
         public static Camera? ResolveWorldCamera(Graphic g)
@@ -76,7 +85,7 @@ namespace UnityEngine.UI
                 : default;
         }
 
-        static Rect BoundingRect(Rect r, RectTransform rectTransform, Canvas canvas)
+        private static Rect BoundingRect(Rect r, RectTransform rectTransform, Canvas canvas)
         {
             // XXX: Graphic clipping & culling is done in root canvas space.
             canvas = canvas.rootCanvas;
@@ -105,7 +114,7 @@ namespace UnityEngine.UI
             static float Max(float a, float b, float c, float d) => Mathf.Max(Mathf.Max(a, b), Mathf.Max(c, d));
         }
 
-        static Vector2 MultiplyPoint2D(this Matrix4x4 mat, Vector2 point)
+        private static Vector2 MultiplyPoint2D(this Matrix4x4 mat, Vector2 point)
         {
             Vector2 v;
             v.x = (float) (mat.m00 * (double) point.x + mat.m01 * (double) point.y) + mat.m03;

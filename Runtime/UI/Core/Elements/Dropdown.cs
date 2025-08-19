@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using Sirenix.OdinInspector;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
-using UnityEngine.Pool;
 
 namespace UnityEngine.UI
 {
@@ -29,13 +29,6 @@ namespace UnityEngine.UI
             public virtual void OnPointerEnter(PointerEventData eventData)
             {
                 EventSystem.current.SetSelectedGameObject(gameObject);
-            }
-
-            public virtual void OnCancel(BaseEventData eventData)
-            {
-                Dropdown dropdown = GetComponentInParent<Dropdown>();
-                if (dropdown)
-                    dropdown.Hide();
             }
         }
 
@@ -126,7 +119,7 @@ namespace UnityEngine.UI
         public RectTransform template { get { return m_Template; } set { m_Template = value; RefreshShownValue(); } }
 
         // Text to be used as a caption for the current value. It's not required, but it's kept here for convenience.
-        [SerializeField]
+        [SerializeField, Required]
         private Text m_CaptionText;
 
         /// <summary>
@@ -681,18 +674,6 @@ namespace UnityEngine.UI
         }
 
         /// <summary>
-        /// This will hide the dropdown list.
-        /// </summary>
-        /// <remarks>
-        /// Called by a BaseInputModule when a Cancel event occurs.
-        /// </remarks>
-        /// <param name="eventData">The asocciated event data.</param>
-        public void OnCancel(BaseEventData eventData)
-        {
-            Hide();
-        }
-
-        /// <summary>
         /// Show the dropdown.
         ///
         /// Plan for dropdown scrolling to ensure dropdown is contained within screen.
@@ -708,24 +689,7 @@ namespace UnityEngine.UI
                 return;
 
             // Get root Canvas.
-            var list = ListPool<Canvas>.Get();
-            gameObject.GetComponentsInParent(false, list);
-            if (list.Count == 0)
-                return;
-
-            // case 1064466 rootCanvas should be last element returned by GetComponentsInParent()
-            var listCount = list.Count;
-            Canvas rootCanvas = list[listCount - 1];
-            for (int i = 0; i < listCount; i++)
-            {
-                if (list[i].isRootCanvas || list[i].overrideSorting)
-                {
-                    rootCanvas = list[i];
-                    break;
-                }
-            }
-
-            ListPool<Canvas>.Release(list);
+            var rootCanvas = m_CaptionText.ResolveRenderRoot();
 
             if (!validTemplate)
             {
