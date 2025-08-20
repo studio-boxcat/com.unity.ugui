@@ -447,7 +447,7 @@ namespace UnityEngine.UI
             // When no vertices are generated, SetMesh with an empty mesh.
             // If we call canvasRenderer.Clear() to clear the mesh,
             // it will also remove the material, which is not what we want.
-            if (mb.HasSetUp())
+            if (mb.HasSetUp() is false)
             {
                 canvasRenderer.SetMesh(MeshPool.Empty);
                 return;
