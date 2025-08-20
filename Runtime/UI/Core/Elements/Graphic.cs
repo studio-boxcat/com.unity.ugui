@@ -447,8 +447,7 @@ namespace UnityEngine.UI
             // When no vertices are generated, SetMesh with an empty mesh.
             // If we call canvasRenderer.Clear() to clear the mesh,
             // it will also remove the material, which is not what we want.
-            var posCount = mb.Poses.Count;
-            if (posCount is MeshBuilder.Invalid)
+            if (mb.HasSetUp())
             {
                 canvasRenderer.SetMesh(MeshPool.Empty);
                 return;
@@ -460,11 +459,7 @@ namespace UnityEngine.UI
 
 
             // set the mesh to the CanvasRenderer
-            var mesh = MeshPool.Rent();
-            Assert.IsTrue(mesh.vertexCount is 0, "Mesh is not empty. Please clear the mesh before building it again.");
-            mb.FillMeshAndInvalidate(mesh);
-            canvasRenderer.SetMesh(mesh);
-            MeshPool.Return(mesh); // return the mesh to the pool
+            mb.SetMeshAndInvalidate(canvasRenderer);
         }
 
         public virtual void ForceUpdateGeometry() => UpdateGeometry();

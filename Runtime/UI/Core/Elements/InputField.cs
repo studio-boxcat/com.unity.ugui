@@ -321,16 +321,6 @@ namespace UnityEngine.UI
             EnforceTextHOverflow();
         }
 
-        protected Mesh mesh
-        {
-            get
-            {
-                if (m_Mesh == null)
-                    m_Mesh = new Mesh();
-                return m_Mesh;
-            }
-        }
-
         protected TextGenerator cachedInputTextGenerator
         {
             get
@@ -1371,8 +1361,7 @@ namespace UnityEngine.UI
             {
                 if (m_CachedInputRenderer != null)
                 {
-                    mesh.Clear();
-                    m_CachedInputRenderer.SetMesh(mesh);
+                    m_CachedInputRenderer.SetMesh(MeshPool.Empty);
                 }
 
                 DeactivateInputField();
@@ -2660,8 +2649,12 @@ namespace UnityEngine.UI
             if (m_CachedInputRenderer == null)
                 return;
 
-            OnFillVBO(mesh);
-            m_CachedInputRenderer.SetMesh(mesh);
+            using (MeshBuilderPool.Rent(out var mb))
+            {
+                OnFillVBO(mb);
+                if (mb.HasSetUp()) mb.SetMeshAndInvalidate(m_CachedInputRenderer);
+                else m_CachedInputRenderer.SetMesh(MeshPool.Empty);
+            }
         }
 
         private void AssignPositioningIfNeeded()
@@ -2687,32 +2680,22 @@ namespace UnityEngine.UI
             }
         }
 
-        private void OnFillVBO(Mesh vbo)
+        private void OnFillVBO(MeshBuilder mb)
         {
             if (!isFocused)
-            {
-                vbo.Clear();
                 return;
-            }
 
-            using (MeshBuilderPool.Rent(out var helper))
+            if (!hasSelection)
             {
-                var roundingOffset = Vector2.zero;
-
-                if (!hasSelection)
-                {
-                    GenerateCaret(helper, roundingOffset);
-                }
-                else
-                {
-                    GenerateHighlight(helper, roundingOffset);
-                }
-
-                helper.FillMeshAndInvalidate(vbo);
+                GenerateCaret(mb);
+            }
+            else
+            {
+                GenerateHighlight(mb);
             }
         }
 
-        private void GenerateCaret(MeshBuilder vbo, Vector2 roundingOffset)
+        private void GenerateCaret(MeshBuilder vbo)
         {
             if (!m_CaretVisible)
                 return;
@@ -2745,8 +2728,8 @@ namespace UnityEngine.UI
             startPosition.y = gen.lines[characterLine].topY / m_TextComponent.pixelsPerUnit;
             float height = gen.lines[characterLine].height / m_TextComponent.pixelsPerUnit;
 
-            var curVertMin = startPosition + roundingOffset - new Vector2(0, height);
-            var curVertMax = startPosition + roundingOffset + new Vector2(width, 0);
+            var curVertMin = startPosition - new Vector2(0, height);
+            var curVertMax = startPosition + new Vector2(width, 0);
             vbo.SetUp_Quad(curVertMin, curVertMax, Vector2.zero, Vector2.zero, caretColor);
 
             int screenHeight = Screen.height;
@@ -2771,7 +2754,7 @@ namespace UnityEngine.UI
             UIInput.compositionCursorPos = screenPosition;
         }
 
-        private void GenerateHighlight(MeshBuilder vbo, Vector2 roundingOffset)
+        private void GenerateHighlight(MeshBuilder vbo)
         {
             int startChar = Mathf.Max(0, caretPositionInternal - m_DrawStart);
             int endChar = Mathf.Max(0, caretSelectPositionInternal - m_DrawStart);
@@ -2806,8 +2789,8 @@ namespace UnityEngine.UI
                         endPosition.x = m_TextComponent.rectTransform.rect.xMax;
 
                     qb.Add(
-                        startPosition + roundingOffset,
-                        endPosition + roundingOffset,
+                        startPosition,
+                        endPosition,
                         Vector2.zero, Vector2.zero);
 
                     startChar = currentChar + 1;

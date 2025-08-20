@@ -6,11 +6,11 @@ namespace UnityEngine.UI
 {
     public class MeshQuadBuilder
     {
-        readonly MeshBuilder _mb;
-        readonly int _capacity;
-        readonly Vector3[] _poses;
-        readonly Vector2[] _uvs;
-        int _count;
+        private readonly MeshBuilder _mb;
+        private readonly int _capacity;
+        private readonly Vector3[] _poses;
+        private readonly Vector2[] _uvs;
+        private int _count;
 
 
         public MeshQuadBuilder(MeshBuilder mb, int capacity)
@@ -91,6 +91,8 @@ namespace UnityEngine.UI
             Assert.AreEqual(posCount, colorCount, "Colors is not prepared");
             Assert.AreNotEqual(Invalid, indexCount, "Indices is not prepared");
         }
+
+        public bool HasSetUp() => Poses.Count is not Invalid;
 
         public void SetUp_Empty()
         {
@@ -203,6 +205,16 @@ namespace UnityEngine.UI
         {
             FillMesh(mesh);
             Invalidate();
+        }
+
+        public void SetMeshAndInvalidate(CanvasRenderer canvasRenderer)
+        {
+            Assert.IsTrue(Poses.Count is not Invalid, "Poses is not prepared.");
+            var mesh = MeshPool.Rent();
+            Assert.IsTrue(mesh.vertexCount is 0, "Mesh is not empty. Please clear the mesh before building it again.");
+            FillMeshAndInvalidate(mesh);
+            canvasRenderer.SetMesh(mesh);
+            MeshPool.Return(mesh); // return the mesh to the pool
         }
     }
 }
