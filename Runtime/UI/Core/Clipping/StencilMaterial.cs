@@ -38,7 +38,6 @@ namespace UnityEngine.UI
         private static readonly int _stencilReadMask = Shader.PropertyToID("_StencilReadMask");
         private static readonly int _stencilWriteMask = Shader.PropertyToID("_StencilWriteMask");
         private static readonly int _colorMask = Shader.PropertyToID("_ColorMask");
-        private static readonly int _useUIAlphaClip = Shader.PropertyToID("_UseUIAlphaClip");
 
         /// <summary>
         /// Add a new material using the specified base and stencil ID.
@@ -84,18 +83,6 @@ namespace UnityEngine.UI
             newMat.SetFloat(_stencilReadMask, readMask);
             newMat.SetFloat(_stencilWriteMask, writeMask);
             newMat.SetFloat(_colorMask, (float) colorWriteMask);
-
-            var useAlphaClip = operation != StencilOp.Keep && writeMask > 0;
-            if (useAlphaClip)
-            {
-                newMat.SetFloat(_useUIAlphaClip, 1);
-                newMat.EnableKeyword("UNITY_UI_ALPHACLIP");
-            }
-            else
-            {
-                newMat.SetFloat(_useUIAlphaClip, 0);
-                newMat.DisableKeyword("UNITY_UI_ALPHACLIP");
-            }
 
             L.I($"[UGUI] Stencil material created: {newMat.name}", baseMat);
 
