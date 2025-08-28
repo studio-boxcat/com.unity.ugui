@@ -11,8 +11,7 @@ namespace UnityEngine.UI
         Color = 1 << 0,
         Material = 1 << 1,
         Raycast = 1 << 2,
-        Maskable = 1 << 3,
-        All = Color | Material | Raycast | Maskable
+        All = Color | Material | Raycast
     }
 
     [Conditional("UNITY_EDITOR")]

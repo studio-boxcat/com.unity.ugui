@@ -1,10 +1,9 @@
 // ReSharper disable InconsistentNaming
 
 #nullable enable
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine.Assertions;
-using UnityEngine.Bindings;
 using UnityEngine.Rendering;
 
 namespace UnityEngine.UI
@@ -15,173 +14,142 @@ namespace UnityEngine.UI
     /// </summary>
     public static class StencilMaterial
     {
-        private class MatEntry
-        {
-            public readonly Material baseMat;
-            public readonly Material customMat;
-            public readonly ulong hash;
-            public int refCount;
-
-            public MatEntry(Material baseMat, Material customMat, ulong hash)
-            {
-                this.baseMat = baseMat;
-                this.customMat = customMat;
-                this.hash = hash;
-            }
-        }
-
-        private static readonly List<MatEntry> m_List = new();
+        private static readonly Dictionary<int, MatEntry> _baseToEntry = new();
+        private static readonly Dictionary<int, MatEntry> _renderToEntry = new();
 
         private static readonly int _stencil = Shader.PropertyToID("_Stencil");
-        private static readonly int _stencilOp = Shader.PropertyToID("_StencilOp");
-        private static readonly int _stencilComp = Shader.PropertyToID("_StencilComp");
-        private static readonly int _stencilReadMask = Shader.PropertyToID("_StencilReadMask");
-        private static readonly int _stencilWriteMask = Shader.PropertyToID("_StencilWriteMask");
-        private static readonly int _colorMask = Shader.PropertyToID("_ColorMask");
 
-        /// <summary>
-        /// Add a new material using the specified base and stencil ID.
-        /// </summary>
-        private static Material Add(Material baseMat,
-            int stencilID, StencilOp operation, CompareFunction compareFunction,
-            ColorWriteMask colorWriteMask, int readMask = 255, int writeMask = 255)
+        public static Material AddMaskable(Material baseMat)
         {
             Assert.IsTrue(baseMat, "Base material must not be null.");
-            Assert.IsTrue(stencilID > 0, "Stencil ID must be greater than 0.");
-            Assert.IsTrue(stencilID <= 0xff && (int) operation <= 0xff && (int) compareFunction <= 0xff
-                          && (int) colorWriteMask <= 0xff && readMask <= 0xff && writeMask <= 0xff,
-                "Stencil ID, operation, compare function, color write mask, read mask and write mask must be <= 0xff.");
-
-#if DEBUG
-            CheckPropertyExists(baseMat, _stencil);
-            CheckPropertyExists(baseMat, _stencilOp);
-            CheckPropertyExists(baseMat, _stencilComp);
-            CheckPropertyExists(baseMat, _stencilReadMask);
-            CheckPropertyExists(baseMat, _stencilWriteMask);
-            CheckPropertyExists(baseMat, _colorMask);
-#endif
 
             // If we have a pre-existing entry matching the description,
             // just increase the ref count and return the material.
-            var hash = Hash(stencilID, operation, compareFunction, colorWriteMask, readMask, writeMask);
-            foreach (var e in m_List) // not that huge, so we can use foreach.
+            var baseID = baseMat.GetInstanceID();
+            if (_baseToEntry.TryGetValue(baseID, out var e))
             {
-                if (e.baseMat.RefEq(baseMat) && e.hash == hash)
-                {
-                    ++e.refCount;
-                    return e.customMat;
-                }
+                ++e.RefCount;
+                return e.Render;
             }
 
-            var newMat = new Material(baseMat);
-            newMat.SetDontSave(); // Prevent material from unloading.
-            newMat.SetNameDebug($"{baseMat.name} (Stencil Id:{stencilID}, Op:{operation}, Comp:{compareFunction}, WriteMask:{writeMask}, ReadMask:{readMask}, ColorMask:{colorWriteMask})");
+            var renderMat = new Material(baseMat);
+            renderMat.SetDontSave(); // Prevent material from unloading.
+            renderMat.SetNameDebug($"{baseMat.name} (Maskable)");
+            renderMat.SetFloat(_stencil, 1); // XXX: we only support 1 level of masking for now
 
-            newMat.SetFloat(_stencil, stencilID);
-            newMat.SetFloat(_stencilOp, (float) operation);
-            newMat.SetFloat(_stencilComp, (float) compareFunction);
-            newMat.SetFloat(_stencilReadMask, readMask);
-            newMat.SetFloat(_stencilWriteMask, writeMask);
-            newMat.SetFloat(_colorMask, (float) colorWriteMask);
+            L.I($"[UGUI] Stencil material created: {renderMat.name}", baseMat);
 
-            L.I($"[UGUI] Stencil material created: {newMat.name}", baseMat);
+            var entry = new MatEntry(baseMat, renderMat) { RefCount = 1 };
+            _baseToEntry.Add(baseID, entry);
+            _renderToEntry.Add(renderMat.GetInstanceID(), entry);
 
-            m_List.Add(new MatEntry(baseMat, newMat, hash) { refCount = 1 });
-
-#if UNITY_EDITOR
-            if (m_List.Count > 16)
-                L.E($"[UGUI] Too many stencil materials created: {m_List.Count}, list=[{string.Join(", ", m_List.Select(e => e.customMat.name))}]");
+#if DEBUG
+            if (_baseToEntry.Count > 8)
+                L.E($"[UGUI] Too many stencil materials created: {_baseToEntry.Count}, " +
+                    $"list=[{string.Join(", ", _baseToEntry.Values)}]");
 #endif
-            return newMat;
-
-            static ulong Hash(
-                int stencilID, StencilOp operation, CompareFunction compareFunction,
-                ColorWriteMask colorWriteMask, int readMask, int writeMask)
-            {
-                // stencil ID, op, compare function, color write mask, read mask, write mask are all 1 byte.
-                return (uint) stencilID
-                       | ((ulong) operation << 8)
-                       | ((ulong) compareFunction << 16)
-                       | ((ulong) colorWriteMask << 24)
-                       | ((ulong) readMask << 32)
-                       | ((ulong) writeMask << 40);
-            }
-        }
-
-        public static Material AddMaskable(Material toUse, int depth)
-        {
-            Assert.IsTrue(depth is > 0 and < 8, "Stencil depth must be greater than 0 and less than 8.");
-
-            return Add(toUse,
-                stencilID: (1 << depth) - 1,
-                StencilOp.Keep,
-                CompareFunction.Equal,
-                ColorWriteMask.All,
-                readMask: (1 << depth) - 1,
-                writeMask: 0);
-        }
-
-        public static (Material Mask, Material Unmask) AddMaskPair(Material baseMaterial, byte depth, bool showMaskGraphic)
-        {
-            Assert.IsTrue(baseMaterial, "Base material must not be null.");
-            Assert.IsTrue(depth < 8, "Stencil depth must be less than 8.");
-
-            var colorWriteMask = showMaskGraphic ? ColorWriteMask.All : 0;
-
-            // if we are at the first level...
-            // we want to destroy what is there
-            if (depth is 0)
-            {
-                return (Add(baseMaterial, stencilID: 1, StencilOp.Replace, CompareFunction.Always, colorWriteMask: colorWriteMask),
-                    Add(baseMaterial, stencilID: 1, StencilOp.Zero, CompareFunction.Always, colorWriteMask: 0));
-            }
-            //otherwise we need to be a bit smarter and set some read / write masks
-            else
-            {
-                var bit = 1 << depth;
-                var whole = bit | (bit - 1); // this is the mask that will include self and all previous levels.
-                var below = bit - 1; // this is the mask that will include all previous levels, but not self.
-                return (Add(baseMaterial, stencilID: whole, StencilOp.Replace, CompareFunction.Equal,
-                        colorWriteMask: colorWriteMask, readMask: below, writeMask: whole),
-                    Add(baseMaterial, stencilID: below, StencilOp.Replace, CompareFunction.Equal,
-                        colorWriteMask: 0, readMask: below, writeMask: whole));
-            }
+            return renderMat;
         }
 
         /// <summary>
         /// Remove an existing material, automatically cleaning it up if it's no longer in use.
         /// </summary>
-        public static void Remove([NotNull] Material customMat)
+        public static void RemoveMaskable(Material renderMat)
         {
-            // Iterate in reverse order as the most recently added materials are most likely to be removed.
-            var count = m_List.Count;
-
-            for (var i = count - 1; i >= 0; i--)
+            var renderID = renderMat.GetInstanceID();
+            if (_renderToEntry.TryGetValue(renderID, out var e) is false)
             {
-                var e = m_List[i];
-                if (ReferenceEquals(e.customMat, customMat) is false)
-                    continue;
+                L.E($"[UGUI] Trying to remove a stencil material that doesn't exist: {renderMat.SafeName()}", renderMat);
+                return;
+            }
 
-                // Destroy material if no longer in use.
-                // Keep some instances in the list to reduce allocations.
-                var noRef = --e.refCount is 0;
-                if (noRef && count > 4)
-                {
-                    L.I($"[UGUI] Stencil material destroyed: {e.customMat.name}", e.baseMat);
-                    Object.DestroyImmediate(e.customMat);
-                    m_List.RemoveAt(i);
-                }
+            if (--e.RefCount is not 0 // still in use
+                || _renderToEntry.Count <= 4) // keep some instances to reduce allocations
+            {
+                return;
+            }
 
-                break;
+            // Destroy material if no longer in use.
+            L.I($"[UGUI] Stencil material destroyed: {e.Render.SafeName()}", e.Render);
+            Object.DestroyImmediate(e.Render);
+            _baseToEntry.Remove(e.Base.GetInstanceID());
+            _renderToEntry.Remove(renderID);
+        }
+
+        public static byte GetDepthFromRenderMaterial(Material mat)
+        {
+            var id = (int) mat.GetFloat(_stencil);
+            return id switch
+            {
+                0 => 0, // most common case
+                0b0000_0001 => 1, // most common case
+                0b0000_0011 => 2,
+                0b0000_0111 => 3,
+                0b0000_1111 => 4,
+                0b0001_1111 => 5,
+                0b0011_1111 => 6,
+                0b0111_1111 => 7,
+                0b1111_1111 => 8,
+                _ => throw new ArgumentOutOfRangeException(nameof(mat), $"Invalid stencil ID: {id}")
+            };
+        }
+
+        private static Material? _maskMat;
+        private static Material? _unmaskMat;
+
+        public static (Material Mask, Material Unmask) LoadMaskPair()
+        {
+            if (_maskMat is not null)
+                return (_maskMat, _unmaskMat!);
+
+            // XXX: only depth 1 supported for now
+            const int stencilID = 1;
+            var baseMat = Graphic.defaultGraphicMaterial;
+            var stencilOp = Shader.PropertyToID("_StencilOp");
+            var stencilComp = Shader.PropertyToID("_StencilComp");
+            var stencilReadMask = Shader.PropertyToID("_StencilReadMask");
+            var stencilWriteMask = Shader.PropertyToID("_StencilWriteMask");
+            var colorMask = Shader.PropertyToID("_ColorMask");
+
+            var mask = new Material(baseMat);
+            mask.SetDontSave();
+            mask.SetFloat(_stencil, stencilID);
+            mask.SetFloat(stencilOp, (float) StencilOp.Replace);
+            mask.SetFloat(stencilComp, (float) CompareFunction.Always);
+            mask.SetFloat(stencilReadMask, stencilID);
+            mask.SetFloat(stencilWriteMask, stencilID);
+            mask.SetFloat(colorMask, 0); // don't draw, just write to stencil buffer
+            mask.EnableKeyword("UNITY_UI_ALPHACLIP");
+
+            var unmask = new Material(baseMat);
+            unmask.SetDontSave();
+            unmask.SetFloat(_stencil, stencilID);
+            unmask.SetFloat(stencilOp, (float) StencilOp.Zero);
+            unmask.SetFloat(stencilComp, (float) CompareFunction.Always);
+            unmask.SetFloat(stencilReadMask, stencilID);
+            unmask.SetFloat(stencilWriteMask, stencilID);
+            unmask.SetFloat(colorMask, 0);
+            unmask.EnableKeyword("UNITY_UI_ALPHACLIP");
+
+            return (mask, unmask);
+        }
+
+        private class MatEntry
+        {
+            public readonly Material Base;
+            public readonly Material Render;
+            public int RefCount;
+
+            public MatEntry(Material @base, Material render)
+            {
+                Base = @base;
+                Render = render;
+            }
+
+            public override string ToString()
+            {
+                return $"(base='{Base.name}', render='{Render.name}', refCount={RefCount})";
             }
         }
-
-#if DEBUG
-        private static void CheckPropertyExists(Material mat, int id)
-        {
-            if (mat.HasProperty(id)) return;
-            L.W("[UGUI] Material " + mat.name + " doesn't have " + id + " property", mat);
-        }
-#endif
     }
 }

@@ -446,7 +446,7 @@ namespace UnityEngine.UI
 
         private void EnsureLayoutHasRebuilt()
         {
-            if (!m_HasRebuiltLayout && !CanvasUpdateRegistry.IsRebuildingLayout())
+            if (!m_HasRebuiltLayout && CanvasUpdateRegistry.IsIdle())
                 CanvasUpdateRegistry.PerformUpdate();
         }
 

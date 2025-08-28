@@ -1,9 +1,10 @@
-// ReSharper disable InconsistentNaming
-
 #nullable enable
 using System;
 using System.Collections.Generic;
 using UnityEngine.Assertions;
+
+// ReSharper disable InconsistentNaming
+// ReSharper disable PossibleInvalidCastExceptionInForeachLoop
 
 namespace UnityEngine.UI
 {
@@ -22,21 +23,29 @@ namespace UnityEngine.UI
     /// </summary>
     public static class CanvasUpdateRegistry
     {
-        private static bool _performingLayoutUpdate;
-        private static bool _performingGraphicUpdate;
+        private enum Phase : byte
+        {
+            Idle,
+            LayoutUpdate,
+            LayoutCallback,
+            Cull,
+            GraphicUpdate,
+            GraphicCallback,
+        }
+
+        private static Phase _phase = Phase.Idle;
 
         private static readonly List<(Object, int)> _layoutRebuildQueue = new(); // ILayoutRebuildTarget or Transform (layout node).
         private static readonly List<(Object, int)> _graphicRebuildQueue = new(); // Graphic
         private static readonly List<(Object, int)> _layoutRebuildCallbacks = new(); // MonoBehaviour, IPostLayoutRebuildCallback
         private static readonly List<(Object, int)> _graphicRebuildCallbacks = new(); // MonoBehaviour, IPostGraphicRebuildCallback
-        private static readonly List<Object> _tempBuf1 = new();
-        private static readonly List<Object> _tempBuf2 = new();
+        private static readonly List<Object> _tempBuf = new();
         private static readonly HashSet<Transform> _visitedBuf = new(RefComparer.Instance);
 
         static CanvasUpdateRegistry() => Canvas.willRenderCanvases += PerformUpdate;
 
-        public static bool IsRebuildingLayout() => _performingLayoutUpdate;
-        public static bool IsRebuildingGraphic() => _performingGraphicUpdate;
+        public static bool IsIdle() => _phase is Phase.Idle;
+        public static bool IsRebuildingLayout() => _phase is Phase.LayoutUpdate;
 
         public static void PerformUpdate()
         {
@@ -45,25 +54,18 @@ namespace UnityEngine.UI
             // Perform Layout Rebuild.
             if (_layoutRebuildQueue.NotEmpty() || _layoutRebuildCallbacks.NotEmpty())
             {
-                _performingLayoutUpdate = true;
                 UISystemProfilerApi.BeginSample(UISystemProfilerApi.SampleType.Layout);
 
-                // collect the layout roots and callbacks first to avoid corruption of the queue while processing.
-                _tempBuf1.Clear();
-                _tempBuf2.Clear();
+                _phase = Phase.LayoutUpdate;
+                _tempBuf.Clear();
                 if (_layoutRebuildQueue.NotEmpty())
-                    FlushLayoutRoot(_layoutRebuildQueue, result: _tempBuf1);
-                if (_layoutRebuildCallbacks.NotEmpty())
-                    FlushCallbacks(_layoutRebuildCallbacks, result: _tempBuf2);
+                    FlushLayoutRoot(_layoutRebuildQueue, result: _tempBuf);
                 Assert.IsTrue(_layoutRebuildQueue.IsEmpty());
-                Assert.IsTrue(_layoutRebuildCallbacks.IsEmpty());
-
-                if (_tempBuf1.NotEmpty())
+                if (_tempBuf.NotEmpty())
                 {
-                    L.I($"[CanvasUpdateRegistry] Rebuilding Layout Roots: {_tempBuf1.Count.Strm()}");
+                    L.I($"[CanvasUpdateRegistry] Rebuilding Layout Roots: {_tempBuf.Count.Strm()}");
 
-                    // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
-                    foreach (Transform layoutRoot in _tempBuf1) // element is guaranteed to be non-destroyed here.
+                    foreach (Transform layoutRoot in _tempBuf) // element is guaranteed to be non-destroyed here.
                     {
                         try
                         {
@@ -71,20 +73,22 @@ namespace UnityEngine.UI
                         }
                         catch (Exception e)
                         {
-#if DEBUG
-                            L.E($"Exception while rebuilding Layout {layoutRoot}");
-                            L.E(e);
-#endif
+                            DebugException($"[CanvasUpdateRegistry] Exception while rebuilding Layout {layoutRoot}", e);
                         }
                     }
                 }
 
-                if (_tempBuf2.NotEmpty())
-                {
-                    L.I($"[CanvasUpdateRegistry] Executing PostLayoutRebuildCallbacks: {_tempBuf2.Count.Strm()}");
 
-                    // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
-                    foreach (IPostLayoutRebuildCallback callback in _tempBuf2)
+                _phase = Phase.LayoutCallback;
+                _tempBuf.Clear();
+                if (_layoutRebuildCallbacks.NotEmpty())
+                    FlushCallbacks(_layoutRebuildCallbacks, result: _tempBuf);
+                Assert.IsTrue(_layoutRebuildCallbacks.IsEmpty());
+                if (_tempBuf.NotEmpty())
+                {
+                    L.I($"[CanvasUpdateRegistry] Executing PostLayoutRebuildCallbacks: {_tempBuf.Count.Strm()}");
+
+                    foreach (IPostLayoutRebuildCallback callback in _tempBuf)
                     {
                         try
                         {
@@ -92,16 +96,12 @@ namespace UnityEngine.UI
                         }
                         catch (Exception e)
                         {
-#if DEBUG
-                            L.E($"Exception while executing PostLayoutRebuild for {callback}");
-                            L.E(e);
-#endif
+                            DebugException($"[CanvasUpdateRegistry] Exception while executing PostLayoutRebuild for {callback}", e);
                         }
                     }
                 }
 
                 UISystemProfilerApi.EndSample(UISystemProfilerApi.SampleType.Layout);
-                _performingLayoutUpdate = false;
             }
 
 
@@ -109,12 +109,12 @@ namespace UnityEngine.UI
             try
             {
                 Profiling.Profiler.BeginSample("ClipperRegistry.Cull");
+                _phase = Phase.Cull;
                 ClipperRegistry.Cull();
             }
             catch (Exception e)
             {
-                L.E("Exception while culling clippers");
-                L.E(e);
+                DebugException("[CanvasUpdateRegistry] Exception during culling", e);
             }
             finally
             {
@@ -125,21 +125,15 @@ namespace UnityEngine.UI
             // Perform Graphic Rebuild.
             if (_graphicRebuildQueue.NotEmpty() || _graphicRebuildCallbacks.NotEmpty())
             {
-                _performingGraphicUpdate = true;
                 UISystemProfilerApi.BeginSample(UISystemProfilerApi.SampleType.Render);
 
-                // collect the graphics and callbacks first to avoid corruption of the queue while processing.
-                _tempBuf1.Clear();
-                _tempBuf2.Clear();
+                _phase = Phase.GraphicUpdate;
+                _tempBuf.Clear();
                 if (_graphicRebuildQueue.NotEmpty())
-                    FlushGraphic(_graphicRebuildQueue, result: _tempBuf1);
-                if (_graphicRebuildCallbacks.NotEmpty())
-                    FlushCallbacks(_graphicRebuildCallbacks, result: _tempBuf2);
-
-                if (_tempBuf1.NotEmpty())
+                    FlushGraphic(_graphicRebuildQueue, result: _tempBuf);
+                if (_tempBuf.NotEmpty())
                 {
-                    // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
-                    foreach (Graphic graphic in _tempBuf1)
+                    foreach (Graphic graphic in _tempBuf)
                     {
                         try
                         {
@@ -147,18 +141,19 @@ namespace UnityEngine.UI
                         }
                         catch (Exception e)
                         {
-#if DEBUG
-                            L.E($"Exception while rebuilding Graphic {graphic}");
-                            L.E(e);
-#endif
+                            DebugException($"[CanvasUpdateRegistry] Exception while rebuilding Graphic {graphic}", e);
                         }
                     }
                 }
 
-                if (_tempBuf2.NotEmpty())
+
+                _phase = Phase.GraphicCallback;
+                _tempBuf.Clear();
+                if (_graphicRebuildCallbacks.NotEmpty())
+                    FlushCallbacks(_graphicRebuildCallbacks, result: _tempBuf);
+                if (_tempBuf.NotEmpty())
                 {
-                    // ReSharper disable once PossibleInvalidCastExceptionInForeachLoop
-                    foreach (IPostGraphicRebuildCallback callback in _tempBuf2)
+                    foreach (IPostGraphicRebuildCallback callback in _tempBuf)
                     {
                         try
                         {
@@ -166,19 +161,18 @@ namespace UnityEngine.UI
                         }
                         catch (Exception e)
                         {
-#if DEBUG
-                            L.E($"Exception while executing PostGraphicRebuild for {callback}");
-                            L.E(e);
-#endif
+                            DebugException($"[CanvasUpdateRegistry] Exception while executing PostGraphicRebuild for {callback}", e);
                         }
                     }
                 }
 
                 UISystemProfilerApi.EndSample(UISystemProfilerApi.SampleType.Render);
-                _performingGraphicUpdate = false;
             }
 
+
+            _phase = Phase.Idle;
             return;
+
 
             static void FlushLayoutRoot(List<(Object, int)> source, List<Object> result)
             {
@@ -232,7 +226,7 @@ namespace UnityEngine.UI
 
         internal static void QueueLayoutNode(Transform target)
         {
-            if (_performingLayoutUpdate)
+            if (_phase is Phase.LayoutUpdate)
                 L.W($"[CanvasUpdateRegistry] Trying to add {target} for layout rebuild while we are already inside a rebuild loop.");
 
             // root will be resolved by LayoutRebuilder.
@@ -241,7 +235,7 @@ namespace UnityEngine.UI
 
         public static void QueueGraphic(Graphic target)
         {
-            if (_performingGraphicUpdate)
+            if (_phase is Phase.GraphicUpdate)
                 L.W($"[CanvasUpdateRegistry] Trying to add {target} for graphic rebuild while we are already inside a rebuild loop.");
 
             _graphicRebuildQueue.Add((target, target.GetInstanceID()));
@@ -250,7 +244,7 @@ namespace UnityEngine.UI
         public static void QueueLayoutRebuildCallback<TLayoutRebuildTarget>(TLayoutRebuildTarget target)
             where TLayoutRebuildTarget : MonoBehaviour, IPostLayoutRebuildCallback
         {
-            if (_performingLayoutUpdate)
+            if (_phase is Phase.LayoutCallback)
                 L.W($"[CanvasUpdateRegistry] Trying to add {target} for layout rebuild while we are already inside a rebuild loop.");
 
             _layoutRebuildCallbacks.Add((target, target.GetInstanceID()));
@@ -259,10 +253,17 @@ namespace UnityEngine.UI
         public static void QueueGraphicRebuildCallback<TGraphicRebuildTarget>(TGraphicRebuildTarget target)
             where TGraphicRebuildTarget : MonoBehaviour, IPostGraphicRebuildCallback
         {
-            if (_performingGraphicUpdate)
+            if (_phase is Phase.GraphicCallback)
                 L.W($"[CanvasUpdateRegistry] Trying to add {target} for graphic rebuild while we are already inside a rebuild loop.");
 
             _graphicRebuildCallbacks.Add((target, target.GetInstanceID()));
+        }
+
+        [System.Diagnostics.Conditional("DEBUG")]
+        private static void DebugException(string message, Exception e)
+        {
+            L.E(message);
+            L.E(e);
         }
     }
 }

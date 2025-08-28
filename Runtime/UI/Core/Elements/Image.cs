@@ -14,7 +14,7 @@ namespace UnityEngine.UI
     /// <summary>
     ///   Displays a Sprite inside the UI System.
     /// </summary>
-    public class Image : MaskableGraphic, ILayoutElement
+    public class Image : Graphic, ILayoutElement
     {
         /// <summary>
         /// Image fill type controls how to display the image.

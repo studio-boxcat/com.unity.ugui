@@ -21,7 +21,7 @@ namespace UnityEngine.UI
 
             foreach (IMeshModifier meshModifier in meshModifiers)
             {
-                // check isActiveAndEnabled, since this method is called from Graphic.OnPopulateMesh, which is only called if the Graphic is active and enabled.
+                // check enabled only, since this method is called from Graphic.OnPopulateMesh, which is only called if the Graphic is active and enabled.
                 if (meshModifier is Behaviour { enabled: false }) continue;
                 meshModifier.ModifyMesh(mb);
             }

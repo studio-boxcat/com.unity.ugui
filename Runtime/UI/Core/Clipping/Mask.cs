@@ -1,111 +1,75 @@
 // ReSharper disable InconsistentNaming
 
 #nullable enable
-using System;
 using Sirenix.OdinInspector;
+using UnityEngine.Serialization;
 
 namespace UnityEngine.UI
 {
-    /// <summary>
-    /// A component for masking children elements.
-    /// </summary>
-    /// <remarks>
-    /// By using this element any children elements that have masking enabled will mask where a sibling Graphic would write 0 to the stencil buffer.
-    /// </remarks>
-    [AddComponentMenu("UI/Mask", 13)]
-    [ExecuteAlways]
-    [RequireComponent(typeof(RectTransform))]
-    [DisallowMultipleComponent]
-    public class Mask : UIBehaviour, IMaterialModifier
+    public class Mask : MonoBehaviour, IMeshModifier, IMaterialModifier, IPostGraphicRebuildCallback
     {
-        [NonSerialized] private RectTransform? m_RectTransform;
-        public RectTransform rectTransform => m_RectTransform ??= (RectTransform) transform;
+        [SerializeField, Required, ChildGameObjectsOnly]
+        private Graphic _graphic = null!;
+        [SerializeField, Required, ChildGameObjectsOnly]
+        private Maskable[] _maskables = null!;
+        [SerializeField, FormerlySerializedAs("m_ShowMaskGraphic")]
+        private bool _showMaskGraphic = true;
 
-        [SerializeField, OnValueChanged("SetMaterialDirty")]
-        private bool m_ShowMaskGraphic = true;
-
-        /// <summary>
-        /// Show the graphic that is associated with the Mask render area.
-        /// </summary>
-        public bool showMaskGraphic
+        private void OnEnable()
         {
-            get => m_ShowMaskGraphic;
-            set
+            _graphic.SetMaterialDirty();
+
+            foreach (var m in _maskables)
             {
-                if (value.CmpSet(ref m_ShowMaskGraphic))
-                    graphic.SetMaterialDirty();
+                if (m) m.Graphic.SetMaterialDirty();
+                else L.W($"[Mask] Maskable is destroyed: {m.SafeName()}");
             }
         }
 
-        [NonSerialized] private Graphic? m_Graphic;
-        public Graphic graphic => m_Graphic ??= GetComponent<Graphic>();
-
-        [NonSerialized] private Material? m_MaskMaterial;
-        [NonSerialized] private Material? m_UnmaskMaterial;
-
-        protected virtual void OnEnable()
+        protected void OnDisable()
         {
-            var g = graphic;
-            g.canvasRenderer.hasPopInstruction = true; // this makes the Graphic.isMaskingGraphic return true.
-            g.SetMaterialDirty();
-            MaskUtilities.NotifyStencilStateChanged(this);
+            _graphic.SetMaterialDirty();
+
+            foreach (var m in _maskables)
+            {
+                if (m) m.Graphic.SetMaterialDirty();
+                else L.W($"[Mask] Maskable is destroyed: {m.SafeName()}");
+            }
         }
 
-        protected virtual void OnDisable()
+        void IMeshModifier.ModifyMesh(MeshBuilder mb) =>
+            CanvasUpdateRegistry.QueueGraphicRebuildCallback(this);
+
+        Material IMaterialModifier.GetModifiedMaterial(Material baseMaterial)
         {
-            // we call base OnDisable first here
-            // as we need to have the IsActive return the
-            // correct value when we notify the children
-            // that the mask state has changed.
-            var g = graphic;
-            g.SetMaterialDirty();
-            g.canvasRenderer.hasPopInstruction = false; // this makes the Graphic.isMaskingGraphic return true.
-            g.canvasRenderer.popMaterialCount = 0;
-
-            if (m_MaskMaterial is not null)
-            {
-                StencilMaterial.Remove(m_MaskMaterial);
-                StencilMaterial.Remove(m_UnmaskMaterial!);
-                m_MaskMaterial = null;
-                m_UnmaskMaterial = null;
-            }
-
-            MaskUtilities.NotifyStencilStateChanged(this);
+            CanvasUpdateRegistry.QueueGraphicRebuildCallback(this);
+            return baseMaterial;
         }
 
-        private void SetMaterialDirty() => graphic.SetMaterialDirty();
-
-        /// Stencil calculation time!
-        public virtual Material GetModifiedMaterial(Material baseMaterial)
+        // override material after graphic rebuild
+        void IPostGraphicRebuildCallback.PostGraphicRebuild()
         {
-            if (!enabled) return baseMaterial; // only check enabled, not isActiveAndEnabled.
-            var g = graphic;
-            if (g.enabled is false) return baseMaterial; // if the graphic is disabled, the mask also be disabled too.
+            var (maskMat, unmaskMat) = StencilMaterial.LoadMaskPair();
+            var cr = _graphic.canvasRenderer;
 
-            var stencilDepth = MaskUtilities.GetStencilDepth(transform);
-            if (stencilDepth >= 8)
+            // set up mask
+            var tex = _graphic.mainTexture;
+            if (_showMaskGraphic)
             {
-                Debug.LogWarning("Attempting to use a stencil mask with depth > 8", gameObject);
-                return baseMaterial;
+                cr.materialCount = 2;
+                cr.SetMaterial(_graphic.material, tex);
+                cr.SetMaterial(maskMat, 1);
+            }
+            else
+            {
+                cr.materialCount = 1;
+                cr.SetMaterial(maskMat, tex);
             }
 
-            var oldMaskMaterial = m_MaskMaterial;
-            var oldUnmaskMaterial = m_UnmaskMaterial;
-            (m_MaskMaterial, m_UnmaskMaterial) = StencilMaterial.AddMaskPair(baseMaterial, stencilDepth, m_ShowMaskGraphic);
-
-            // configure the CanvasRenderer to use the mask material.
-            var cr = g.canvasRenderer;
+            // set up unmask
+            cr.hasPopInstruction = true;
             cr.popMaterialCount = 1;
-            cr.SetPopMaterial(m_UnmaskMaterial, 0);
-
-            // remove the old mask at last to avoid destroying & creating materials.
-            if (oldMaskMaterial is not null)
-            {
-                StencilMaterial.Remove(oldMaskMaterial);
-                StencilMaterial.Remove(oldUnmaskMaterial!);
-            }
-
-            return m_MaskMaterial;
+            cr.SetPopMaterial(unmaskMat, 0);
         }
     }
 }

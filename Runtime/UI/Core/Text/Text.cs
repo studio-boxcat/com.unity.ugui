@@ -5,7 +5,7 @@ using UnityEngine.Assertions;
 namespace UnityEngine.UI
 {
     [GraphicPropertyHide(GraphicPropertyFlag.Raycast | GraphicPropertyFlag.Material)]
-    public class Text : MaskableGraphic, ILayoutElement, IFontUpdateListener
+    public class Text : Graphic, ILayoutElement, IFontUpdateListener
     {
         [SerializeField, InlineProperty, HideLabel, PropertyOrder(500)]
         [OnValueChanged("FontData_OnValueChanged")]
@@ -63,10 +63,8 @@ namespace UnityEngine.UI
             // cleanest solution....
             // if we detect the font texture has changed and are in a rebuild loop
             // we just regenerate the verts for the new UV's
-            if (CanvasUpdateRegistry.IsRebuildingGraphic() || CanvasUpdateRegistry.IsRebuildingLayout())
-                UpdateGeometry();
-            else
-                SetVerticesDirty();
+            if (CanvasUpdateRegistry.IsIdle()) SetVerticesDirty();
+            else UpdateGeometry();
         }
 
         /// <summary>

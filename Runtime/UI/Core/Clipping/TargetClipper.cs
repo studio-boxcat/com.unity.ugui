@@ -66,8 +66,8 @@ namespace UnityEngine.UI
             {
                 if (!graphic) continue;
                 // prevent the target graphic is added to the other clipper by ClipperRegistry.
-                if (graphic is MaskableGraphic { maskable: true })
-                    result.AddError("TargetClipper cannot be used with MaskableGraphic components.");
+                if (graphic.HasComponent<Maskable>() )
+                    result.AddError("TargetClipper cannot be used with Maskable components.");
                 if (graphic.HasComponent<Clippable>())
                     result.AddError("TargetClipper cannot be used with Clippable components.");
             }

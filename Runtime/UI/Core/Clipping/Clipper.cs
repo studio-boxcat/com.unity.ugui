@@ -9,14 +9,6 @@ using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
-    /// <summary>
-    /// Interface for elements that can be clipped if they are under an IClipper
-    /// </summary>
-    public interface IClippable
-    {
-        Graphic Graphic { get; }
-    }
-
     [AddComponentMenu("UI/Clipper", 14)]
     [ExecuteAlways]
     [DisallowMultipleComponent]
@@ -98,7 +90,7 @@ namespace UnityEngine.UI
             return RectTransformUtility.RectangleContainsScreenPoint(rectTransform, sp, eventCamera, m_Padding);
         }
 
-        internal void PerformClipping(List<IClippable> targets)
+        internal void PerformClipping(List<Clippable> targets)
         {
             Assert.IsTrue(targets.TrueForAll(x => x.Graphic),
                 "Destroyed Graphic components are not allowed in Clipper.PerformClipping.");
@@ -219,17 +211,8 @@ namespace UnityEngine.UI
             {
                 if (graphic.gameObject.RefEq(gameObject))
                     continue; // Skip self
-
-                if (graphic is MaskableGraphic m)
-                {
-                    if (m.maskable is false)
-                        result.AddWarning($"Graphic '{graphic.name}' is not maskable but is a child of a Clippable.");
-                }
-                else
-                {
-                    if (graphic.TryGetComponent<Clippable>(out var c) is false || c.enabled is false)
-                        result.AddError($"Graphic '{graphic.name}' is not maskable and has no IClippable component, but is a child of a Clippable.");
-                }
+                if (graphic.TryGetComponent<Clippable>(out var c) is false || c.enabled is false)
+                    result.AddError($"Graphic '{graphic.name}' is not maskable and has no Clippable component, but is a child of a Clipper.");
             }
             */
         }

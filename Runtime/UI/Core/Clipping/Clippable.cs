@@ -6,13 +6,12 @@ using Sirenix.OdinInspector;
 namespace UnityEngine.UI
 {
     [ExecuteAlways]
-    public class Clippable : MonoBehaviour, IClippable
-#if UNITY_EDITOR
-        , ISelfValidator
-#endif
+    [DisallowMultipleComponent]
+    public class Clippable : MonoBehaviour
     {
         [SerializeField, Required, ChildGameObjectsOnly, HideIf("@m_Graphic")]
         private Graphic m_Graphic = null!;
+        public Graphic Graphic => m_Graphic;
 
         private void OnEnable()
         {
@@ -38,8 +37,6 @@ namespace UnityEngine.UI
 
         private void OnCanvasHierarchyChanged() => OnTransformParentChanged();
 
-        Graphic IClippable.Graphic => m_Graphic;
-
 #if UNITY_EDITOR
         [ShowInInspector, MultiLineProperty, HideLabel]
         private string _infoMessage
@@ -59,12 +56,6 @@ namespace UnityEngine.UI
 
         private void Reset() => m_Graphic = GetComponent<Graphic>();
         private void OnValidate() => m_Graphic ??= GetComponent<Graphic>(); // ensure m_Graphic is set in the editor
-
-        void ISelfValidator.Validate(SelfValidationResult result)
-        {
-            if (this.CountComponents<IClippable>() > 1)
-                result.AddError("Multiple IClippable components found on the same GameObject. Only one is allowed.");
-        }
 #endif
     }
 }

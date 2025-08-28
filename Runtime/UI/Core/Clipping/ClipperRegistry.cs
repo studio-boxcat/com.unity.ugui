@@ -14,11 +14,11 @@ namespace UnityEngine.UI
     /// </remarks>
     internal static class ClipperRegistry
     {
-        private static readonly Dictionary<Clipper, List<IClippable>?> _clippers = new(RefComparer.Instance); // null means that the clipper is not resolved or has no clippables registered.
-        private static readonly Dictionary<IClippable, Clipper?> _clippables = new(RefComparer.Instance); // null means that the clipper is not resolved or has no clipper on parents.
+        private static readonly Dictionary<Clipper, List<Clippable>?> _clippers = new(RefComparer.Instance); // null means that the clipper is not resolved or has no clippables registered.
+        private static readonly Dictionary<Clippable, Clipper?> _clippables = new(RefComparer.Instance); // null means that the clipper is not resolved or has no clipper on parents.
         private static readonly List<Clipper> _dirtyClippers = new(); // can contain duplicates, remove only occurs on Cull() call.
-        private static readonly List<IClippable> _dirtyClippables = new(); // can contain duplicates, remove only occurs on Cull() call.
-        private static readonly List<IClippable> _tempClippables = new(); // used to collect targets from clippers.
+        private static readonly List<Clippable> _dirtyClippables = new(); // can contain duplicates, remove only occurs on Cull() call.
+        private static readonly List<Clippable> _tempClippables = new(); // used to collect targets from clippers.
 
         public static void RegisterClipper(Clipper c)
         {
@@ -45,14 +45,14 @@ namespace UnityEngine.UI
             }
         }
 
-        public static void RegisterClippable(IClippable c)
+        public static void RegisterClippable(Clippable c)
         {
             V($"Registering clippable: {c}");
             _clippables.Add(c, null); // will be resolved on the next Cull() call. let it throw if the clippable is already registered.
             _dirtyClippables.Add(c);
         }
 
-        public static void UnregisterClippable(IClippable c)
+        public static void UnregisterClippable(Clippable c)
         {
             V($"Unregistering clippable: {c}");
             var result = _clippables.Remove(c, out var clipper);
@@ -77,7 +77,7 @@ namespace UnityEngine.UI
             }
         }
 
-        public static void ReparentClippable(IClippable c)
+        public static void ReparentClippable(Clippable c)
         {
             Assert.IsTrue(_clippables.ContainsKey(c), "Clippable must be registered in ClipperRegistry before it can be reparented.");
             _dirtyClippables.Add(c);
@@ -173,7 +173,7 @@ namespace UnityEngine.UI
                         // so we can safely assume that newClipper is not null here.
                         // but just in case, we check it again.
                         if (_clippers.TryGetValue(newClipper, out var list) is false || list is null) // could be null if this clippable is the first one for this clipper.
-                            list = _clippers[newClipper] = new List<IClippable>();
+                            list = _clippers[newClipper] = new List<Clippable>();
                         list.Add(c); // add the clippable to the new clipper.
                     }
                     else
@@ -236,8 +236,8 @@ namespace UnityEngine.UI
         private static void V(string message) => L.I($"[ClipperRegistry] {message}");
 
 #if UNITY_EDITOR
-        public static Clipper? GetCachedClipper(IClippable c) => _clippables.GetValueOrDefault(c);
-        public static List<IClippable>? GetCachedClippables(Clipper c) => _clippers.GetValueOrDefault(c);
+        public static Clipper? GetCachedClipper(Clippable c) => _clippables.GetValueOrDefault(c);
+        public static List<Clippable>? GetCachedClippables(Clipper c) => _clippers.GetValueOrDefault(c);
 #endif
     }
 }

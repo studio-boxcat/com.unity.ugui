@@ -4,7 +4,6 @@
 using System;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
-using UnityEngine.Assertions;
 using UnityEngine.Serialization;
 
 namespace UnityEngine.UI
@@ -364,7 +363,7 @@ namespace UnityEngine.UI
             if (canvasRenderer.cull != cull)
             {
                 canvasRenderer.cull = cull;
-                UISystemProfilerApi.AddMarker("MaskableGraphic.cullingChanged", this);
+                UISystemProfilerApi.AddMarker("Graphic.cullingChanged", this);
                 OnCullingChanged();
             }
         }

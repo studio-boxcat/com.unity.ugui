@@ -12,7 +12,7 @@ namespace UnityEngine.UI
     /// best to use it only for backgrounds or temporary visible graphics.
     /// </remarks>
     [AddComponentMenu("UI/Raw Image", 12)]
-    public class RawImage : MaskableGraphic
+    public class RawImage : Graphic
     {
         [FormerlySerializedAs("m_Tex")]
         [SerializeField, Required] Texture m_Texture;

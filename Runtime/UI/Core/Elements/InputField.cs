@@ -1072,7 +1072,7 @@ namespace UnityEngine.UI
 
             // If we have a cached renderer then we had OnDisable called so just restore the material.
             if (m_CachedInputRenderer != null)
-                m_CachedInputRenderer.SetMaterial(m_TextComponent.GetModifiedMaterial(Graphic.defaultGraphicMaterial), Texture2D.whiteTexture);
+                m_CachedInputRenderer.SetMaterial(Graphic.defaultGraphicMaterial, Texture2D.whiteTexture);
 
             if (m_TextComponent != null)
                 UpdateLabel();
@@ -3089,15 +3089,6 @@ namespace UnityEngine.UI
         {
             DeactivateInputField();
             base.OnDeselect(eventData);
-        }
-
-        public void OnSubmit(BaseEventData eventData)
-        {
-            if (!IsActive() || !IsInteractable())
-                return;
-
-            if (!isFocused)
-                m_ShouldActivateNextUpdate = true;
         }
 
         private void EnforceContentType()
