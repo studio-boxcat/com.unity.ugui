@@ -132,6 +132,7 @@ namespace UnityEngine.UI
             L.I("[UGUI] Creating stencil mask/unmask materials");
             var mat = new Material(Graphic.defaultGraphicMaterial);
             mat.SetNameDebug($"Mask (Op={op}, ShowGraphic={showMaskGraphic})");
+            mat.SetDontSave();
             mat.SetFloat(_stencil, _stencilValue);
             mat.SetFloat(_stencilComp, (float) CompareFunction.Always);
             mat.SetFloat(_stencilOp, (float) op);
