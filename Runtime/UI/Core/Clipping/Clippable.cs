@@ -45,7 +45,7 @@ namespace UnityEngine.UI
 
         public static void MakeTreeClippable(GameObject root)
         {
-            foreach (var graphic in root.GetGraphicsInChildrenShared())
+            foreach (var graphic in root.GetGraphicsInChildrenShared(includeInactive: true))
             {
                 if (graphic is NonDrawingGraphic) continue;
                 // Clippable must not call GetGraphicsInChildrenShared() in Awake() or OnEnable()
