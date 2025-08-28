@@ -88,6 +88,12 @@ namespace UnityEngine.UI
             _maskables = GetComponentsInChildren<Maskable>(true);
         }
 
+        private void Awake()
+        {
+            _graphic ??= GetComponent<Graphic>();
+            _maskables ??= GetComponentsInChildren<Maskable>(true);
+        }
+
         void ISelfValidator.Validate(SelfValidationResult result)
         {
             if (!_graphic) return;
