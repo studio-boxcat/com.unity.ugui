@@ -11,9 +11,9 @@ namespace UnityEngine.UI
         private Graphic _graphic = null!;
         public Graphic Graphic => _graphic;
 
-        [NonSerialized, ShowInInspector, ReadOnly, FoldoutGroup("Advanced")]
+        [NonSerialized, ShowInInspector, ReadOnly]
         private Material? _baseMaterial;
-        [NonSerialized, ShowInInspector, ReadOnly, FoldoutGroup("Advanced")]
+        [NonSerialized, ShowInInspector, ReadOnly]
         private Material? _maskMaterial;
 
         private void OnEnable() => _graphic.SetMaterialDirty();
@@ -25,6 +25,7 @@ namespace UnityEngine.UI
             {
                 StencilMaterial.RemoveMaskable(_maskMaterial);
                 _maskMaterial = null;
+                _baseMaterial = null;
             }
         }
 
@@ -56,6 +57,7 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
+        private void Awake() => _graphic ??= GetComponent<Graphic>(); // when adding component in editor
         private void Reset() => _graphic = GetComponent<Graphic>();
 #endif
     }

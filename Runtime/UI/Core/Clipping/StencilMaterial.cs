@@ -100,36 +100,42 @@ namespace UnityEngine.UI
         public static (Material Mask, Material Unmask) LoadMaskPair()
         {
             if (_maskMat is not null)
-                return (_maskMat, _unmaskMat!);
+            {
+                Assert.IsTrue(_maskMat.IsKeywordEnabled("UNITY_UI_ALPHACLIP"), "[StencilMaterial] Mask material should have alpha clip enabled");
+                Assert.IsTrue(_unmaskMat!.IsKeywordEnabled("UNITY_UI_ALPHACLIP"), "[StencilMaterial] Unmask material should have alpha clip enabled");
+                return (_maskMat, _unmaskMat);
+            }
 
             // XXX: only depth 1 supported for now
             const int stencilID = 1;
-            var baseMat = Graphic.defaultGraphicMaterial;
+            var defaultMat = Graphic.defaultGraphicMaterial;
             var stencilOp = Shader.PropertyToID("_StencilOp");
             var stencilComp = Shader.PropertyToID("_StencilComp");
             var stencilReadMask = Shader.PropertyToID("_StencilReadMask");
             var stencilWriteMask = Shader.PropertyToID("_StencilWriteMask");
             var colorMask = Shader.PropertyToID("_ColorMask");
 
-            var mask = new Material(baseMat);
-            mask.SetDontSave();
+            // mask material: write 1 to stencil buffer for non-transparent pixels
+            var mask = new Material(defaultMat);
+            mask.SetNameDebug("UI/Default (Mask)");
             mask.SetFloat(_stencil, stencilID);
             mask.SetFloat(stencilOp, (float) StencilOp.Replace);
             mask.SetFloat(stencilComp, (float) CompareFunction.Always);
-            mask.SetFloat(stencilReadMask, stencilID);
-            mask.SetFloat(stencilWriteMask, stencilID);
+            mask.SetFloat(stencilReadMask, 255);
+            mask.SetFloat(stencilWriteMask, 255);
             mask.SetFloat(colorMask, 0); // don't draw, just write to stencil buffer
-            mask.EnableKeyword("UNITY_UI_ALPHACLIP");
+            mask.EnableKeyword("UNITY_UI_ALPHACLIP"); // will be discarded if the pixel is almost transparent
 
-            var unmask = new Material(baseMat);
-            unmask.SetDontSave();
+            // unmask material: reset stencil to 0 for non-transparent pixels
+            var unmask = new Material(defaultMat);
+            unmask.SetNameDebug("UI/Default (Unmask)");
             unmask.SetFloat(_stencil, stencilID);
             unmask.SetFloat(stencilOp, (float) StencilOp.Zero);
             unmask.SetFloat(stencilComp, (float) CompareFunction.Always);
-            unmask.SetFloat(stencilReadMask, stencilID);
-            unmask.SetFloat(stencilWriteMask, stencilID);
-            unmask.SetFloat(colorMask, 0);
-            unmask.EnableKeyword("UNITY_UI_ALPHACLIP");
+            unmask.SetFloat(stencilReadMask, 255);
+            unmask.SetFloat(stencilWriteMask, 255);
+            unmask.SetFloat(colorMask, 0); // don't draw, just write to stencil buffer
+            unmask.EnableKeyword("UNITY_UI_ALPHACLIP"); // will be discarded if the pixel is almost transparent
 
             return (mask, unmask);
         }
