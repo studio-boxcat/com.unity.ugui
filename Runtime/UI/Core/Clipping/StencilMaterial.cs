@@ -18,6 +18,13 @@ namespace UnityEngine.UI
         private static readonly Dictionary<int, MatEntry> _renderToEntry = new();
 
         private static readonly int _stencil = Shader.PropertyToID("_Stencil");
+        private static readonly int _stencilComp = Shader.PropertyToID("_StencilComp");
+        private static readonly int _stencilOp = Shader.PropertyToID("_StencilOp");
+        private static readonly int _stencilReadMask = Shader.PropertyToID("_StencilReadMask");
+        private static readonly int _stencilWriteMask = Shader.PropertyToID("_StencilWriteMask");
+        private static readonly int _colorMask = Shader.PropertyToID("_ColorMask");
+        private static readonly int _useUIAlphaClip = Shader.PropertyToID("_UseUIAlphaClip");
+        private const int _stencilValue = 1; // XXX: we only support 1 level of masking for now
 
         public static Material AddMaskable(Material baseMat)
         {
@@ -35,7 +42,8 @@ namespace UnityEngine.UI
             var renderMat = new Material(baseMat);
             renderMat.SetDontSave(); // Prevent material from unloading.
             renderMat.SetNameDebug($"{baseMat.name} (Maskable)");
-            renderMat.SetFloat(_stencil, 1); // XXX: we only support 1 level of masking for now
+            renderMat.SetFloat(_stencil, _stencilValue);
+            renderMat.SetFloat(_stencilComp, (float) CompareFunction.Equal);
 
             L.I($"[UGUI] Stencil material created: {renderMat.name}", baseMat);
 
@@ -50,6 +58,16 @@ namespace UnityEngine.UI
 #endif
             return renderMat;
         }
+
+#if DEBUG
+        public static void ConfigureRenderMaterialForDebug(Material renderMat)
+        {
+            if (Application.isPlaying && renderMat.HasProperty(_stencil) is false)
+                L.E($"[UGUI] Material property missing: {renderMat.SafeName()}", renderMat);
+            renderMat.SetFloat(_stencil, _stencilValue);
+            renderMat.SetFloat(_stencilComp, (float) CompareFunction.Equal);
+        }
+#endif
 
         /// <summary>
         /// Remove an existing material, automatically cleaning it up if it's no longer in use.
@@ -94,50 +112,35 @@ namespace UnityEngine.UI
             };
         }
 
-        private static Material? _maskMat;
+        private static Material? _maskMat_ShowGraphic;
+        private static Material? _maskMat_HideGraphic;
         private static Material? _unmaskMat;
 
-        public static (Material Mask, Material Unmask) LoadMaskPair()
+        public static (Material Mask, Material Unmask) LoadMaskPair(bool showMaskGraphic)
         {
-            if (_maskMat is not null)
-            {
-                Assert.IsTrue(_maskMat.IsKeywordEnabled("UNITY_UI_ALPHACLIP"), "[StencilMaterial] Mask material should have alpha clip enabled");
-                Assert.IsTrue(_unmaskMat!.IsKeywordEnabled("UNITY_UI_ALPHACLIP"), "[StencilMaterial] Unmask material should have alpha clip enabled");
-                return (_maskMat, _unmaskMat);
-            }
+            var maskMat = showMaskGraphic
+                ? (_maskMat_ShowGraphic ??= CreateMaskMaterial(StencilOp.Replace, showMaskGraphic: true))
+                : (_maskMat_HideGraphic ??= CreateMaskMaterial(StencilOp.Replace, showMaskGraphic: false));
+            _unmaskMat ??= CreateMaskMaterial(StencilOp.Zero, showMaskGraphic: false);
+            Assert.IsTrue(maskMat.HasProperty(_stencil), $"[UGUI] Material property missing: {maskMat.SafeName()}");
+            Assert.IsTrue(_unmaskMat.HasProperty(_stencil), $"[UGUI] Material property missing: {_unmaskMat.SafeName()}");
+            return (maskMat, _unmaskMat);
+        }
 
-            // XXX: only depth 1 supported for now
-            const int stencilID = 1;
-            var defaultMat = Graphic.defaultGraphicMaterial;
-            var stencilOp = Shader.PropertyToID("_StencilOp");
-            var stencilComp = Shader.PropertyToID("_StencilComp");
-            var stencilReadMask = Shader.PropertyToID("_StencilReadMask");
-            var stencilWriteMask = Shader.PropertyToID("_StencilWriteMask");
-            var colorMask = Shader.PropertyToID("_ColorMask");
-
-            // mask material: write 1 to stencil buffer for non-transparent pixels
-            var mask = new Material(defaultMat);
-            mask.SetNameDebug("UI/Default (Mask)");
-            mask.SetFloat(_stencil, stencilID);
-            mask.SetFloat(stencilOp, (float) StencilOp.Replace);
-            mask.SetFloat(stencilComp, (float) CompareFunction.Always);
-            mask.SetFloat(stencilReadMask, 255);
-            mask.SetFloat(stencilWriteMask, 255);
-            mask.SetFloat(colorMask, 0); // don't draw, just write to stencil buffer
-            mask.EnableKeyword("UNITY_UI_ALPHACLIP"); // will be discarded if the pixel is almost transparent
-
-            // unmask material: reset stencil to 0 for non-transparent pixels
-            var unmask = new Material(defaultMat);
-            unmask.SetNameDebug("UI/Default (Unmask)");
-            unmask.SetFloat(_stencil, stencilID);
-            unmask.SetFloat(stencilOp, (float) StencilOp.Zero);
-            unmask.SetFloat(stencilComp, (float) CompareFunction.Always);
-            unmask.SetFloat(stencilReadMask, 255);
-            unmask.SetFloat(stencilWriteMask, 255);
-            unmask.SetFloat(colorMask, 0); // don't draw, just write to stencil buffer
-            unmask.EnableKeyword("UNITY_UI_ALPHACLIP"); // will be discarded if the pixel is almost transparent
-
-            return (mask, unmask);
+        private static Material CreateMaskMaterial(StencilOp op, bool showMaskGraphic)
+        {
+            L.I("[UGUI] Creating stencil mask/unmask materials");
+            var mat = new Material(Graphic.defaultGraphicMaterial);
+            mat.SetNameDebug($"Mask (Op={op}, ShowGraphic={showMaskGraphic})");
+            mat.SetFloat(_stencil, _stencilValue);
+            mat.SetFloat(_stencilComp, (float) CompareFunction.Always);
+            mat.SetFloat(_stencilOp, (float) op);
+            mat.SetFloat(_stencilReadMask, 255);
+            mat.SetFloat(_stencilWriteMask, 255);
+            mat.SetFloat(_colorMask, showMaskGraphic ? 15 : 0);
+            mat.SetFloat(_useUIAlphaClip, 1); // required for correct alpha clipping
+            mat.EnableKeyword("UNITY_UI_ALPHACLIP"); // will be discarded if the pixel is almost transparent
+            return mat;
         }
 
         private class MatEntry

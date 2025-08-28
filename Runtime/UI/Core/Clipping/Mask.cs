@@ -73,30 +73,9 @@ namespace UnityEngine.UI
         {
             Assert.IsTrue(isActiveAndEnabled, "[Mask] Should only be called when active and enabled");
 
-            var (maskMat, unmaskMat) = StencilMaterial.LoadMaskPair();
             var cr = _graphic.canvasRenderer;
-            Assert.IsTrue(cr.materialCount is 1, "[Mask] CanvasRenderer should have exactly one material");
-
-            // set up mask
-            var tex = _graphic.mainTexture;
-            if (_showMaskGraphic)
-            {
-                cr.materialCount = 2;
-                cr.SetMaterial(maskMat, 1);
-
-                // combine original mesh with mask mesh
-                var orgMesh = cr.GetMesh();
-                _mesh ??= MeshPool.CreateDynamicMesh();
-                _mesh.Clear(keepVertexLayout: true);
-                _mesh.CombineMeshes(orgMesh, orgMesh, mergeSubMeshes: false); // first submesh is original, second is mask
-                cr.SetMesh(_mesh);
-            }
-            else
-            {
-                cr.SetMaterial(maskMat, tex);
-            }
-
-            // set up unmask
+            var (maskMat, unmaskMat) = StencilMaterial.LoadMaskPair(_showMaskGraphic);
+            cr.SetMaterial(maskMat, 0);
             cr.hasPopInstruction = true;
             cr.popMaterialCount = 1;
             cr.SetPopMaterial(unmaskMat, 0);

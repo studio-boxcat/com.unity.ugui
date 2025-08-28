@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using Sirenix.OdinInspector;
+using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
@@ -42,7 +43,13 @@ namespace UnityEngine.UI
 
             // if the baseMaterial is not changed, return the cached mask material.
             var unchanged = _baseMaterial.RefEq(baseMaterial);
-            if (unchanged) return _maskMaterial!;
+            if (unchanged)
+            {
+#if DEBUG
+                StencilMaterial.ConfigureRenderMaterialForDebug(_maskMaterial!);
+#endif
+                return _maskMaterial!;
+            }
             _baseMaterial = baseMaterial; // update base material reference
 
             // invalidate cached mask material first.
