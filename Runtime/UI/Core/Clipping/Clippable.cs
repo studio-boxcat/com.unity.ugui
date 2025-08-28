@@ -13,6 +13,12 @@ namespace UnityEngine.UI
         private Graphic m_Graphic = null!;
         public Graphic Graphic => m_Graphic;
 
+        private void Awake()
+        {
+            // for the component added at runtime
+            m_Graphic ??= GetComponent<Graphic>();
+        }
+
         private void OnEnable()
         {
 #if UNITY_EDITOR
@@ -36,6 +42,16 @@ namespace UnityEngine.UI
         }
 
         private void OnCanvasHierarchyChanged() => OnTransformParentChanged();
+
+        public static void MakeTreeClippable(GameObject root)
+        {
+            foreach (var graphic in root.GetGraphicsInChildrenShared())
+            {
+                if (graphic is NonDrawingGraphic) continue;
+                // Clippable must not call GetGraphicsInChildrenShared() in Awake() or OnEnable()
+                graphic.gameObject.CheckAndAddComponent<Clippable>();
+            }
+        }
 
 #if UNITY_EDITOR
         [ShowInInspector, MultiLineProperty, HideLabel]
