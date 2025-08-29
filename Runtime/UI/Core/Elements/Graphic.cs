@@ -328,28 +328,13 @@ namespace UnityEngine.UI
         }
 
         /// <summary>
-        /// This method must be called when <c>CanvasRenderer.cull</c> is modified.
-        /// </summary>
-        /// <remarks>
-        /// This can be used to perform operations that were previously skipped because the <c>Graphic</c> was culled.
-        /// </remarks>
-        protected void OnCullingChanged()
-        {
-            if (!canvasRenderer.cull && (m_VertsDirty || m_MaterialDirty))
-            {
-                // When we were culled, we potentially skipped calls to <c>Rebuild</c>.
-                CanvasUpdateRegistry.QueueGraphic(this);
-            }
-        }
-
-        /// <summary>
         /// See IClippable.Cull
         /// </summary>
-        public virtual void Cull(Rect clipRect, bool validRect)
+        public void Cull(Rect clipRect, bool validRect)
         {
             if (validRect is false)
             {
-                UpdateCull(true);
+                UpdateCull(true); // true = don't draw
                 return;
             }
 
@@ -360,12 +345,13 @@ namespace UnityEngine.UI
 
         internal void UpdateCull(bool cull)
         {
-            if (canvasRenderer.cull != cull)
-            {
-                canvasRenderer.cull = cull;
-                UISystemProfilerApi.AddMarker("Graphic.cullingChanged", this);
-                OnCullingChanged();
-            }
+            var cr = canvasRenderer;
+            if (cr.cull == cull) return;
+
+            cr.cull = cull;
+            // When we were culled, we potentially skipped calls to Rebuild.
+            if (!cull && (m_VertsDirty || m_MaterialDirty))
+                CanvasUpdateRegistry.QueueGraphic(this);
         }
 
         /// <summary>
