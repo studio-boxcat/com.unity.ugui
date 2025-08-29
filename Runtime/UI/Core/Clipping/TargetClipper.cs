@@ -3,6 +3,7 @@
 #nullable enable
 using System;
 using Sirenix.OdinInspector;
+using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
@@ -53,6 +54,20 @@ namespace UnityEngine.UI
             }
         }
 
+        public void AddGraphicsInChildren(Transform root)
+        {
+            var oldLength = _targets.Length;
+            var graphics = root.GetGraphicsInChildrenShared(includeInactive: true);
+            Array.Resize(ref _targets, _targets.Length + graphics.Count);
+            for (var index = 0; index < graphics.Count; index++)
+            {
+                var g = graphics[index];
+                Assert.IsTrue(g.NoComponent<Maskable>(), $"{g.name} should not have Maskable.");
+                Assert.IsTrue(g.NoComponent<Clippable>(), $"{g.name} should not have Clippable.");
+                _targets[oldLength + index] = g;
+            }
+        }
+
 #if UNITY_EDITOR
         private void Reset() => _targets = Array.Empty<Graphic>();
 
@@ -66,7 +81,7 @@ namespace UnityEngine.UI
             {
                 if (!graphic) continue;
                 // prevent the target graphic is added to the other clipper by ClipperRegistry.
-                if (graphic.HasComponent<Maskable>() )
+                if (graphic.HasComponent<Maskable>())
                     result.AddError("TargetClipper cannot be used with Maskable components.");
                 if (graphic.HasComponent<Clippable>())
                     result.AddError("TargetClipper cannot be used with Clippable components.");
