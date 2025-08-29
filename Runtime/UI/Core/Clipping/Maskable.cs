@@ -1,12 +1,14 @@
 #nullable enable
 using System;
 using Sirenix.OdinInspector;
-using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
     [ExecuteAlways]
     public class Maskable : MonoBehaviour, IMaterialModifier
+#if UNITY_EDITOR
+        , ISelfValidator
+#endif
     {
         [SerializeField, Required, ChildGameObjectsOnly]
         private Graphic _graphic = null!;
@@ -66,6 +68,12 @@ namespace UnityEngine.UI
 #if UNITY_EDITOR
         private void Awake() => _graphic ??= GetComponent<Graphic>(); // when adding component in editor
         private void Reset() => _graphic = GetComponent<Graphic>();
+
+        void ISelfValidator.Validate(SelfValidationResult result)
+        {
+            if (this.HasComponentInParent<Mask>(includeInactive: true) is false)
+                result.AddError($"{nameof(Maskable)} has no parent {nameof(Mask)} component.");
+        }
 #endif
     }
 }

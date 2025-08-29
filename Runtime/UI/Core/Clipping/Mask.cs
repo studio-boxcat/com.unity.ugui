@@ -18,7 +18,8 @@ namespace UnityEngine.UI
         private Graphic _graphic = null!;
         [SerializeField, FormerlySerializedAs("m_ShowMaskGraphic")]
         private bool _showMaskGraphic = true;
-        [SerializeField, Required, ChildGameObjectsOnly, ListDrawerSettings(IsReadOnly = true)]
+        [SerializeField, Required, ChildGameObjectsOnly]
+        [ListDrawerSettings(IsReadOnly = true), AllChildren, RequiredListLength(MinLength = 1)]
         private Maskable[] _maskables = null!;
 
         [NonSerialized] private Mesh? _mesh;
@@ -96,8 +97,7 @@ namespace UnityEngine.UI
 
         void ISelfValidator.Validate(SelfValidationResult result)
         {
-            if (!_graphic) return;
-            if (_graphic.gameObject.RefNq(gameObject))
+            if (_graphic && _graphic.gameObject.RefNq(gameObject))
                 result.AddError($"[Mask] Graphic ({_graphic.SafeName()}) must be on the same GameObject as Mask ({gameObject.name})");
         }
 #endif
