@@ -4,26 +4,20 @@ using Sirenix.OdinInspector.Editor.Validation;
 
 namespace UnityEngine.UI
 {
-    public class GraphicRaycasterValidator : ValueValidator<GraphicRaycaster>
+    public class GraphicRaycasterValidator : RootObjectValidator<GraphicRaycaster>
     {
         protected override void Validate(Sirenix.OdinInspector.Editor.Validation.ValidationResult result)
         {
-            var value = ValueEntry.SmartValue;
-            if (value is null) return;
+            var obj = Object;
+            if (!obj) return;
 
             // CanvasRenderer must be attached.
-            if (value.TryGetComponent<CanvasRenderer>(out _) == false)
-            {
-                result.ResultType = ValidationResultType.Error;
-                result.Message = "CanvasRenderer must be attached.";
-            }
+            if (obj.NoComponent<CanvasRenderer>())
+                result.AddError("CanvasRenderer must be attached.");
 
             // Canvas must be attached.
-            if (value.TryGetComponent<Canvas>(out _) == false)
-            {
-                result.ResultType = ValidationResultType.Error;
-                result.Message = "Canvas must be attached.";
-            }
+            if (obj.NoComponent<Canvas>())
+                result.AddError("Canvas must be attached.");
         }
     }
 }
