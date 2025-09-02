@@ -35,8 +35,9 @@ namespace UnityEngine.UI
 
         private void OnDisable()
         {
+            // graphic might not be a child of this GameObject, so we cannot guarantee whether graphic is destroyed or not.
             foreach (var g in _targets)
-                ClipperRegistry.RestoreCullState(g);
+                if (g) ClipperRegistry.RestoreCullState(g);
         }
 
         // before CanvasRenderer render.
@@ -46,9 +47,9 @@ namespace UnityEngine.UI
             var clipRect = CanvasUtils.BoundingRect(
                 rectTransform, canvas, _padding, out var validRect);
 
-            foreach (var target in _targets)
+            foreach (var g in _targets)
             {
-                var g = target;
+                Assert.IsTrue(g, "Target graphic is null.");
                 g.SetClipSoftness(_softness);
                 g.SetClipRect(clipRect, validRect);
             }
@@ -67,6 +68,9 @@ namespace UnityEngine.UI
                 _targets[oldLength + index] = g;
             }
         }
+
+        public void PruneDestroyedTargets() =>
+            UnityObjectUtils.PruneDestroyed(ref _targets);
 
 #if UNITY_EDITOR
         private void Reset() => _targets = Array.Empty<Graphic>();
