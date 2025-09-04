@@ -63,7 +63,6 @@ namespace UnityEngine.UI
             for (var index = 0; index < graphics.Count; index++)
             {
                 var g = graphics[index];
-                Assert.IsTrue(g.NoComponent<Maskable>(), $"{g.name} should not have Maskable.");
                 Assert.IsTrue(g.NoComponent<Clippable>(), $"{g.name} should not have Clippable.");
                 _targets[oldLength + index] = g;
             }
@@ -85,8 +84,6 @@ namespace UnityEngine.UI
             {
                 if (!graphic) continue;
                 // prevent the target graphic is added to the other clipper by ClipperRegistry.
-                if (graphic.HasComponent<Maskable>())
-                    result.AddError("TargetClipper cannot be used with Maskable components.");
                 if (graphic.HasComponent<Clippable>())
                     result.AddError("TargetClipper cannot be used with Clippable components.");
             }
