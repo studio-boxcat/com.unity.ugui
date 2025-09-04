@@ -52,14 +52,14 @@ namespace UnityEngine.UI
             var clipRect = CanvasUtils.BoundingRect(
                 rectTransform, canvas, _padding, out var validRect);
 
-            var e = AliveEnumerator.Create(_targets);
-            while (e.Next(out var g))
+            var p = Pruner.Create(_targets);
+            while (p.Next(out var g))
             {
                 Assert.IsTrue(g, "Target graphic is null.");
                 g!.SetClipSoftness(_softness);
                 g.SetClipRect(clipRect, validRect);
             }
-            _targets = e.Shrink();
+            _targets = p.Shrink();
         }
 
         public void AddGraphicsInChildren(Transform root)
