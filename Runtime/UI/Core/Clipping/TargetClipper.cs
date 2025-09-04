@@ -37,22 +37,29 @@ namespace UnityEngine.UI
         {
             // graphic might not be a child of this GameObject, so we cannot guarantee whether graphic is destroyed or not.
             foreach (var g in _targets)
+            {
                 if (g) ClipperRegistry.RestoreCullState(g);
+            }
         }
 
         // before CanvasRenderer render.
         private void LateUpdate()
         {
+            var len = _targets.Length;
+            if (len is 0) return;
+
             var canvas = _targets[0].canvas;
             var clipRect = CanvasUtils.BoundingRect(
                 rectTransform, canvas, _padding, out var validRect);
 
-            foreach (var g in _targets)
+            var e = AliveEnumerator.Create(_targets);
+            while (e.Next(out var g))
             {
                 Assert.IsTrue(g, "Target graphic is null.");
-                g.SetClipSoftness(_softness);
+                g!.SetClipSoftness(_softness);
                 g.SetClipRect(clipRect, validRect);
             }
+            _targets = e.Shrink();
         }
 
         public void AddGraphicsInChildren(Transform root)
@@ -67,9 +74,6 @@ namespace UnityEngine.UI
                 _targets[oldLength + index] = g;
             }
         }
-
-        public void PruneDestroyedTargets() =>
-            UnityObjectUtils.PruneDestroyed(ref _targets);
 
 #if UNITY_EDITOR
         private void Reset() => _targets = Array.Empty<Graphic>();
