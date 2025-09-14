@@ -6,9 +6,9 @@ namespace UnityEngine.UI
     public static class MeshExtensions
     {
         // _colorBuf could be changed by calling Set(), so it needs extreme care when returning it
-        static Color32[] _colorBuf = Array.Empty<Color32>();
+        private static Color32[] _colorBuf = Array.Empty<Color32>();
 
-        static Color32[] GetTempColors(Color32 color, int count)
+        private static Color32[] GetTempColors(Color32 color, int count)
         {
             if (_colorBuf.Length < count)
                 _colorBuf = new Color32[count];
