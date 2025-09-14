@@ -140,10 +140,8 @@ namespace UnityEngine.UI
             Indices.SetUp(QuadIndexCache.Single);
         }
 
-        public void SetUp_Quad_FullUV(Vector2 pos1, Vector2 pos2, Color32 color)
-        {
-            SetUp_Quad(pos1, pos2, new Vector2(0, 0), new Vector2(1, 1), color);
-        }
+        public void SetUp_Quad_FullUV(Vector2 pos1, Vector2 pos2, Color32 color) => SetUp_Quad(pos1, pos2, new Vector2(0, 0), new Vector2(1, 1), color);
+        public void SetUp_Quad_FullUV(Rect rect, Color32 color) => SetUp_Quad_FullUV(rect.min, rect.max, color);
 
         public void Clear()
         {

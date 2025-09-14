@@ -29,7 +29,7 @@ namespace UnityEngine.UI
 #if UNITY_EDITOR
     public static class GraphicPropertyVisible
     {
-        static readonly Dictionary<Type, GraphicPropertyFlag> _cache = new();
+        private static readonly Dictionary<Type, GraphicPropertyFlag> _cache = new();
 
         public static bool IsVisible(Type type, GraphicPropertyFlag property)
         {
