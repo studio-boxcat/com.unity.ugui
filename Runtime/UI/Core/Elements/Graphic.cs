@@ -537,6 +537,13 @@ namespace UnityEngine.UI
 
         [UsedImplicitly]
         private bool CanShow(GraphicPropertyFlag flag) => GraphicPropertyVisible.IsVisible(GetType(), flag);
+
+        [ContextMenu("Toggle Raycast Target _r")]
+        private void ToggleRaycastTarget()
+        {
+            UnityEditor.Undo.RecordObject(this, "Toggle Raycast Target");
+            raycastTarget = !raycastTarget;
+        }
 #endif
     }
 }
