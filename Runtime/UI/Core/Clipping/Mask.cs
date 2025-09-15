@@ -97,8 +97,13 @@ namespace UnityEngine.UI
 
         void ISelfValidator.Validate(SelfValidationResult result)
         {
-            if (_graphic && _graphic.gameObject.RefNq(gameObject))
-                result.AddError($"[Mask] Graphic ({_graphic.SafeName()}) must be on the same GameObject as Mask ({gameObject.name})");
+            if (_graphic)
+            {
+                if (_graphic.material.RefNq(Graphic.defaultGraphicMaterial))
+                    result.AddError($"[Mask] Graphic ({_graphic.SafeName()}) must have default material.");
+                if (_graphic.gameObject.RefNq(gameObject))
+                    result.AddError($"[Mask] Graphic ({_graphic.SafeName()}) must be on the same GameObject as Mask ({gameObject.name})");
+            }
         }
 #endif
     }
