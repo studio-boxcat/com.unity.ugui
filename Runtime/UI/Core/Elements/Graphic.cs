@@ -543,6 +543,7 @@ namespace UnityEngine.UI
         {
             UnityEditor.Undo.RecordObject(this, "Toggle Raycast Target");
             raycastTarget = !raycastTarget;
+            raycastPadding = Vector4.zero;
         }
 #endif
     }
