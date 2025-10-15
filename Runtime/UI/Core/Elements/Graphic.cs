@@ -496,15 +496,6 @@ namespace UnityEngine.UI
                     .Append("inheritedAlpha: ").Append((int) (cr.GetInheritedAlpha() * 255)).Append(", ")
                     ;
 
-                if (cr.hasRectClipping)
-                {
-                    sb.Append("clipping: ").Append(cr.clippingSoftness).Append(", ");
-                }
-                else
-                {
-                    sb.Append("clipping: none, ");
-                }
-
                 // for deactivated graphics, the mesh is not built.
                 var mesh = cr.GetMesh();
                 if (mesh)

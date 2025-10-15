@@ -62,9 +62,9 @@ namespace UnityEngine.UI
                 var sb = SbPool.Rent();
 
                 var cr = m_Graphic.canvasRenderer;
-                sb.AppendLine($"hasRectClipping: {cr.hasRectClipping}");
-                var clipper = ClipperRegistry.GetCachedClipper(this);
-                sb.AppendLine($"clipper: {clipper.SafeName()}");
+                sb.Append("hasRectClipping: ").Append(cr.hasRectClipping).Append(", ");
+                sb.Append("clippingSoftness: ").Append(cr.clippingSoftness).Append(", ");
+                sb.Append("clipper: \"").Append(ClipperRegistry.GetCachedClipper(this).SafeName()).Append("\"");
 
                 return SbPool.Return(sb);
             }
