@@ -5,8 +5,8 @@ namespace UnityEngine.UI
 {
     public static class WhiteColorCache
     {
-        static Color32[] _opaque = new Color32[64];
-        static Color32[] _transparent = new Color32[64];
+        private static Color32[] _opaque = new Color32[64];
+        private static Color32[] _transparent = new Color32[64];
 
 
         static WhiteColorCache()
@@ -19,7 +19,7 @@ namespace UnityEngine.UI
         {
             if (color is not { r: 255, g: 255, b: 255 })
             {
-                colors = default;
+                colors = null;
                 return false;
             }
 
@@ -33,7 +33,7 @@ namespace UnityEngine.UI
                     colors = Transparent(count);
                     return true;
                 default:
-                    colors = default;
+                    colors = null;
                     return false;
             }
         }
@@ -51,7 +51,7 @@ namespace UnityEngine.UI
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static void PrepareArray(ref Color32[] colors, int vertexCount, Color32 color)
+        private static void PrepareArray(ref Color32[] colors, int vertexCount, Color32 color)
         {
             if (colors.Length >= vertexCount) return;
             colors = new Color32[vertexCount];

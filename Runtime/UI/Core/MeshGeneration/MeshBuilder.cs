@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using JetBrains.Annotations;
+using Unity.Collections;
 using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
@@ -80,16 +81,20 @@ namespace UnityEngine.UI
         public readonly MeshIndexChannel Indices = new(96);
 
         [Conditional("DEBUG")]
-        public void AssertPrepared()
+        public void AssertPrepared(bool checkColor = true)
         {
             var posCount = Poses.Count;
             var uvCount = UVs.Count;
-            var colorCount = Colors.Count;
             var indexCount = Indices.Count;
             Assert.AreNotEqual(Invalid, posCount, "Poses is not prepared");
             Assert.AreEqual(posCount, uvCount, "UVs is not prepared");
-            Assert.AreEqual(posCount, colorCount, "Colors is not prepared");
             Assert.AreNotEqual(Invalid, indexCount, "Indices is not prepared");
+
+            if (checkColor)
+            {
+                var colorCount = Colors.Count;
+                Assert.AreEqual(posCount, colorCount, "Colors is not prepared");
+            }
         }
 
         public bool HasSetUp() => Poses.Count is not Invalid;
@@ -145,6 +150,14 @@ namespace UnityEngine.UI
 
         public void SetUp_ColorWhiteToMatchPos() => Colors.SetUp_White(Poses.Count);
 
+        public void Invalidate()
+        {
+            Poses.Invalidate();
+            UVs.Invalidate();
+            Colors.Invalidate();
+            Indices.Invalidate();
+        }
+
         public void Clear()
         {
             Poses.Clear();
@@ -163,7 +176,7 @@ namespace UnityEngine.UI
             Indices.TrimAfter(trimIndex);
         }
 
-        public void FillMesh(Mesh mesh)
+        public void Fill(Mesh mesh)
         {
             AssertPrepared();
             Assert.AreEqual(0, mesh.vertexCount, "Mesh is not empty");
@@ -192,27 +205,32 @@ namespace UnityEngine.UI
             mesh.RecalculateBounds();
         }
 
-        public void Invalidate()
+        public void FillAndInvalidate(Mesh mesh)
         {
-            AssertPrepared();
-            Poses.Invalidate();
-            UVs.Invalidate();
-            Colors.Invalidate();
-            Indices.Invalidate();
-        }
-
-        public void FillMeshAndInvalidate(Mesh mesh)
-        {
-            FillMesh(mesh);
+            Fill(mesh);
             Invalidate();
         }
+
+#if UNITY_EDITOR
+        public void FillAndInvalidate(Sprite sprite)
+        {
+            AssertPrepared(checkColor: false);
+
+            using var ps = Poses.AllocateNativeArray(Allocator.Temp);
+            using var uvs = UVs.AllocateNativeArray(Allocator.Temp);
+            using var tris = Indices.AllocateNativeArray(Allocator.Temp);
+            sprite.SetMesh(ps, uvs, tris);
+
+            Invalidate();
+        }
+#endif
 
         public void SetMeshAndInvalidate(CanvasRenderer canvasRenderer)
         {
             Assert.IsTrue(Poses.Count is not Invalid, "Poses is not prepared.");
             var mesh = MeshPool.Rent();
             Assert.IsTrue(mesh.vertexCount is 0, "Mesh is not empty. Please clear the mesh before building it again.");
-            FillMeshAndInvalidate(mesh);
+            FillAndInvalidate(mesh);
             canvasRenderer.SetMesh(mesh);
             MeshPool.Return(mesh); // return the mesh to the pool
         }

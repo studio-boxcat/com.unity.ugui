@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using Unity.Collections;
 using UnityEngine.Assertions;
 using UnityEngine.Rendering;
 
@@ -132,6 +133,16 @@ namespace UnityEngine.UI
         {
             Assert.IsNotNull(Data);
             Internal_FillMesh(mesh);
+        }
+
+        [MustDisposeResource]
+        public NativeArray<T> AllocateNativeArray(Allocator allocator)
+        {
+            Assert.IsNotNull(Data, "MeshChannel.SetUp() must be called before allocating NativeArray.");
+
+            var nativeArray = new NativeArray<T>(Count, allocator, NativeArrayOptions.UninitializedMemory);
+            NativeArray<T>.Copy(Data!, nativeArray, Count);
+            return nativeArray;
         }
 
         public void Invalidate()
