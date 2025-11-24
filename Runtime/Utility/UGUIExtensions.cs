@@ -25,9 +25,9 @@ namespace UnityEngine.UI
             return childGO.AddComponent<TGraphic>(); // add component after SetParent() to avoid null parent canvas.
         }
 
-        public static void SetRGB(this Graphic g, Color color) => g.color = color.WithAlpha(g.color.a);
+        public static void SetRGB(this Graphic g, Color color) => g.color = color.WithA(g.color.a);
         public static float GetAlpha(this Graphic g) => g.color.a;
-        public static void SetAlpha(this Graphic g, float alpha) => g.color = g.color.WithAlpha(alpha);
+        public static void SetAlpha(this Graphic g, float alpha) => g.color = g.color.WithA(alpha);
 
         public static float GetScaledWidth(this Canvas canvas)
             => canvas.pixelRect.width / canvas.scaleFactor;

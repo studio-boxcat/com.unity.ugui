@@ -59,7 +59,7 @@ namespace UnityEngine.UI
             var p3 = p3Temp.WithZ(0);
             Handles.DrawSolidRectangleWithOutline(
                 new[] { p0, p1, p2, p3 },
-                Handles.UIColliderHandleColor.WithAlpha(0.15f),
+                Handles.UIColliderHandleColor.WithA(0.15f),
                 Handles.UIColliderHandleColor);
             return rect;
         }
