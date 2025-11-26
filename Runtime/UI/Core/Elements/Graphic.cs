@@ -43,7 +43,7 @@ namespace UnityEngine.UI
         }
 
         [SerializeField, ShowIf("@CanShow(GraphicPropertyFlag.Raycast)"), OnValueChanged("SetRaycastDirty")]
-        [FoldoutGroup("Advanced", order: GraphicPropOrder.Advanced), PropertyOrder(GraphicPropOrder.Advanced_RaycastTarget)]
+        [FoldoutGroup(GraphicEditorConst.Advanced, order: GraphicPropOrder.Advanced), PropertyOrder(GraphicPropOrder.Advanced_RaycastTarget)]
         private bool m_RaycastTarget;
 
         protected RaycastRegisterLink m_RaycastRegisterLink;
