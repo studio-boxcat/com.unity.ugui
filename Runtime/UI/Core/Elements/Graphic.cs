@@ -536,6 +536,13 @@ namespace UnityEngine.UI
             raycastTarget = !raycastTarget;
             raycastPadding = Vector4.zero;
         }
+
+        [ContextMenu("Reset Raycast Padding _p")]
+        private void ResetRaycastPadding()
+        {
+            UnityEditor.Undo.RecordObject(this, "Reset Raycast Padding");
+            raycastPadding = Vector4.zero;
+        }
 #endif
     }
 }
