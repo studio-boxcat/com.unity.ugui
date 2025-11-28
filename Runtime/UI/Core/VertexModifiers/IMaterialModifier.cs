@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using UnityEngine.Assertions;
+using Sirenix.OdinInspector;
 
 namespace UnityEngine.UI
 {
@@ -19,8 +19,29 @@ namespace UnityEngine.UI
         Material GetModifiedMaterial(Material baseMaterial);
     }
 
+    [ExecuteAlways]
+    public abstract class MaterialModifierBase : MonoBehaviour, IMaterialModifier
+    {
+        [SerializeField, Required, ChildGameObjectsOnly]
+        [HideIf("_graphic_HideIf")]
+        private Graphic _graphic = null!;
+        public Graphic Graphic => _graphic;
+
+        protected virtual void Awake() => _graphic ??= GetComponent<Graphic>();
+        protected virtual void OnEnable() => SetMaterialDirty();
+        protected virtual void OnDisable() => SetMaterialDirty();
+        public void SetMaterialDirty() => _graphic.SetMaterialDirty();
+        public abstract Material GetModifiedMaterial(Material baseMaterial);
+
+#if UNITY_EDITOR
+        protected virtual void Reset() => _graphic = GetComponent<Graphic>();
+        private bool _graphic_HideIf() => _graphic && _graphic.gameObject.RefEq(gameObject);
+#endif
+    }
+
     public static class MaterialModifierUtils
     {
+        // assume that there's no nested usage, so we can reuse the same buffer.
         private static readonly List<IMaterialModifier> _buf = new();
 
         public static Material ResolveMaterialForRendering(Component comp, Material baseMaterial)

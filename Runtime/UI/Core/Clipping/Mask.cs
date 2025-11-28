@@ -8,14 +8,11 @@ using UnityEngine.Serialization;
 
 namespace UnityEngine.UI
 {
-    [ExecuteAlways]
-    public class Mask : MonoBehaviour, IMeshModifier, IMaterialModifier, IPostGraphicRebuildCallback
+    public class Mask : MaterialModifierBase, IMeshModifier, IPostGraphicRebuildCallback
 #if UNITY_EDITOR
         , ISelfValidator
 #endif
     {
-        [SerializeField, Required, ChildGameObjectsOnly]
-        private Graphic _graphic = null!;
         [SerializeField, FormerlySerializedAs("m_ShowMaskGraphic")]
         private bool _showMaskGraphic = true;
         [SerializeField, Required, ChildGameObjectsOnly]
@@ -24,9 +21,9 @@ namespace UnityEngine.UI
 
         [NonSerialized] private Mesh? _mesh;
 
-        private void OnEnable()
+        protected override void OnEnable()
         {
-            _graphic.SetMaterialDirty();
+            base.OnEnable();
 
             foreach (var m in _maskables)
             {
@@ -35,11 +32,11 @@ namespace UnityEngine.UI
             }
         }
 
-        protected void OnDisable()
+        protected override void OnDisable()
         {
-            _graphic.SetMaterialDirty();
+            base.OnDisable();
 
-            var cr = _graphic.canvasRenderer;
+            var cr = Graphic.canvasRenderer;
             cr.hasPopInstruction = false;
 
             foreach (var m in _maskables)
@@ -63,7 +60,7 @@ namespace UnityEngine.UI
             CanvasUpdateRegistry.QueueGraphicRebuildCallback(this);
         }
 
-        Material IMaterialModifier.GetModifiedMaterial(Material baseMaterial)
+        public override Material GetModifiedMaterial(Material baseMaterial)
         {
             CanvasUpdateRegistry.QueueGraphicRebuildCallback(this);
             return baseMaterial;
@@ -74,7 +71,7 @@ namespace UnityEngine.UI
         {
             Assert.IsTrue(isActiveAndEnabled, "[Mask] Should only be called when active and enabled");
 
-            var cr = _graphic.canvasRenderer;
+            var cr = Graphic.canvasRenderer;
             var (maskMat, unmaskMat) = StencilMaterial.LoadMaskPair(_showMaskGraphic);
             cr.SetMaterial(maskMat, 0);
             cr.hasPopInstruction = true;
@@ -83,26 +80,27 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
-        private void Reset()
+        protected override void Reset()
         {
-            _graphic = GetComponent<Graphic>();
+            base.Reset();
             _maskables = GetComponentsInChildren<Maskable>(true);
         }
 
-        private void Awake()
+        protected override void Awake()
         {
-            _graphic ??= GetComponent<Graphic>();
+            base.Awake();
             _maskables ??= GetComponentsInChildren<Maskable>(true);
         }
 
         void ISelfValidator.Validate(SelfValidationResult result)
         {
-            if (_graphic)
+            var g = Graphic;
+            if (g)
             {
-                if (_graphic.material.RefNq(Graphic.defaultGraphicMaterial))
-                    result.AddError($"[Mask] Graphic ({_graphic.SafeName()}) must have default material.");
-                if (_graphic.gameObject.RefNq(gameObject))
-                    result.AddError($"[Mask] Graphic ({_graphic.SafeName()}) must be on the same GameObject as Mask ({gameObject.name})");
+                if (g.material.RefNq(Graphic.defaultGraphicMaterial))
+                    result.AddError($"[Mask] Graphic ({g.SafeName()}) must have default material.");
+                if (g.gameObject.RefNq(gameObject))
+                    result.AddError($"[Mask] Graphic ({g.SafeName()}) must be on the same GameObject as Mask ({gameObject.name})");
             }
         }
 #endif

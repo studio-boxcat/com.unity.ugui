@@ -4,23 +4,15 @@ using Sirenix.OdinInspector;
 
 namespace UnityEngine.UI
 {
-    [ExecuteAlways]
-    public class Maskable : MonoBehaviour, IMaterialModifier
+    public class Maskable : MaterialModifierBase
 #if UNITY_EDITOR
         , ISelfValidator
 #endif
     {
-        [SerializeField, Required, ChildGameObjectsOnly]
-        private Graphic _graphic = null!;
-        public Graphic Graphic => _graphic;
-
         [NonSerialized, ShowInInspector, ReadOnly]
         private Material? _baseMaterial;
         [NonSerialized, ShowInInspector, ReadOnly]
         private Material? _maskMaterial;
-
-        private void OnEnable() => _graphic.SetMaterialDirty();
-        private void OnDisable() => _graphic.SetMaterialDirty();
 
         private void OnDestroy()
         {
@@ -32,7 +24,7 @@ namespace UnityEngine.UI
             }
         }
 
-        Material IMaterialModifier.GetModifiedMaterial(Material baseMaterial)
+        public override Material GetModifiedMaterial(Material baseMaterial)
         {
             // We don't support multiple masking levels, so only the first mask will work.
             // This means we don't need to the mask component changed or not,
@@ -66,9 +58,6 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
-        private void Awake() => _graphic ??= GetComponent<Graphic>(); // when adding component in editor
-        private void Reset() => _graphic = GetComponent<Graphic>();
-
         void ISelfValidator.Validate(SelfValidationResult result)
         {
             if (this.HasComponentInParent<Mask>(includeInactive: true) is false)
