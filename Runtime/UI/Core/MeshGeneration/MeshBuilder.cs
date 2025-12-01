@@ -211,7 +211,6 @@ namespace UnityEngine.UI
             Invalidate();
         }
 
-#if UNITY_EDITOR
         public void FillAndInvalidate(Sprite sprite)
         {
             AssertPrepared(checkColor: false);
@@ -223,7 +222,6 @@ namespace UnityEngine.UI
 
             Invalidate();
         }
-#endif
 
         public void SetMeshAndInvalidate(CanvasRenderer canvasRenderer)
         {
