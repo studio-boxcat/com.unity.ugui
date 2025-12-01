@@ -9,11 +9,7 @@ namespace UnityEngine.UI
 
         public static GameObject NewGraphicChildBase(this Transform t, string name = "")
         {
-            var childGO = new GameObject(name, _graphicTypes)
-            {
-                layer = t.gameObject.layer
-            };
-
+            var childGO = new GameObject(name, _graphicTypes) { layer = t.gameObject.layer };
             var child = childGO.transform;
             child.SetParent(t, false);
             return childGO;
