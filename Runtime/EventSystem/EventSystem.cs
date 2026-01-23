@@ -103,7 +103,7 @@ namespace UnityEngine.EventSystems
 
         void Update()
         {
-            if (!ReferenceEquals(current, this))
+            if (current.RefNq(this))
                 return;
             m_InputModule.UpdateModule();
             m_InputModule.Process();
