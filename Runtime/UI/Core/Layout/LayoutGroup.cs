@@ -56,12 +56,12 @@ namespace UnityEngine.UI
         /// <summary>
         /// See LayoutElement.preferredWidth
         /// </summary>
-        float ILayoutElement.preferredWidth => GetTotalPreferredSize(Axis.X);
+        float ILayoutElementH.preferredWidth => GetTotalPreferredSize(Axis.X);
 
         /// <summary>
         /// See LayoutElement.preferredHeight
         /// </summary>
-        float ILayoutElement.preferredHeight => GetTotalPreferredSize(Axis.Y);
+        float ILayoutElementV.preferredHeight => GetTotalPreferredSize(Axis.Y);
 
         // ILayoutController Interface
 

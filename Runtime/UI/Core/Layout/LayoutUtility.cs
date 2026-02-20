@@ -1,6 +1,6 @@
 #nullable enable
 
-using System;
+using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
@@ -24,71 +24,39 @@ namespace UnityEngine.UI
         public static float Select(this Axis axis, float x, float y) => axis.IsX() ? x : y;
         public static int SelectHorizontalOrVertical(this Axis axis, RectOffset r) => axis.IsX() ? r.horizontal : r.vertical;
 
-        public static float CalcPreferredSize(RectTransform rect, Axis axis) => GetLayoutProperty(rect, axis);
-        public static float CalcPreferredWidth(RectTransform rect) => GetLayoutProperty(rect, Axis.X);
-        public static float CalcPreferredHeight(RectTransform rect) => GetLayoutProperty(rect, Axis.Y);
+        public static float CalcPreferredSize(RectTransform rect, Axis axis) => axis.IsX() ? CalcPreferredWidth(rect) : CalcPreferredHeight(rect);
 
-        private static float GetLayoutProperty(RectTransform rect, Axis axis)
+        public static float CalcPreferredWidth(RectTransform rect)
+            => ResolveLayoutElement<ILayoutElementH>(rect)?.preferredWidth ?? 0;
+
+        public static float CalcPreferredHeight(RectTransform rect)
+            => ResolveLayoutElement<ILayoutElementV>(rect)?.preferredHeight ?? 0;
+
+        /// <summary>
+        /// Resolves the highest-priority enabled layout element from a RectTransform.
+        /// Returns null if no enabled element is found.
+        /// </summary>
+        public static T? ResolveLayoutElement<T>(RectTransform rect) where T : class, ILayoutPriority
         {
-            using var _ = CompBuf.GetComponents(rect, typeof(ILayoutElement), out var components);
-
+            using var _ = CompBuf.GetComponents(rect, typeof(T), out var components);
             var count = components.Count;
-            // no layout elements, return 0.
-            if (count is 0) return 0;
+            if (count is 0) return null;
+            var first = (T) (object) components[0];
+            if (count is 1) return first is Behaviour { enabled: false } ? null : first;
 
-            // only one layout element, return its property value.
-            if (count is 1)
-            {
-                var layoutComp = (ILayoutElement) components[0];
-                if (layoutComp is Behaviour { enabled: false }) // only check for enabled, not isActiveAndEnabled.
-                    return 0f;
-                return GetValue(layoutComp, axis).LB0();
-            }
-
-            var value = 0f; // default 0.
-            var maxPriority = int.MinValue;
+            T? result = null;
+            var maxPriority = -1;
             for (var i = 0; i < count; i++)
             {
-                var layoutComp = (ILayoutElement) components[i];
-                if (layoutComp is Behaviour { enabled: false }) // only check for enabled, not isActiveAndEnabled.
-                    continue;
-
-                var priority = layoutComp.layoutPriority;
-                // If this layout components has lower priority than a previously used, ignore it.
-                if (priority < maxPriority)
-                    continue;
-                float curValue = GetValue(layoutComp, axis);
-                // If this layout property is set to a negative value, it means it should be ignored.
-                if (curValue < 0)
-                    continue;
-
-                // If this layout component has higher priority than all previous ones,
-                // overwrite with this one's value.
-                if (priority > maxPriority)
-                {
-                    value = curValue;
-                    maxPriority = priority;
-                }
-                // We already checked priority < maxPriority (false) && priority > maxPriority (false), so priority == maxPriority here.
-                // If the layout component has the same priority as a previously used,
-                // use the largest of the values with the same priority.
-                else if (curValue > value)
-                {
-                    value = curValue;
-                }
+                var elem = (T) (object) components[i];
+                if (elem is Behaviour { enabled: false }) continue; // check enabled, not isActiveAndEnabled
+                var priority = elem.layoutPriority;
+                Assert.IsFalse(priority < 0, "layoutPriority must not be negative");
+                if (priority <= maxPriority) continue;
+                result = elem;
+                maxPriority = priority;
             }
-
-            return value;
-
-            static float GetValue(ILayoutElement e, Axis axis)
-            {
-                return axis switch
-                {
-                    Axis.X => e.preferredWidth,
-                    Axis.Y => e.preferredHeight,
-                    _ => throw new ArgumentOutOfRangeException(nameof(axis), "Axis must be either 0 (width) or 1 (height).")
-                };
-            }
+            return result;
         }
     }
 }

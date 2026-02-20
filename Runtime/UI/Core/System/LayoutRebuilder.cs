@@ -85,7 +85,7 @@ namespace UnityEngine.UI
             }
         }
 
-        private static readonly ListPool<ILayoutElement> _elemPool = new();
+        private static readonly ListPool<ILayoutPriority> _elemPool = new();
         private static readonly ListPool<ILayoutController> _ctrlPool = new();
 
         /// <summary>
@@ -107,37 +107,25 @@ namespace UnityEngine.UI
                 L.E("[LayoutRebuilder] No ILayoutController on target: " + layoutRoot.name, layoutRoot);
 #endif
 
-            using var d0 = _elemPool.Rent(out var elems); // calculate layout, dimensions, etc.
+            using var d0 = _elemPool.Rent(out var elems); // layout elements (child to parent order)
             using var d1 = _ctrlPool.Rent(out var ctrls); // controls rect transforms
-            CollectElements(layoutRoot, elems); // child to parent order.
+            CollectElements(layoutRoot, elems);
             CollectControllers(layoutRoot, ctrls); // parent to child order. (ILayoutSelfController first).
 
             // Horizontal layout first.
             foreach (var elem in elems)
-            {
-                // L.I("[LayoutRebuilder] CalculateLayoutInputHorizontal: " + layoutElement, (Object) layoutElement);
-                elem.CalculateLayoutInputHorizontal();
-            }
+                if (elem is ILayoutElementH h) h.CalculateLayoutInputHorizontal();
             foreach (var ctrl in ctrls)
-            {
-                // L.I("[LayoutRebuilder] SetLayoutHorizontal: " + layoutController, (Object) layoutController);
                 ctrl.SetLayoutHorizontal();
-            }
 
             // Then vertical layout.
             foreach (var elem in elems)
-            {
-                // L.I("[LayoutRebuilder] CalculateLayoutInputVertical: " + layoutElement, (Object) layoutElement);
-                elem.CalculateLayoutInputVertical();
-            }
+                if (elem is ILayoutElementV v) v.CalculateLayoutInputVertical();
             foreach (var ctrl in ctrls)
-            {
-                // L.I("[LayoutRebuilder] SetLayoutVertical: " + layoutController, (Object) layoutController);
                 ctrl.SetLayoutVertical();
-            }
         }
 
-        private static void CollectElements(Transform t, List<ILayoutElement> result)
+        private static void CollectElements(Transform t, List<ILayoutPriority> result)
         {
             Assert.IsTrue(t.gameObject.activeInHierarchy, "Target must be active in hierarchy: " + t.name);
 

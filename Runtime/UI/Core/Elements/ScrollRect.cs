@@ -14,7 +14,7 @@ namespace UnityEngine.UI
     /// <remarks>
     /// ScrollRect will not do any clipping on its own. Combined with a Mask component, it can be turned into a scroll view.
     /// </remarks>
-    public class ScrollRect : UIBehaviour, IInitializePotentialDragHandler, IBeginDragHandler, IEndDragHandler, IDragHandler, IScrollHandler, IPostLayoutRebuildCallback, ILayoutElement, ILayoutGroup
+    public class ScrollRect : UIBehaviour, IInitializePotentialDragHandler, IBeginDragHandler, IEndDragHandler, IDragHandler, IScrollHandler, IPostLayoutRebuildCallback, ILayoutGroup
     {
         /// <summary>
         /// A setting for which behavior to use when content moves beyond the confines of its container.
@@ -893,8 +893,6 @@ namespace UnityEngine.UI
 
         private bool hScrollingNeeded => m_ContentBounds.size.x > m_ViewBounds.size.x + 0.01f;
         private bool vScrollingNeeded => m_ContentBounds.size.y > m_ViewBounds.size.y + 0.01f;
-
-        int ILayoutElement.layoutPriority => -1;
 
         /// <summary>
         /// Called by the layout system.

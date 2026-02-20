@@ -1,34 +1,51 @@
 namespace UnityEngine.UI
 {
     /// <summary>
-    ///   A component is treated as a layout element by the auto layout system if it implements ILayoutElement.
+    /// Shared priority used by the layout system to resolve conflicts between multiple layout inputs on the same GameObject.
+    /// </summary>
+    public interface ILayoutPriority
+    {
+        int layoutPriority => 0;
+    }
+
+    /// <summary>
+    /// Provides horizontal layout input (preferredWidth). Implement this instead of ILayoutElement for single-axis components.
     /// </summary>
     /// <remarks>
-    /// The layout system will invoke CalculateLayoutInputHorizontal before querying preferredWidth. It can potentially save performance if these properties are cached when CalculateLayoutInputHorizontal is invoked, so they don't need to be recalculated every time the properties are queried.
-    ///
-    /// The layout system will invoke CalculateLayoutInputVertical before querying preferredHeight. It can potentially save performance if these properties are cached when CalculateLayoutInputVertical is invoked, so they don't need to be recalculated every time the properties are queried.
-    ///
-    /// The preferredWidth property should not rely on any properties of the RectTransform of the layout element, otherwise the behavior will be non-deterministic.
-    /// The preferredHeight property may rely on horizontal aspects of the RectTransform, such as the width or the X component of the position.
-    /// Any properties of the RectTransforms on child layout elements may always be relied on.
+    /// The layout system invokes CalculateLayoutInputHorizontal before querying preferredWidth.
+    /// Children will already have up-to-date horizontal inputs when this method is called.
+    /// preferredWidth must not rely on any properties of the element's own RectTransform, otherwise the behavior will be non-deterministic.
+    /// Properties of child RectTransforms may always be relied on.
+    /// Cache computed values in CalculateLayoutInputHorizontal to avoid recalculating on every query.
     /// </remarks>
-    public interface ILayoutElement
+    public interface ILayoutElementH : ILayoutPriority
     {
-        /// <summary>
-        /// After this method is invoked, layout horizontal input properties should return up-to-date values.
-        ///  Children will already have up-to-date layout horizontal inputs when this methods is called.
-        /// </summary>
         void CalculateLayoutInputHorizontal() { }
+        float preferredWidth { get; }
+    }
 
-        /// <summary>
-        ///After this method is invoked, layout vertical input properties should return up-to-date values.
-        ///Children will already have up-to-date layout vertical inputs when this methods is called.
-        /// </summary>
+    /// <summary>
+    /// Provides vertical layout input (preferredHeight). Implement this instead of ILayoutElement for single-axis components.
+    /// </summary>
+    /// <remarks>
+    /// The layout system invokes CalculateLayoutInputVertical before querying preferredHeight.
+    /// Children will already have up-to-date vertical inputs when this method is called.
+    /// preferredHeight may rely on horizontal aspects of the RectTransform (e.g. width), since horizontal layout runs first.
+    /// Properties of child RectTransforms may always be relied on.
+    /// Cache computed values in CalculateLayoutInputVertical to avoid recalculating on every query.
+    /// </remarks>
+    public interface ILayoutElementV : ILayoutPriority
+    {
         void CalculateLayoutInputVertical() { }
+        float preferredHeight { get; }
+    }
 
-        float preferredWidth => -1;
-        float preferredHeight => -1;
-        int layoutPriority => 0;
+    /// <summary>
+    /// Composite interface for components that provide both horizontal and vertical layout input.
+    /// Backward-compatible — existing implementors need no changes beyond updating explicit interface references.
+    /// </summary>
+    public interface ILayoutElement : ILayoutElementH, ILayoutElementV
+    {
     }
 
     /// <summary>
