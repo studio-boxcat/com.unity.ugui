@@ -73,7 +73,7 @@ namespace UnityEngine.UI
                         }
                         catch (Exception e)
                         {
-                            DebugException($"[CanvasUpdateRegistry] Exception while rebuilding Layout {layoutRoot}", e);
+                            DebugException($"[CanvasUpdateRegistry] Exception while rebuilding Layout", e, layoutRoot);
                         }
                     }
                 }
@@ -141,7 +141,7 @@ namespace UnityEngine.UI
                         }
                         catch (Exception e)
                         {
-                            DebugException($"[CanvasUpdateRegistry] Exception while rebuilding Graphic {graphic}", e);
+                            DebugException($"[CanvasUpdateRegistry] Exception while rebuilding Graphic", e, graphic);
                         }
                     }
                 }
@@ -260,9 +260,9 @@ namespace UnityEngine.UI
         }
 
         [System.Diagnostics.Conditional("DEBUG")]
-        private static void DebugException(string message, Exception e)
+        private static void DebugException(string message, Exception e, Object? obj = null)
         {
-            L.E(message);
+            L.E(message + (obj ? ": " + obj.name : ""), obj);
             L.E(e);
         }
     }
