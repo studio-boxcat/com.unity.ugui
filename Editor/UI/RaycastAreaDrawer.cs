@@ -59,18 +59,16 @@ namespace UnityEngine.UI
             var p3 = p3Temp.WithZ(0);
             Handles.DrawSolidRectangleWithOutline(
                 new[] { p0, p1, p2, p3 },
-                Handles.UIColliderHandleColor.WithA(0.15f),
-                Handles.UIColliderHandleColor);
+                Color.magenta.WithA(0.15f),
+                Color.magenta);
             return rect;
         }
 
         private static void DrawHandle(Graphic graphic, Rect rect)
         {
-            // Handle size based on scene view camera distance
-            var handleSize = HandleUtility.GetHandleSize(default) * 0.03f;
-            if (handleSize == 0) handleSize = 0.02f; // Default small size
-
-            Handles.color = Handles.UIColliderHandleColor;
+            // configure handles
+            var handleSize = HandleUtility.GetHandleSize(default) * 0.08f;
+            Handles.color = Color.magenta;
 
             var t = graphic.rectTransform;
             var ltw = t.localToWorldMatrix;
