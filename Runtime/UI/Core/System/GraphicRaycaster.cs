@@ -114,7 +114,7 @@ namespace UnityEngine.UI
 
             static bool Hit(RectTransform rt, Graphic graphic, Camera eventCamera, Vector2 pointerPosition)
             {
-                return RectTransformUtility.RectangleContainsScreenPoint(rt, pointerPosition, eventCamera, graphic.raycastPadding)
+                return RectTransformUtility.RectangleContainsScreenPoint(rt, pointerPosition, eventCamera, graphic.raycastInset)
                        && RaycastUtils.IsEligibleForRaycast(rt, pointerPosition, eventCamera);
             }
         }

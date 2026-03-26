@@ -49,8 +49,8 @@ namespace UnityEngine.UI
         private static Rect DrawRect(Graphic graphic)
         {
             var t = graphic.rectTransform;
-            var padding = graphic.raycastPadding; // Store initial padding for handle positioning
-            t.CalcWorldCorners2D(padding,
+            var inset = graphic.raycastInset; // Store initial inset for handle positioning
+            t.CalcWorldCorners2D(inset,
                 out var p0Temp, out var p1Temp, out var p2Temp, out var p3Temp, out var rect);
 
             var p0 = p0Temp.WithZ(0);
@@ -73,15 +73,15 @@ namespace UnityEngine.UI
             var t = graphic.rectTransform;
             var ltw = t.localToWorldMatrix;
             var wtl = t.worldToLocalMatrix;
-            var padding = graphic.raycastPadding; // Store initial padding for handle positioning
-            var changed = ProcessHandle(Side.L, rect, ltw, wtl, ref padding, handleSize)
-                          || ProcessHandle(Side.R, rect, ltw, wtl, ref padding, handleSize)
-                          || ProcessHandle(Side.B, rect, ltw, wtl, ref padding, handleSize)
-                          || ProcessHandle(Side.T, rect, ltw, wtl, ref padding, handleSize);
+            var inset = graphic.raycastInset;
+            var changed = ProcessHandle(Side.L, rect, ltw, wtl, ref inset, handleSize)
+                          || ProcessHandle(Side.R, rect, ltw, wtl, ref inset, handleSize)
+                          || ProcessHandle(Side.B, rect, ltw, wtl, ref inset, handleSize)
+                          || ProcessHandle(Side.T, rect, ltw, wtl, ref inset, handleSize);
             if (changed)
             {
-                Undo.RecordObject(graphic, "Adjust Raycast Padding");
-                graphic.raycastPadding = padding;
+                Undo.RecordObject(graphic, "Adjust Raycast Inset");
+                graphic.raycastInset = inset;
                 EditorUtility.SetDirty(graphic);
             }
             return;
@@ -112,7 +112,7 @@ namespace UnityEngine.UI
                 if (!ctrlX) oldHandle = oldHandle.YX(); // flip for vertical handles (T, B)
                 oldHandle = ltw.MultiplyPoint2D(oldHandle); // translate into world-space
 
-                var newHandle = (Vector2) Handles.FreeMoveHandle(oldHandle, hSize, Vector3.zero, Handles.DotHandleCap);
+                var newHandle = (Vector2)Handles.FreeMoveHandle(oldHandle, hSize, Vector3.zero, Handles.DotHandleCap);
                 if (EditorGUI.EndChangeCheck())
                 {
                     var newPos = wtl.MultiplyPoint1D(newHandle, axisX: ctrlX); // translate back to local-space

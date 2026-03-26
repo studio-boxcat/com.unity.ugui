@@ -62,20 +62,18 @@ namespace UnityEngine.UI
             }
         }
 
-        [SerializeField, HideInInspector] // padding is edited by handles.
-        private Vector4 m_RaycastPadding;
+        // padding is edited by handles.
+        [SerializeField, HideInInspector, FormerlySerializedAs("m_RaycastPadding")]
+        private Vector4 m_RaycastInset;
 
         /// <summary>
-        /// Padding to be applied to the masking
-        /// X = Left
-        /// Y = Bottom
-        /// Z = Right
-        /// W = Top
+        /// Inset to shrink the raycast area from each edge.
+        /// X = Left, Y = Bottom, Z = Right, W = Top
         /// </summary>
-        public Vector4 raycastPadding
+        public Vector4 raycastInset
         {
-            get => m_RaycastPadding;
-            set => m_RaycastPadding = value;
+            get => m_RaycastInset;
+            set => m_RaycastInset = value;
         }
 
         [NonSerialized] private RectTransform? m_RectTransform;
@@ -208,7 +206,7 @@ namespace UnityEngine.UI
             {
                 // The RectTransform is a required component that must not be destroyed. Based on this assumption, a
                 // null-reference check is sufficient.
-                return m_RectTransform ??= (RectTransform) transform;
+                return m_RectTransform ??= (RectTransform)transform;
             }
         }
 
@@ -493,7 +491,7 @@ namespace UnityEngine.UI
                 sb
                     .Append("canvas: \"").Append(canvas.SafeName()).Append("\", ")
                     .Append("cull: ").Append(cr.cull).Append(", ")
-                    .Append("inheritedAlpha: ").Append((int) (cr.GetInheritedAlpha() * 255)).Append(", ")
+                    .Append("inheritedAlpha: ").Append((int)(cr.GetInheritedAlpha() * 255)).Append(", ")
                     ;
 
                 // for deactivated graphics, the mesh is not built.
@@ -534,14 +532,14 @@ namespace UnityEngine.UI
         {
             UnityEditor.Undo.RecordObject(this, "Toggle Raycast Target");
             raycastTarget = !raycastTarget;
-            raycastPadding = Vector4.zero;
+            raycastInset = Vector4.zero;
         }
 
-        [ContextMenu("Reset Raycast Padding _p")]
-        private void ResetRaycastPadding()
+        [ContextMenu("Reset Raycast Inset _p")]
+        private void ResetRaycastInset()
         {
-            UnityEditor.Undo.RecordObject(this, "Reset Raycast Padding");
-            raycastPadding = Vector4.zero;
+            UnityEditor.Undo.RecordObject(this, "Reset Raycast Inset");
+            raycastInset = Vector4.zero;
         }
 #endif
     }
