@@ -25,6 +25,12 @@ namespace UnityEngine.UI
         public static float GetAlpha(this Graphic g) => g.color.a;
         public static void SetAlpha(this Graphic g, float alpha) => g.color = g.color.WithA(alpha);
 
+        public static void SetVisualDirty(this Graphic g)
+        {
+            g.SetVerticesDirty();
+            g.SetMaterialDirty();
+        }
+
         public static float GetScaledWidth(this Canvas canvas)
             => canvas.pixelRect.width / canvas.scaleFactor;
 
