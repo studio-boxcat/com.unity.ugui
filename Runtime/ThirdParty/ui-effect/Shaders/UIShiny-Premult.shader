@@ -1,4 +1,4 @@
-Shader "UIEffect/UIShiny-PremultAlpha"
+Shader "UIEffect/UIShiny-Premult"
 {
 	Properties
 	{

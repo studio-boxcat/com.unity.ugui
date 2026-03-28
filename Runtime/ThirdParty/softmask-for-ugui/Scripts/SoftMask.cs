@@ -208,7 +208,7 @@ namespace Coffee.UISoftMask
         }
 
         private static Material? _sharedMaskMat;
-        private static Material GetSharedMaskMaterial() => _sharedMaskMat ??= Resources.Load<Material>("SoftMask");
+        private static Material GetSharedMaskMaterial() => _sharedMaskMat ??= Resources.Load<Material>(MaterialNames.SoftMask);
 
         /// <summary>
         /// Gets the size of the down sampling.

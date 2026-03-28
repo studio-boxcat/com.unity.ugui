@@ -22,11 +22,13 @@ fixed4 ApplyColorEffect(half4 color, half4 factor)
 {
 	#if ADD
 	color.rgb += factor.rgb * factor.a;
-	return color;
+	#elif PREMULT
+	// Lerp in premultiplied space: fill color must be premultiplied too
+	color.rgb = lerp(color.rgb, factor.rgb * color.a, factor.a);
 	#else
 	color.rgb = lerp(color.rgb, factor.rgb, factor.a);
-	return color;
 	#endif
+	return color;
 }
 
 // Apply shiny effect.

@@ -1,9 +1,11 @@
-﻿Shader "UIEffect/UIEffect"
+Shader "UIEffect/UIEffect"
 {
 	Properties
 	{
 		[HideInInspector] _Color ("Tint", Color) = (1,1,1,1)
 		[HideInInspector] _ParamTex ("Parameter Texture", 2D) = "white" {}
+		[HideInInspector] _SrcBlend ("", Float) = 5
+		[HideInInspector] _DstBlend ("", Float) = 10
 		[Toggle(ADD)] _Add ("Add", Float) = 0
 	}
 
@@ -29,7 +31,7 @@
 		Lighting Off
 		ZWrite Off
 		ZTest [unity_GUIZTestMode]
-		Blend SrcAlpha OneMinusSrcAlpha
+		Blend [_SrcBlend] [_DstBlend]
 
 		Pass
 		{
@@ -38,13 +40,7 @@
 		CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
-			#if !defined(SHADER_API_D3D11_9X) && !defined(SHADER_API_D3D9)
-			#pragma target 2.0
-			#else
-			#pragma target 3.0
-			#endif
-
-			#pragma multi_compile_local _ ADD
+			#pragma shader_feature_local _ ADD PREMULT
 
 		#include "UnityUI.cginc"
 
@@ -63,6 +59,10 @@
 
 				color = ApplyColorEffect(color, fixed4(IN.color.rgb, colorFactor));
 				color.a *= IN.color.a;
+
+				#if PREMULT
+				color.rgb *= IN.color.a;
+				#endif
 
 				return color;
 			}

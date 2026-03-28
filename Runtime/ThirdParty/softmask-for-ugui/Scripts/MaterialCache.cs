@@ -60,7 +60,7 @@ namespace Coffee.UISoftMask
         }
 
         private static Material? _baseMat;
-        private static Material GetBaseMat() => _baseMat ??= Resources.Load<Material>("SoftMaskable");
+        private static Material GetBaseMat() => _baseMat ??= Resources.Load<Material>(MaterialNames.SoftMaskable);
 
         private static ShaderID s_SoftMaskTexId = new("_SoftMaskTex");
         private static ShaderID s_MaskInteractionId = new("_MaskInteraction");
@@ -96,9 +96,9 @@ namespace Coffee.UISoftMask
         {
             shaderIndex = shaderName switch
             {
-                "UI/Default" => 0,
-                "MeowTower/UI/UI-Additive" => 1,
-                "MeowTower/UI/UI-PremultAlpha" => 2,
+                ShaderNames.UIDefault => 0,
+                ShaderNames.UIAdditive => 1,
+                ShaderNames.UIPremult => 2,
                 _ => byte.MaxValue, // Not supported
             };
 

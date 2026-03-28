@@ -7,8 +7,9 @@ namespace Coffee.UIEffects
     {
         static Material _effect_Add;
         static Material _effect_Fill;
+        static Material _effect_Fill_Premult;
         static Material _shiny;
-        static Material _shiny_PremultAlpha;
+        static Material _shiny_Premult;
 
 
         static ParameterTexture _paramEffect;
@@ -36,8 +37,10 @@ namespace Coffee.UIEffects
 
             return colorMode switch
             {
-                ColorMode.Add => _effect_Add ??= LoadMaterial("UIEffect_ADD", ParamEffect),
-                ColorMode.Fill => _effect_Fill ??= LoadMaterial("UIEffect_FILL", ParamEffect),
+                ColorMode.Add => _effect_Add ??= LoadMaterial(MaterialNames.UIEffectAdd, ParamEffect),
+                ColorMode.Fill when baseShaderName is ShaderNames.UIPremult
+                    => _effect_Fill_Premult ??= LoadMaterial(MaterialNames.UIEffectFillPremult, ParamEffect),
+                ColorMode.Fill => _effect_Fill ??= LoadMaterial(MaterialNames.UIEffectFill, ParamEffect),
                 _ => throw new System.NotSupportedException("Only ColorMode.Add and ColorMode.Fill are supported.")
             };
         }
@@ -45,22 +48,22 @@ namespace Coffee.UIEffects
 #if DEBUG
         internal static bool IsValidShaderName(string shaderName, ColorMode colorMode)
         {
-            if (colorMode is ColorMode.Add) // for add, if the shader is premult, we need to use blend function ONE+ONE, which is not implemented yet.
-                return shaderName is "UI/Default";
-            if (colorMode is ColorMode.Fill) // for fill, it does not matter whether it is premultiplied or not. the only alpha channel is used.
-                return shaderName is "UI/Default" or "MeowTower/UI/UI-PremultAlpha";
+            if (colorMode is ColorMode.Add) // premult would need Blend ONE+ONE, not implemented
+                return shaderName is ShaderNames.UIDefault;
+            if (colorMode is ColorMode.Fill)
+                return shaderName is ShaderNames.UIDefault or ShaderNames.UIPremult;
             throw new System.NotSupportedException($"Unsupported ColorMode: {colorMode}");
         }
 #endif
 
         public static Material GetShiny(string baseShaderName)
         {
-            Assert.IsTrue(baseShaderName is "UI/Default" or "MeowTower/UI/UI-PremultAlpha",
-                "Only UI/Default and UI/PremultAlpha are supported.");
+            Assert.IsTrue(baseShaderName is ShaderNames.UIDefault or ShaderNames.UIPremult,
+                $"Unsupported shader: {baseShaderName}");
 
-            return baseShaderName is "UI/Default"
-                ? _shiny ??= LoadMaterial("UIShiny", ParamShiny)
-                : _shiny_PremultAlpha ??= LoadMaterial("UIShiny-PremultAlpha", ParamShiny);
+            return baseShaderName is ShaderNames.UIDefault
+                ? _shiny ??= LoadMaterial(MaterialNames.UIShiny, ParamShiny)
+                : _shiny_Premult ??= LoadMaterial(MaterialNames.UIShinyPremult, ParamShiny);
         }
 
         static Material LoadMaterial(string path, ParameterTexture paramTex)
