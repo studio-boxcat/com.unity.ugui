@@ -24,7 +24,7 @@ namespace UnityEngine.UI
     {
         [SerializeField, Required, ChildGameObjectsOnly]
         [HideIf("_graphic_HideIf")]
-        private Graphic _graphic = null!;
+        private Graphic _graphic;
         public Graphic Graphic => _graphic;
 
         protected virtual void Awake() => _graphic ??= GetComponent<Graphic>();

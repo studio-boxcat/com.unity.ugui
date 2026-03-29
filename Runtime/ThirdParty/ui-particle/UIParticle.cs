@@ -19,11 +19,11 @@ namespace Coffee.UIExtensions
     public partial class UIParticle : Graphic
     {
         [SerializeField, Required, HideInInspector, ReadOnly]
-        internal ParticleSystem Source = null!;
+        internal ParticleSystem Source;
 
         [SerializeField, Required, AssetsOnly]
         [OnValueChanged("OnInspectorTextureChanged")]
-        private Texture2D _texture = null!;
+        private Texture2D _texture;
         public override Texture mainTexture => _texture;
 
         [NonSerialized]

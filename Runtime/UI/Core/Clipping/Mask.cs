@@ -17,7 +17,7 @@ namespace UnityEngine.UI
         private bool _showMaskGraphic = true;
         [SerializeField, Required, ChildGameObjectsOnly]
         [ListDrawerSettings(IsReadOnly = true), AllChildren, RequiredListLength(MinLength = 1)]
-        private Maskable[] _maskables = null!;
+        private Maskable[] _maskables;
 
         [NonSerialized] private Mesh? _mesh;
 

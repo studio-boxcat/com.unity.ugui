@@ -25,7 +25,7 @@ namespace Coffee.UISoftMask
         private bool _showMaskGraphic = true;
         [SerializeField, Required, ChildGameObjectsOnly, PropertyOrder(1000)]
         [ListDrawerSettings(IsReadOnly = true), AllChildren, RequiredListLength(MinLength = 1)]
-        private SoftMaskable[] _maskables = null!;
+        private SoftMaskable[] _maskables;
 
         private enum DownSamplingRate { None = 0, x1 = 1, x2 = 2, x4 = 4, x8 = 8, }
 

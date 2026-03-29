@@ -10,7 +10,7 @@ namespace UnityEngine.UI
     public class Clippable : MonoBehaviour
     {
         [SerializeField, Required, ChildGameObjectsOnly, HideIf("@m_Graphic")]
-        private Graphic m_Graphic = null!;
+        private Graphic m_Graphic;
         public Graphic Graphic => m_Graphic;
 
         private void Awake()

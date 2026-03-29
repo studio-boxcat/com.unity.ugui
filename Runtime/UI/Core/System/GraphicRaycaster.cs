@@ -16,7 +16,7 @@ namespace UnityEngine.UI
     public class GraphicRaycaster : BaseRaycaster
     {
         [SerializeField, Required, ChildGameObjectsOnly]
-        private Canvas m_Canvas = null!;
+        private Canvas m_Canvas;
         public Canvas canvas => m_Canvas;
         public override Camera eventCamera => m_Canvas.worldCamera;
 

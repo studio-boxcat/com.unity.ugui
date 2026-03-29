@@ -14,7 +14,7 @@ namespace UnityEngine.UI
 #endif
     {
         [SerializeField, Required, RequiredListLength(MinLength = 1)]
-        private Graphic[] _targets = null!;
+        private Graphic[] _targets;
 
         [SerializeField] private Vector4 _padding;
         public Vector4 padding
