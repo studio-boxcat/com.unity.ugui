@@ -6,6 +6,9 @@ namespace UnityEngine.UI
 {
     [GraphicPropertyHide(GraphicPropertyFlag.Raycast | GraphicPropertyFlag.Material)]
     public class Text : Graphic, ILayoutElement, IFontUpdateListener
+#if UNITY_EDITOR
+        , ISelfValidator
+#endif
     {
         [SerializeField, InlineProperty, HideLabel, PropertyOrder(500)]
         [OnValueChanged("FontData_OnValueChanged")]
@@ -273,12 +276,9 @@ namespace UnityEngine.UI
         /// <remarks>
         /// When set to HorizontalWrapMode.Overflow, text can exceed the horizontal boundaries of the Text graphic. When set to HorizontalWrapMode.Wrap, text will be word-wrapped to fit within the boundaries.
         /// </remarks>
-        public HorizontalWrapMode horizontalOverflow
+        public bool horizontalOverflow
         {
-            get
-            {
-                return m_FontData.horizontalOverflow;
-            }
+            get => m_FontData.horizontalOverflow;
             set
             {
                 if (m_FontData.horizontalOverflow == value)
@@ -293,12 +293,9 @@ namespace UnityEngine.UI
         /// <summary>
         /// Vertical overflow mode.
         /// </summary>
-        public VerticalWrapMode verticalOverflow
+        public bool verticalOverflow
         {
-            get
-            {
-                return m_FontData.verticalOverflow;
-            }
+            get => m_FontData.verticalOverflow;
             set
             {
                 if (m_FontData.verticalOverflow == value)
@@ -439,8 +436,8 @@ namespace UnityEngine.UI
             settings.fontStyle = m_FontData.fontStyle;
             settings.resizeTextForBestFit = m_FontData.bestFit;
             settings.updateBounds = false;
-            settings.horizontalOverflow = m_FontData.horizontalOverflow;
-            settings.verticalOverflow = m_FontData.verticalOverflow;
+            settings.horizontalOverflow = m_FontData.horizontalOverflow ? HorizontalWrapMode.Overflow : HorizontalWrapMode.Wrap;
+            settings.verticalOverflow = m_FontData.verticalOverflow ? VerticalWrapMode.Overflow : VerticalWrapMode.Truncate;
 
             return settings;
         }
@@ -505,6 +502,13 @@ namespace UnityEngine.UI
                 _fontUpdateLink.Update(m_FontData.font);
             SetVerticesDirty();
             SetLayoutDirty();
+        }
+
+        void ISelfValidator.Validate(SelfValidationResult result)
+        {
+            // geometry + no vertical overflow -> potential text clipping, when sizeDelta set to preferredHeight by ILayoutController ContentSizeFitter.
+            if (verticalOverflow is false && alignByGeometry)
+                result.AddError("Align By Geometry is not compatible with Vertical Overflow set to Truncate. This may cause text clipping.");
         }
 #endif // if UNITY_EDITOR
     }

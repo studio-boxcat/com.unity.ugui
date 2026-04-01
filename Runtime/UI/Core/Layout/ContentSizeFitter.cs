@@ -17,12 +17,14 @@ namespace UnityEngine.UI
     {
         [SerializeField, OnValueChanged(nameof(SetDirty))]
         private bool m_HorizontalFit = true;
+        public bool HorizontalFit => m_HorizontalFit;
         [SerializeField, OnValueChanged(nameof(SetDirty))]
         private bool m_VerticalFit;
+        public bool VerticalFit => m_VerticalFit;
 
         [System.NonSerialized]
         private RectTransform? m_Rect;
-        private RectTransform rectTransform => m_Rect ??= (RectTransform) transform;
+        private RectTransform rectTransform => m_Rect ??= (RectTransform)transform;
 
         private bool _performingSetLayout;
 
@@ -51,7 +53,7 @@ namespace UnityEngine.UI
 
             // Set size to preferred size
             var size = LayoutUtility.CalcPreferredSize(t, axis);
-            t.SetSizeWithCurrentAnchors((RectTransform.Axis) axis, size);
+            t.SetSizeWithCurrentAnchors((RectTransform.Axis)axis, size);
 
             _performingSetLayout = false;
         }

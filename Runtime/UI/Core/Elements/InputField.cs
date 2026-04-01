@@ -3179,11 +3179,8 @@ namespace UnityEngine.UI
 
         void EnforceTextHOverflow()
         {
-            if (m_TextComponent != null)
-                if (multiLine)
-                    m_TextComponent.horizontalOverflow = HorizontalWrapMode.Wrap;
-                else
-                    m_TextComponent.horizontalOverflow = HorizontalWrapMode.Overflow;
+            if (m_TextComponent)
+                m_TextComponent.horizontalOverflow = !multiLine;
         }
 
         void SetToCustomIfContentTypeIsNot(params ContentType[] allowedContentTypes)

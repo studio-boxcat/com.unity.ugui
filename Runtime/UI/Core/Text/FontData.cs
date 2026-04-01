@@ -44,11 +44,11 @@ namespace UnityEngine.UI
         [FormerlySerializedAs("richText")]
         private bool m_RichText;
 
-        [SerializeField, HorizontalGroup("WrapMode", DisableAutomaticLabelWidth = true), LabelText("WrapMode (H/V)")]
-        private HorizontalWrapMode m_HorizontalOverflow;
+        [SerializeField, HorizontalGroup("WrapMode", DisableAutomaticLabelWidth = true), LabelText("Overflow (H/V)")]
+        private bool m_HorizontalOverflow;
 
         [SerializeField, HorizontalGroup("WrapMode", Width = 0.3f), HideLabel]
-        private VerticalWrapMode m_VerticalOverflow;
+        private bool m_VerticalOverflow;
 
         [SerializeField, Range(0, 2)]
         private float m_LineSpacing;
@@ -140,7 +140,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// The horizontal overflow policy for this generated Text object.
         /// </summary>
-        public HorizontalWrapMode horizontalOverflow
+        public bool horizontalOverflow
         {
             get { return m_HorizontalOverflow; }
             set { m_HorizontalOverflow = value; }
@@ -149,7 +149,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// The vertical overflow policy for this generated Text object.
         /// </summary>
-        public VerticalWrapMode verticalOverflow
+        public bool verticalOverflow
         {
             get { return m_VerticalOverflow; }
             set { m_VerticalOverflow = value; }
