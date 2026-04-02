@@ -1,6 +1,7 @@
 // ReSharper disable InconsistentNaming
 
 using System.Collections.Generic;
+using Sirenix.OdinInspector;
 
 namespace UnityEngine.UI
 {
@@ -12,14 +13,13 @@ namespace UnityEngine.UI
     /// </summary>
     public abstract class LayoutGroup : UIBehaviour, ILayoutElement, ILayoutGroup
     {
-        [SerializeField] protected RectOffset m_Padding;
+        [SerializeField, OnValueChanged("SetLayoutDirty")]
+        protected RectOffset m_Padding;
 
         /// <summary>
         /// The padding to add around the child layout elements.
         /// </summary>
         public RectOffset padding => m_Padding ??= new RectOffset();
-
-        [SerializeField] protected TextAnchor m_ChildAlignment = TextAnchor.UpperLeft;
 
         /// <summary>
         /// The alignment to use for the child layout elements in the layout group.
@@ -27,7 +27,8 @@ namespace UnityEngine.UI
         /// <remarks>
         /// If a layout element does not specify a flexible width or height, its child elements many not use the available space within the layout group. In this case, use the alignment settings to specify how to align child elements within their layout group.
         /// </remarks>
-        public TextAnchor childAlignment { get => m_ChildAlignment; set => SetPropertyUtility.SetEnum(ref m_ChildAlignment, value); }
+        [SerializeField, OnValueChanged("SetLayoutDirty")]
+        protected TextAnchor m_ChildAlignment = TextAnchor.UpperLeft;
 
         [System.NonSerialized] private RectTransform m_Rect;
         protected RectTransform rectTransform => m_Rect ??= (RectTransform) transform;
@@ -114,8 +115,8 @@ namespace UnityEngine.UI
         protected float GetAlignmentOnAxis(Axis axis)
         {
             return axis.IsX()
-                ? ((int) childAlignment % 3) * 0.5f
-                : ((int) childAlignment / 3) * 0.5f;
+                ? ((int) m_ChildAlignment % 3) * 0.5f
+                : ((int) m_ChildAlignment / 3) * 0.5f;
         }
 
         /// <summary>
@@ -205,7 +206,7 @@ namespace UnityEngine.UI
         /// <summary>
         /// Mark the LayoutGroup as dirty.
         /// </summary>
-        private void SetLayoutDirty() => LayoutRebuilder.SetDirty(rectTransform);
+        protected void SetLayoutDirty() => LayoutRebuilder.SetDirty(rectTransform);
 
 #if UNITY_EDITOR
         protected const DrivenTransformProperties BaseDrivenProperties =

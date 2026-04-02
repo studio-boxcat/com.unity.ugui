@@ -1,5 +1,6 @@
 // ReSharper disable InconsistentNaming
 #nullable enable
+using Sirenix.OdinInspector;
 using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
@@ -11,14 +12,11 @@ namespace UnityEngine.UI
     [ExecuteAlways]
     public abstract class HorizontalOrVerticalLayoutGroup : LayoutGroup
     {
-        [SerializeField] protected float m_Spacing = 0;
-
         /// <summary>
         /// The spacing to use between layout elements in the layout group.
         /// </summary>
-        public float spacing { get => m_Spacing; set => SetPropertyUtility.SetValue(ref m_Spacing, value); }
-
-        [SerializeField] protected bool m_ChildControlWidth = false;
+        [SerializeField, OnValueChanged("SetLayoutDirty")]
+        protected float m_Spacing = 0;
 
         /// <summary>
         /// Returns true if the Layout Group controls the widths of its children. Returns false if children control their own widths.
@@ -28,9 +26,8 @@ namespace UnityEngine.UI
         ///
         /// If set to true, the widths of the children are automatically driven by the layout group according to their respective minimum, preferred, and flexible widths. This is useful if the widths of the children should change depending on how much space is available.In this case the width of each child cannot be set manually in the RectTransform, but the minimum, preferred and flexible width for each child can be controlled by adding a LayoutElement component to it.
         /// </remarks>
-        public bool childControlWidth { get { return m_ChildControlWidth; } set { SetPropertyUtility.SetValue(ref m_ChildControlWidth, value); } }
-
-        [SerializeField] protected bool m_ChildControlHeight = false;
+        [SerializeField, OnValueChanged("SetLayoutDirty")]
+        protected bool m_ChildControlWidth = false;
 
         /// <summary>
         /// Returns true if the Layout Group controls the heights of its children. Returns false if children control their own heights.
@@ -40,7 +37,8 @@ namespace UnityEngine.UI
         ///
         /// If set to true, the heights of the children are automatically driven by the layout group according to their respective minimum, preferred, and flexible heights. This is useful if the heights of the children should change depending on how much space is available.In this case the height of each child cannot be set manually in the RectTransform, but the minimum, preferred and flexible height for each child can be controlled by adding a LayoutElement component to it.
         /// </remarks>
-        public bool childControlHeight { get { return m_ChildControlHeight; } set { SetPropertyUtility.SetValue(ref m_ChildControlHeight, value); } }
+        [SerializeField, OnValueChanged("SetLayoutDirty")]
+        protected bool m_ChildControlHeight = false;
 
         /// <summary>
         /// Whether the order of children objects should be sorted in reverse.
@@ -49,9 +47,8 @@ namespace UnityEngine.UI
         /// If False the first child object will be positioned first.
         /// If True the last child object will be positioned first.
         /// </remarks>
-        public bool reverseArrangement { get { return m_ReverseArrangement; } set { SetPropertyUtility.SetValue(ref m_ReverseArrangement, value); } }
-
-        [SerializeField] protected bool m_ReverseArrangement = false;
+        [SerializeField, OnValueChanged("SetLayoutDirty")]
+        protected bool m_ReverseArrangement = false;
 
         /// <summary>
         /// Calculate the layout element properties for this layout element along the given axis.
@@ -78,13 +75,13 @@ namespace UnityEngine.UI
                 }
                 else
                 {
-                    totalPreferred += preferred + spacing;
+                    totalPreferred += preferred + m_Spacing;
                 }
             }
 
             if (!alongOtherAxis && rectChildren.Count > 0)
             {
-                totalPreferred -= spacing;
+                totalPreferred -= m_Spacing;
             }
             SetLayoutInputForAxis(totalPreferred, axis);
         }
@@ -152,7 +149,7 @@ namespace UnityEngine.UI
                         float offsetInCell = (childSize - child.sizeDelta[axis.Idx()]) * alignmentOnAxis;
                         SetChildAlongAxis(child, axis, pos + offsetInCell);
                     }
-                    pos += childSize + spacing;
+                    pos += childSize + m_Spacing;
                 }
             }
         }
