@@ -20,9 +20,6 @@ namespace UnityEngine.UI
         public static bool IsY(this Axis axis) => axis == Axis.Y;
 
         public static bool Select(this Axis axis, bool x, bool y) => axis.IsX() ? x : y;
-        public static int Select(this Axis axis, int x, int y) => axis.IsX() ? x : y;
-        public static float Select(this Axis axis, float x, float y) => axis.IsX() ? x : y;
-        public static int SelectHorizontalOrVertical(this Axis axis, RectOffset r) => axis.IsX() ? r.horizontal : r.vertical;
 
         public static float CalcPreferredSize(RectTransform rect, Axis axis) => axis.IsX() ? CalcPreferredWidth(rect) : CalcPreferredHeight(rect);
 
