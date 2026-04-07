@@ -207,12 +207,5 @@ namespace UnityEngine.UI
         /// Mark the LayoutGroup as dirty.
         /// </summary>
         protected void SetLayoutDirty() => LayoutRebuilder.SetDirty(rectTransform);
-
-#if UNITY_EDITOR
-        protected const DrivenTransformProperties BaseDrivenProperties =
-            DrivenTransformProperties.Anchors
-            // track both x and y axis for legacy compatibility
-            | DrivenTransformProperties.AnchoredPosition;
-#endif
     }
 }

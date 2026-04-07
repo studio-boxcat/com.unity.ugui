@@ -258,8 +258,10 @@ namespace UnityEngine.UI
         {
             if (DrivenRectTransManager.Reset(this, out var tracker))
             {
-                const DrivenTransformProperties props = BaseDrivenProperties | DrivenTransformProperties.SizeDelta;
-                tracker.SetChildren(transform, props);
+                tracker.SetChildren(transform,
+                    DrivenTransformProperties.Anchors
+                    | DrivenTransformProperties.AnchoredPosition
+                    | DrivenTransformProperties.SizeDelta);
             }
         }
 #endif
