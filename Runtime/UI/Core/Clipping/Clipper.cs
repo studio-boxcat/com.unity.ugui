@@ -18,42 +18,16 @@ namespace UnityEngine.UI
         , ISelfValidator
 #endif
     {
-        [NonSerialized] private RectTransform? _rectTransform;
-        public RectTransform rectTransform => _rectTransform ??= GetComponent<RectTransform>();
+        [SerializeField, OnValueChanged(nameof(MarkNeedClip))]
+        private Vector4 m_Padding;
+        [SerializeField, OnValueChanged(nameof(MarkNeedClip))]
+        private Vector2Int m_Softness;
 
         [NonSerialized] private Rect _lastClipRect;
         [NonSerialized] private bool _forceClip;
 
-        [SerializeField] private Vector4 m_Padding;
-
-        /// <summary>
-        /// Padding to be applied to the masking
-        /// X = Left
-        /// Y = Bottom
-        /// Z = Right
-        /// W = Top
-        /// </summary>
-        public Vector4 padding
-        {
-            get => m_Padding;
-            set => m_Padding = value;
-        }
-
-        [SerializeField]
-        private Vector2Int m_Softness;
-
-        /// <summary>
-        /// The softness to apply to the horizontal and vertical axis.
-        /// </summary>
-        public Vector2Int softness
-        {
-            get => m_Softness;
-            set
-            {
-                m_Softness.x = Mathf.Max(0, value.x);
-                m_Softness.y = Mathf.Max(0, value.y);
-            }
-        }
+        [NonSerialized] private RectTransform? _rectTransform;
+        public RectTransform rectTransform => _rectTransform ??= GetComponent<RectTransform>();
 
         /// <remarks>
         /// Returns a non-destroyed instance or a null reference.
@@ -102,7 +76,7 @@ namespace UnityEngine.UI
             // get the compound rects from
             // the clippers that are valid
             var clipRect = CanvasUtils.BoundingRect(
-                rectTransform, canvas, padding, out var validRect);
+                rectTransform, canvas, m_Padding, out var validRect);
 
             if (clipRect != _lastClipRect)
             {
