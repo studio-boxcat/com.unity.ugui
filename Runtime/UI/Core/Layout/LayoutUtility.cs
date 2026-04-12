@@ -55,5 +55,9 @@ namespace UnityEngine.UI
             }
             return result;
         }
+
+        // UpperLeft, UpperCenter, UpperRight, MiddleLeft, MiddleCenter, MiddleRight, LowerLeft, LowerCenter, LowerRight
+        public static float PivotX(this TextAnchor anchor) => ((int)anchor % 3) * 0.5f;
+        public static float PivotYInverted(this TextAnchor anchor) => ((int)anchor / 3) * 0.5f;
     }
 }

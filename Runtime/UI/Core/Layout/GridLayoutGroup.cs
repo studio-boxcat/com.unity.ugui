@@ -1,257 +1,120 @@
+using System.Collections.Generic;
 using Sirenix.OdinInspector;
+using UnityEngine.Serialization;
 
 namespace UnityEngine.UI
 {
-    [AddComponentMenu("Layout/Grid Layout Group", 152)]
-    /// <summary>
-    /// Layout class to arrange child elements in a grid format.
-    /// </summary>
-    /// <remarks>
-    /// The GridLayoutGroup component is used to layout child layout elements in a uniform grid where all cells have the same size. The size and the spacing between cells is controlled by the GridLayoutGroup itself. The children have no influence on their sizes.
-    /// </remarks>
-    public class GridLayoutGroup : LayoutGroup
+    [DisallowMultipleComponent]
+    [ExecuteAlways]
+    [RequireComponent(typeof(RectTransform))]
+    public class GridLayoutGroup : MonoBehaviour, ILayoutElementV, ILayoutGroup
+#if UNITY_EDITOR
+        , ISelfValidator
+#endif
     {
-        /// <summary>
-        /// Which corner is the starting corner for the grid.
-        /// </summary>
-        protected enum Corner
+        [SerializeField, OnValueChanged("SetLayoutDirty")]
+        private Vector2 m_CellSize = new(100, 100);
+        [SerializeField, OnValueChanged("SetLayoutDirty")]
+        private Vector2Int m_Padding; // x=top, y=bottom
+        [SerializeField, OnValueChanged("SetLayoutDirty")]
+        private Vector2 m_Spacing;
+        [SerializeField, OnValueChanged("SetLayoutDirty")]
+        protected TextAnchor m_ChildAlignment;
+        [FormerlySerializedAs("m_ConstraintCount")]
+        [SerializeField, OnValueChanged("SetLayoutDirty")]
+        private int m_ColumnCount; // 0 to flexible
+
+        [System.NonSerialized] private RectTransform _rectTransBacking;
+        private RectTransform _rectTrans => _rectTransBacking ??= (RectTransform)transform;
+
+        private float _preferredSize;
+        float ILayoutElementV.preferredHeight => _preferredSize;
+
+        private readonly List<RectTransform> _children = new(); // filtered list of direct children that are considered for layout
+        private int _cellCountX; // cached column count, computed in CalcV, reused in SetV
+        private int _cellCountY; // cached row count, computed in CalcV, reused in SetV
+
+        void ILayoutElementV.CalculateLayoutInputVertical()
         {
-            UpperLeft = 0,
-            UpperRight = 1,
-            LowerLeft = 2,
-            LowerRight = 3
-        }
+            _children.Clear();
 
-        protected enum Constraint
-        {
-            Flexible = 0,
-            FixedColumnCount = 1,
-            FixedRowCount = 2
-        }
-
-        /// <summary>
-        /// Which corner should the first cell be placed in?
-        /// </summary>
-        [SerializeField, OnValueChanged("SetLayoutDirty")]
-        protected Corner m_StartCorner = Corner.UpperLeft;
-
-        /// <summary>
-        /// Which axis should cells be placed along first
-        /// </summary>
-        /// <remarks>
-        /// When startAxis is set to horizontal, an entire row will be filled out before proceeding to the next row. When set to vertical, an entire column will be filled out before proceeding to the next column.
-        /// </remarks>
-        [SerializeField, OnValueChanged("SetLayoutDirty")]
-        protected Axis m_StartAxis = Axis.X;
-
-        /// <summary>
-        /// The size to use for each cell in the grid.
-        /// </summary>
-        [SerializeField, OnValueChanged("SetLayoutDirty")]
-        protected Vector2 m_CellSize = new Vector2(100, 100);
-
-        /// <summary>
-        /// The spacing to use between layout elements in the grid on both axises.
-        /// </summary>
-        [SerializeField, OnValueChanged("SetLayoutDirty")]
-        protected Vector2 m_Spacing = Vector2.zero;
-
-        [SerializeField, OnValueChanged("SetLayoutDirty")]
-        protected Constraint m_Constraint = Constraint.Flexible;
-
-        [SerializeField, OnValueChanged("SetLayoutDirty")]
-        protected int m_ConstraintCount = 2;
-
-        /// <summary>
-        /// Called by the layout system to calculate the horizontal layout size.
-        /// Also see ILayoutElement
-        /// </summary>
-        public override void CalculateLayoutInputHorizontal()
-        {
-            base.CalculateLayoutInputHorizontal();
-
-            var preferredColumns = m_Constraint switch
+            var t = _rectTrans;
+            var childCount = t.childCount;
+            for (var i = 0; i < childCount; i++)
             {
-                Constraint.FixedColumnCount => m_ConstraintCount,
-                Constraint.FixedRowCount => Mathf.CeilToInt(rectChildren.Count / (float)m_ConstraintCount - 0.001f),
-                _ => Mathf.CeilToInt(Mathf.Sqrt(rectChildren.Count))
-            };
-
-            SetLayoutInputForAxis(
-                padding.horizontal + (m_CellSize.x + m_Spacing.x) * preferredColumns - m_Spacing.x,
-                Axis.X);
-        }
-
-        /// <summary>
-        /// Called by the layout system to calculate the vertical layout size.
-        /// Also see ILayoutElement
-        /// </summary>
-        public override void CalculateLayoutInputVertical()
-        {
-            int minRows = 0;
-            if (m_Constraint == Constraint.FixedColumnCount)
-            {
-                minRows = Mathf.CeilToInt(rectChildren.Count / (float)m_ConstraintCount - 0.001f);
-            }
-            else if (m_Constraint == Constraint.FixedRowCount)
-            {
-                minRows = m_ConstraintCount;
-            }
-            else
-            {
-                var width = rectTransform.rect.width;
-                var cellCountX = Mathf.Max(1, Mathf.FloorToInt((width - padding.horizontal + m_Spacing.x + 0.001f) / (m_CellSize.x + m_Spacing.x)));
-                minRows = Mathf.CeilToInt(rectChildren.Count / (float)cellCountX);
+                var c = t.GetChild(i);
+                if (c is not RectTransform rt) continue; // only RectTransform children are considered.
+                if (!c.gameObject.activeSelf) continue; // direct child, active self is enough.
+                if (c.HasComponent<LayoutIgnorer>()) continue;
+                _children.Add(rt);
             }
 
-            var minSpace = padding.vertical + (m_CellSize.y + m_Spacing.y) * minRows - m_Spacing.y;
-            SetLayoutInputForAxis(minSpace, Axis.Y);
-        }
-
-        /// <summary>
-        /// Called by the layout system
-        /// Also see ILayoutElement
-        /// </summary>
-        public override void SetLayoutHorizontal() => SetCellsAlongAxis(0);
-
-        /// <summary>
-        /// Called by the layout system
-        /// Also see ILayoutElement
-        /// </summary>
-        public override void SetLayoutVertical() => SetCellsAlongAxis(1);
-
-        private void SetCellsAlongAxis(int axis)
-        {
-            // Normally a Layout Controller should only set horizontal values when invoked for the horizontal axis
-            // and only vertical values when invoked for the vertical axis.
-            // However, in this case we set both the horizontal and vertical position when invoked for the vertical axis.
-            // Since we only set the horizontal position and not the size, it shouldn't affect children's layout,
-            // and thus shouldn't break the rule that all horizontal layout must be calculated before all vertical layout.
-            var rectChildrenCount = rectChildren.Count;
-            if (axis == 0)
+            // early return if no children
+            childCount = _children.Count; // update child count after filtering
+            if (childCount is 0)
             {
-                // Only set the sizes when invoked for horizontal axis, not the positions.
-
-                for (int i = 0; i < rectChildrenCount; i++)
-                {
-                    var rect = rectChildren[i];
-                    rect.anchorMin = Vector2.up;
-                    rect.anchorMax = Vector2.up;
-                    rect.sizeDelta = m_CellSize;
-                }
+                _preferredSize = m_Padding.XPlusY(); // no children, only padding contributes to preferred size
                 return;
             }
 
-            var (width, height) = rectTransform.rect.size;
+            var cellWidthWithSpace = m_CellSize.x + m_Spacing.x;
+            _cellCountX = m_ColumnCount is not 0 ? m_ColumnCount
+                : Mathf.Max(1, Mathf.FloorToInt((_rectTrans.rect.width + m_Spacing.x + 0.001f) / cellWidthWithSpace)); // flexible, at least 1 required.
 
-            int cellCountX = 1;
-            int cellCountY = 1;
-            if (m_Constraint == Constraint.FixedColumnCount)
+            _cellCountY = (childCount - 1) / _cellCountX + 1;
+            _preferredSize = m_Padding.XPlusY() + (m_CellSize.y + m_Spacing.y) * _cellCountY - m_Spacing.y;
+        }
+
+        void ILayoutController.SetLayoutVertical()
+        {
+            var childCount = _children.Count;
+            if (childCount is 0) return;
+
+            var (width, height) = _rectTrans.rect.size;
+            height -= m_Padding.XPlusY(); // available height after removing padding
+            var cws = m_CellSize.x + m_Spacing.x; // cell width with spacing
+            var chs = m_CellSize.y + m_Spacing.y; // cell height with spacing
+
+            var actualCellCountX = Mathf.Min(_cellCountX, childCount);
+            var startX = (width - actualCellCountX * cws + m_Spacing.x) * m_ChildAlignment.PivotX();
+            var startY = m_Padding.x + (height - _cellCountY * chs + m_Spacing.y) * m_ChildAlignment.PivotYInverted();
+            for (var i = 0; i < childCount; i++)
             {
-                cellCountX = m_ConstraintCount;
+                var child = _children[i];
+                child.anchorMin = child.anchorMax = new Vector2(0, 1); // Vector2.up
+                child.sizeDelta = m_CellSize;
+                child.pivot = new Vector2(0.5f, 0.5f);
 
-                if (rectChildrenCount > cellCountX)
-                    cellCountY = rectChildrenCount / cellCountX + (rectChildrenCount % cellCountX > 0 ? 1 : 0);
-            }
-            else if (m_Constraint == Constraint.FixedRowCount)
-            {
-                cellCountY = m_ConstraintCount;
-
-                if (rectChildrenCount > cellCountY)
-                    cellCountX = rectChildrenCount / cellCountY + (rectChildrenCount % cellCountY > 0 ? 1 : 0);
-            }
-            else
-            {
-                cellCountX = (m_CellSize.x + m_Spacing.x) > 0
-                    ? Mathf.Max(1, Mathf.FloorToInt((width - padding.horizontal + m_Spacing.x + 0.001f) / (m_CellSize.x + m_Spacing.x)))
-                    : int.MaxValue;
-
-                cellCountY = (m_CellSize.y + m_Spacing.y > 0)
-                    ? Mathf.Max(1, Mathf.FloorToInt((height - padding.vertical + m_Spacing.y + 0.001f) / (m_CellSize.y + m_Spacing.y)))
-                    : int.MaxValue;
-            }
-
-            int cellsPerMainAxis, actualCellCountX, actualCellCountY;
-            if (m_StartAxis.IsX())
-            {
-                cellsPerMainAxis = cellCountX;
-                actualCellCountX = Mathf.Clamp(cellCountX, 1, rectChildrenCount);
-
-                actualCellCountY = m_Constraint is Constraint.FixedRowCount
-                    ? Mathf.Min(cellCountY, rectChildrenCount)
-                    : Mathf.Clamp(cellCountY, 1, Mathf.CeilToInt(rectChildrenCount / (float)cellsPerMainAxis));
-            }
-            else
-            {
-                cellsPerMainAxis = cellCountY;
-                actualCellCountY = Mathf.Clamp(cellCountY, 1, rectChildrenCount);
-
-                actualCellCountX = m_Constraint is Constraint.FixedColumnCount
-                    ? Mathf.Min(cellCountX, rectChildrenCount)
-                    : Mathf.Clamp(cellCountX, 1, Mathf.CeilToInt(rectChildrenCount / (float)cellsPerMainAxis));
-            }
-
-            Vector2 requiredSpace = new Vector2(
-                actualCellCountX * m_CellSize.x + (actualCellCountX - 1) * m_Spacing.x,
-                actualCellCountY * m_CellSize.y + (actualCellCountY - 1) * m_Spacing.y
-            );
-            Vector2 startOffset = new Vector2(
-                GetStartOffset(width, Axis.X, requiredSpace.x),
-                GetStartOffset(height, Axis.Y, requiredSpace.y)
-            );
-
-            // Fixes case 1345471 - Makes sure the constraint column / row amount is always respected
-            int childrenToMove = 0;
-            if (rectChildrenCount > m_ConstraintCount && Mathf.CeilToInt((float)rectChildrenCount / (float)cellsPerMainAxis) < m_ConstraintCount)
-            {
-                childrenToMove = m_ConstraintCount - Mathf.CeilToInt((float)rectChildrenCount / (float)cellsPerMainAxis);
-                childrenToMove += Mathf.FloorToInt((float)childrenToMove / ((float)cellsPerMainAxis - 1));
-                if (rectChildrenCount % cellsPerMainAxis == 1)
-                    childrenToMove += 1;
-            }
-
-            for (int i = 0; i < rectChildrenCount; i++)
-            {
-                int positionX;
-                int positionY;
-                if (m_StartAxis.IsX())
-                {
-                    if (m_Constraint == Constraint.FixedRowCount && rectChildrenCount - i <= childrenToMove)
-                    {
-                        positionX = 0;
-                        positionY = m_ConstraintCount - (rectChildrenCount - i);
-                    }
-                    else
-                    {
-                        positionX = i % cellsPerMainAxis;
-                        positionY = i / cellsPerMainAxis;
-                    }
-                }
-                else
-                {
-                    if (m_Constraint == Constraint.FixedColumnCount && rectChildrenCount - i <= childrenToMove)
-                    {
-                        positionX = m_ConstraintCount - (rectChildrenCount - i);
-                        positionY = 0;
-                    }
-                    else
-                    {
-                        positionX = i / cellsPerMainAxis;
-                        positionY = i % cellsPerMainAxis;
-                    }
-                }
-
-                var cornerX = (int)m_StartCorner % 2;
-                var cornerY = (int)m_StartCorner / 2;
-                if (cornerX == 1)
-                    positionX = actualCellCountX - 1 - positionX;
-                if (cornerY == 1)
-                    positionY = actualCellCountY - 1 - positionY;
-
-                SetChildAlongAxis(rectChildren[i], Axis.X, startOffset.x + (m_CellSize.x + m_Spacing.x) * positionX, m_CellSize.x);
-                SetChildAlongAxis(rectChildren[i], Axis.Y, startOffset.y + (m_CellSize.y + m_Spacing.y) * positionY, m_CellSize.y);
+                var posX = startX + cws * (i % _cellCountX);
+                var posY = startY + chs * (i / _cellCountX);
+                child.anchoredPosition = new Vector2(
+                    posX + m_CellSize.x / 2,
+                    -posY - m_CellSize.y / 2);
             }
         }
+
+        private void OnEnable() => SetLayoutDirty();
+        private void OnDisable() => SetLayoutDirty();
+
+        private void OnDidApplyAnimationProperties()
+        {
+            if (isActiveAndEnabled)
+                SetLayoutDirty();
+        }
+
+        private void OnTransformChildrenChanged()
+        {
+            if (isActiveAndEnabled)
+                SetLayoutDirty();
+        }
+
+        private void OnRectTransformDimensionsChange()
+        {
+            if (isActiveAndEnabled && CanvasUpdateRegistry.IsRebuildingLayout() is false)
+                SetLayoutDirty();
+        }
+
+        private void SetLayoutDirty() => LayoutRebuilder.SetDirty(_rectTrans);
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -261,8 +124,15 @@ namespace UnityEngine.UI
                 tracker.SetChildren(transform,
                     DrivenTransformProperties.Anchors
                     | DrivenTransformProperties.AnchoredPosition
-                    | DrivenTransformProperties.SizeDelta);
+                    | DrivenTransformProperties.SizeDelta
+                    | DrivenTransformProperties.Pivot);
             }
+        }
+
+        void ISelfValidator.Validate(SelfValidationResult result)
+        {
+            if (m_CellSize.x + m_Spacing.x <= 0)
+                result.AddError("Cell Size X + Spacing X must be greater than 0.");
         }
 #endif
     }
