@@ -15,7 +15,7 @@ namespace UnityEngine.UI
     /// </summary>
     public static class LayoutUtility
     {
-        public static int Idx(this Axis axis) => (int) axis;
+        public static int Idx(this Axis axis) => (int)axis;
         public static bool IsX(this Axis axis) => axis == Axis.X;
         public static bool IsY(this Axis axis) => axis == Axis.Y;
 
@@ -38,14 +38,14 @@ namespace UnityEngine.UI
             using var _ = CompBuf.GetComponents(rect, typeof(T), out var components);
             var count = components.Count;
             if (count is 0) return null;
-            var first = (T) (object) components[0];
+            var first = (T)(object)components[0];
             if (count is 1) return first is Behaviour { enabled: false } ? null : first;
 
             T? result = null;
             var maxPriority = -1;
             for (var i = 0; i < count; i++)
             {
-                var elem = (T) (object) components[i];
+                var elem = (T)(object)components[i];
                 if (elem is Behaviour { enabled: false }) continue; // check enabled, not isActiveAndEnabled
                 var priority = elem.layoutPriority;
                 Assert.IsFalse(priority < 0, "layoutPriority must not be negative");
