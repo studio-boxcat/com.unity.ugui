@@ -62,13 +62,13 @@ namespace UnityEngine.UI
         private Scrollbar? m_HorizontalScrollbar;
         [SerializeField]
         private Scrollbar? m_VerticalScrollbar;
-        [SerializeField]
+        [SerializeField, ShowIf("m_HorizontalScrollbar")]
         private ScrollbarVisibility m_HorizontalScrollbarVisibility;
-        [SerializeField]
+        [SerializeField, ShowIf("m_VerticalScrollbar")]
         private ScrollbarVisibility m_VerticalScrollbarVisibility;
-        [SerializeField]
+        [SerializeField, ShowIf("m_HorizontalScrollbar")]
         private float m_HorizontalScrollbarSpacing;
-        [SerializeField]
+        [SerializeField, ShowIf("m_VerticalScrollbar")]
         private float m_VerticalScrollbarSpacing;
 
         // The offset from handle position to mouse down position
@@ -591,5 +591,12 @@ namespace UnityEngine.UI
 
             LayoutRebuilder.SetDirty(rectTransform);
         }
+
+#if UNITY_EDITOR
+        private void Reset()
+        {
+            m_Viewport = (RectTransform)transform;
+        }
+#endif
     }
 }
