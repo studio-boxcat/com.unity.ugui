@@ -1,6 +1,9 @@
+#nullable enable
 using System;
 using System.Runtime.CompilerServices;
+using Sirenix.OdinInspector;
 using UnityEngine.EventSystems;
+// ReSharper disable InconsistentNaming
 
 namespace UnityEngine.UI
 {
@@ -8,7 +11,7 @@ namespace UnityEngine.UI
     [SelectionBase]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform))]
-    public class ScrollRect : UIBehaviour, IInitializePotentialDragHandler, IBeginDragHandler, IEndDragHandler, IDragHandler, IScrollHandler, IPostLayoutRebuildCallback, ILayoutGroup
+    public class ScrollRect : MonoBehaviour, IInitializePotentialDragHandler, IBeginDragHandler, IEndDragHandler, IDragHandler, IScrollHandler, IPostLayoutRebuildCallback, ILayoutGroup
     {
         public enum MovementType
         {
@@ -23,87 +26,60 @@ namespace UnityEngine.UI
             AutoHide,
         }
 
-        [SerializeField]
+        [SerializeField, Required]
         private RectTransform m_Content;
-        public RectTransform content { get { return m_Content; } set { m_Content = value; } }
+        public RectTransform content => m_Content;
 
         [SerializeField]
         private bool m_Horizontal = true;
-        public bool horizontal { get { return m_Horizontal; } set { m_Horizontal = value; } }
+        public bool horizontal => m_Horizontal;
 
         [SerializeField]
         private bool m_Vertical = true;
-        public bool vertical { get { return m_Vertical; } set { m_Vertical = value; } }
+        public bool vertical => m_Vertical;
 
         [SerializeField]
         private MovementType m_MovementType = MovementType.Elastic;
-        public MovementType movementType { get { return m_MovementType; } set { m_MovementType = value; } }
+        public MovementType movementType { get => m_MovementType; set => m_MovementType = value; }
 
         [SerializeField]
         private float m_Elasticity = 0.1f;
-        public float elasticity { get { return m_Elasticity; } set { m_Elasticity = value; } }
 
         [SerializeField]
         private bool m_Inertia = true;
-        public bool inertia { get { return m_Inertia; } set { m_Inertia = value; } }
+        public bool inertia { set => m_Inertia = value; }
 
         [SerializeField]
         private float m_DecelerationRate = 0.135f; // Only used when inertia is enabled
-        public float decelerationRate { get { return m_DecelerationRate; } set { m_DecelerationRate = value; } }
-
         [SerializeField]
         private float m_ScrollSensitivity = 1.0f;
-        public float scrollSensitivity { get { return m_ScrollSensitivity; } set { m_ScrollSensitivity = value; } }
 
-        [SerializeField]
+        [SerializeField, Required]
         private RectTransform m_Viewport;
-        public RectTransform viewport { get { return m_Viewport; } }
+        public RectTransform viewport => m_Viewport;
 
         [SerializeField]
-        private Scrollbar m_HorizontalScrollbar;
-        public Scrollbar horizontalScrollbar => m_HorizontalScrollbar;
-
+        private Scrollbar? m_HorizontalScrollbar;
         [SerializeField]
-        private Scrollbar m_VerticalScrollbar;
-        public Scrollbar verticalScrollbar => m_VerticalScrollbar;
-
+        private Scrollbar? m_VerticalScrollbar;
         [SerializeField]
         private ScrollbarVisibility m_HorizontalScrollbarVisibility;
-        public ScrollbarVisibility horizontalScrollbarVisibility => m_HorizontalScrollbarVisibility;
-
         [SerializeField]
         private ScrollbarVisibility m_VerticalScrollbarVisibility;
-        public ScrollbarVisibility verticalScrollbarVisibility => m_VerticalScrollbarVisibility;
-
         [SerializeField]
         private float m_HorizontalScrollbarSpacing;
-        public float horizontalScrollbarSpacing { get { return m_HorizontalScrollbarSpacing; } set { m_HorizontalScrollbarSpacing = value; SetDirty(); } }
-
         [SerializeField]
         private float m_VerticalScrollbarSpacing;
-        public float verticalScrollbarSpacing { get { return m_VerticalScrollbarSpacing; } set { m_VerticalScrollbarSpacing = value; SetDirty(); } }
 
         // The offset from handle position to mouse down position
         private Vector2 m_PointerStartLocalCursor = Vector2.zero;
         protected Vector2 m_ContentStartPosition = Vector2.zero;
 
-        private RectTransform m_ViewRect;
-
-        private RectTransform viewRect
-        {
-            get
-            {
-                if (m_ViewRect == null)
-                    m_ViewRect = m_Viewport != null ? m_Viewport : rectTransform;
-                return m_ViewRect;
-            }
-        }
-
         private Rect m_ContentBounds;
         private Rect m_ViewBounds;
 
         private Vector2 m_Velocity;
-        public Vector2 velocity { get { return m_Velocity; } set { m_Velocity = value; } }
+        public Vector2 velocity => m_Velocity;
 
         private bool m_Dragging;
         private bool m_Scrolling;
@@ -114,7 +90,7 @@ namespace UnityEngine.UI
         [NonSerialized]
         private bool m_HasRebuiltLayout = false;
 
-        [NonSerialized] private RectTransform m_Rect;
+        [NonSerialized] private RectTransform? m_Rect;
         private RectTransform rectTransform => m_Rect ??= (RectTransform)transform;
 
         void IPostLayoutRebuildCallback.PostLayoutRebuild()
@@ -126,7 +102,7 @@ namespace UnityEngine.UI
             m_HasRebuiltLayout = true;
         }
 
-        void OnEnable()
+        private void OnEnable()
         {
             if (m_Horizontal && m_HorizontalScrollbar)
                 m_HorizontalScrollbar.onValueChanged.AddListener(SetHorizontalNormalizedPosition);
@@ -137,7 +113,7 @@ namespace UnityEngine.UI
             SetDirty();
         }
 
-        void OnDisable()
+        private void OnDisable()
         {
             if (m_HorizontalScrollbar)
                 m_HorizontalScrollbar.onValueChanged.RemoveListener(SetHorizontalNormalizedPosition);
@@ -211,7 +187,7 @@ namespace UnityEngine.UI
             UpdateBounds();
 
             m_PointerStartLocalCursor = Vector2.zero;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(viewRect, eventData.position, eventData.pressEventCamera, out m_PointerStartLocalCursor);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(viewport, eventData.position, eventData.pressEventCamera, out m_PointerStartLocalCursor);
             m_ContentStartPosition = m_Content.anchoredPosition;
             m_Dragging = true;
         }
@@ -233,7 +209,7 @@ namespace UnityEngine.UI
                 return;
 
             if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    viewRect, eventData.position, eventData.pressEventCamera, out var localCursor))
+                    viewport, eventData.position, eventData.pressEventCamera, out var localCursor))
                 return;
 
             UpdateBounds();
@@ -255,7 +231,7 @@ namespace UnityEngine.UI
             SetContentAnchoredPosition(position);
         }
 
-        void SetContentAnchoredPosition(Vector2 position)
+        private void SetContentAnchoredPosition(Vector2 position)
         {
             if (!m_Horizontal)
                 position.x = m_Content.anchoredPosition.x;
@@ -269,7 +245,7 @@ namespace UnityEngine.UI
             }
         }
 
-        void LateUpdate()
+        private void LateUpdate()
         {
             if (!m_Content)
                 return;
@@ -340,7 +316,7 @@ namespace UnityEngine.UI
             m_Scrolling = false;
         }
 
-        void UpdatePrevData()
+        private void UpdatePrevData()
         {
             m_PrevPosition = m_Content.anchoredPosition;
             m_PrevViewBounds = m_ViewBounds;
@@ -417,7 +393,7 @@ namespace UnityEngine.UI
         private void SetHorizontalNormalizedPosition(float value) { SetNormalizedPosition(value, 0); }
         private void SetVerticalNormalizedPosition(float value) { SetNormalizedPosition(value, 1); }
 
-        void SetNormalizedPosition(float value, int axis)
+        private void SetNormalizedPosition(float value, int axis)
         {
             EnsureLayoutHasRebuilt();
             UpdateBounds();
@@ -453,11 +429,11 @@ namespace UnityEngine.UI
 
         void ILayoutController.SetLayoutVertical()
         {
-            m_ViewBounds = viewRect.rect;
+            m_ViewBounds = viewport.rect;
             m_ContentBounds = GetBounds();
         }
 
-        void UpdateScrollbarVisibility()
+        private void UpdateScrollbarVisibility()
         {
             UpdateOneScrollbarVisibility(vScrollingNeeded, m_Vertical, m_VerticalScrollbarVisibility, m_VerticalScrollbar);
             UpdateOneScrollbarVisibility(hScrollingNeeded, m_Horizontal, m_HorizontalScrollbarVisibility, m_HorizontalScrollbar);
@@ -482,7 +458,7 @@ namespace UnityEngine.UI
 
         protected void UpdateBounds()
         {
-            m_ViewBounds = viewRect.rect;
+            m_ViewBounds = viewport.rect;
             m_ContentBounds = GetBounds();
 
             if (m_Content == null)
@@ -554,11 +530,11 @@ namespace UnityEngine.UI
             if (m_Content == null)
                 return new Rect();
             m_Content.GetWorldCorners(s_TempCorners);
-            var viewWorldToLocalMatrix = viewRect.worldToLocalMatrix;
+            var viewWorldToLocalMatrix = viewport.worldToLocalMatrix;
             return InternalGetBounds(s_TempCorners, ref viewWorldToLocalMatrix);
         }
 
-        static Rect InternalGetBounds(Vector3[] corners, ref Matrix4x4 viewWorldToLocalMatrix)
+        private static Rect InternalGetBounds(Vector3[] corners, ref Matrix4x4 viewWorldToLocalMatrix)
         {
             var vMin = new Vector2(float.MaxValue, float.MaxValue);
             var vMax = new Vector2(float.MinValue, float.MinValue);
@@ -608,9 +584,9 @@ namespace UnityEngine.UI
             }
         }
 
-        void SetDirty()
+        private void SetDirty()
         {
-            if (!IsActive())
+            if (!isActiveAndEnabled)
                 return;
 
             LayoutRebuilder.SetDirty(rectTransform);
