@@ -12,6 +12,9 @@ namespace UnityEngine.UI
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform))]
     public class ScrollRect : MonoBehaviour, IInitializePotentialDragHandler, IBeginDragHandler, IEndDragHandler, IDragHandler, IScrollHandler, IPostLayoutRebuildCallback, ILayoutGroup
+#if UNITY_EDITOR
+        , ISelfValidator
+#endif
     {
         public enum MovementType
         {
@@ -26,7 +29,7 @@ namespace UnityEngine.UI
             AutoHide,
         }
 
-        [SerializeField, Required]
+        [SerializeField, Required, ChildGameObjectsOnly]
         private RectTransform m_Content;
         public RectTransform content => m_Content;
 
@@ -57,8 +60,6 @@ namespace UnityEngine.UI
         private Scrollbar? m_Scrollbar;
         [SerializeField, FormerlySerializedAs("m_VerticalScrollbarVisibility"), ShowIf("m_Scrollbar")]
         private ScrollbarVisibility m_ScrollbarVisibility;
-        [SerializeField, FormerlySerializedAs("m_VerticalScrollbarSpacing"), ShowIf("m_Scrollbar")]
-        private float m_ScrollbarSpacing;
 
         private float m_PointerStartLocalCursor;
         private float m_ContentStartPosition;
@@ -366,43 +367,22 @@ namespace UnityEngine.UI
             var i = di;
             m_ViewBounds = Bounds.FromRect(viewRect, i);
 
-            if (m_Content == null)
-                return;
+            // Content is a direct child of viewport — localPosition is already in viewport space.
+            var contentRect = m_Content.rect;
+            float contentOffset = m_Content.localPosition[i];
+            float contentCenter = contentRect.center[i] + contentOffset;
+            float contentSize = contentRect.size[i];
 
-            // Get content bounds in viewport-local space, expand to fill view on both axes.
-            m_Content.CalcWorldCorners2D(default,
-                out var p0, out var p1, out var p2, out var p3, out _);
-            var m = viewport.worldToLocalMatrix;
-            Vector2 v0 = m.MultiplyPoint2D(p0), v1 = m.MultiplyPoint2D(p1);
-            Vector2 v2 = m.MultiplyPoint2D(p2), v3 = m.MultiplyPoint2D(p3);
-            var cMin = Vector2.Min(Vector2.Min(v0, v1), Vector2.Min(v2, v3));
-            var cMax = Vector2.Max(Vector2.Max(v0, v1), Vector2.Max(v2, v3));
-            Vector2 contentSize = cMax - cMin;
-            Vector2 contentPos = (cMin + cMax) * 0.5f;
-
-            // Ensure content bounds are at least as large as view by expanding around the content pivot.
-            var contentPivot = m_Content.pivot;
-            Vector2 excess = viewRect.size - contentSize;
-            if (excess.x > 0)
-            {
-                contentPos.x -= excess.x * (contentPivot.x - 0.5f);
-                contentSize.x = viewRect.size.x;
-            }
-            if (excess.y > 0)
-            {
-                contentPos.y -= excess.y * (contentPivot.y - 0.5f);
-                contentSize.y = viewRect.size.y;
-            }
-
-            m_ContentBounds = Bounds.FromCenterSize(contentPos[i], contentSize[i]);
+            // Ensure content is at least as large as view (expand around pivot).
+            m_ContentBounds = m_ViewBounds.Adjust(contentCenter, contentSize, m_Content.pivot[i]);
 
             if (movementType == MovementType.Clamped)
             {
                 float clampDelta = m_ViewBounds.ClampDelta(m_ContentBounds);
                 if (Mathf.Abs(clampDelta) > float.Epsilon)
                 {
-                    float newCenter = m_Content.anchoredPosition[i] + clampDelta;
-                    m_ContentBounds = m_ViewBounds.Adjust(newCenter, contentSize[i], contentPivot[i]);
+                    float newCenter = contentCenter + clampDelta;
+                    m_ContentBounds = m_ViewBounds.Adjust(newCenter, contentSize, m_Content.pivot[i]);
                 }
             }
         }
@@ -417,17 +397,10 @@ namespace UnityEngine.UI
         // Used by SetLayoutVertical (before full UpdateBounds).
         private Bounds GetContentBounds()
         {
-            if (m_Content == null)
-                return default;
-            m_Content.CalcWorldCorners2D(default,
-                out var p0, out var p1, out var p2, out var p3, out _);
-            var m = viewport.worldToLocalMatrix;
+            var rect = m_Content.rect;
             var i = di;
-            float a = m.MultiplyPoint2D(p0)[i], b = m.MultiplyPoint2D(p1)[i];
-            float c = m.MultiplyPoint2D(p2)[i], d = m.MultiplyPoint2D(p3)[i];
-            return new Bounds(
-                Mathf.Min(Mathf.Min(a, b), Mathf.Min(c, d)),
-                Mathf.Max(Mathf.Max(a, b), Mathf.Max(c, d)));
+            float offset = m_Content.localPosition[i];
+            return new Bounds(rect.min[i] + offset, rect.max[i] + offset);
         }
 
         private void SetDirty()
@@ -442,6 +415,14 @@ namespace UnityEngine.UI
         private void Reset()
         {
             m_Viewport = (RectTransform)transform;
+        }
+
+        void ISelfValidator.Validate(SelfValidationResult result)
+        {
+            if (m_Content && m_Viewport && m_Content.parent != m_Viewport)
+                result.AddError("Content must be a direct child of Viewport.");
+            if (m_Content && m_Content.localScale != Vector3.one)
+                result.AddError("Content must not be scaled.");
         }
 #endif
 
