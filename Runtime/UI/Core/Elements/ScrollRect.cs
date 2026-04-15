@@ -44,7 +44,6 @@ namespace UnityEngine.UI
 
         [SerializeField]
         private float m_Elasticity = 0.1f;
-
         [SerializeField]
         private bool m_Inertia = true;
         public bool inertia { set => m_Inertia = value; }
@@ -73,7 +72,7 @@ namespace UnityEngine.UI
 
         // The offset from handle position to mouse down position
         private Vector2 m_PointerStartLocalCursor = Vector2.zero;
-        protected Vector2 m_ContentStartPosition = Vector2.zero;
+        private Vector2 m_ContentStartPosition = Vector2.zero;
 
         private Rect m_ContentBounds;
         private Rect m_ViewBounds;
