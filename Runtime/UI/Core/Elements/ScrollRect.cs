@@ -36,6 +36,7 @@ namespace UnityEngine.UI
         [SerializeField, FormerlySerializedAs("m_Vertical")]
         private Axis m_Direction = Axis.Y;
         public Axis direction => m_Direction;
+        public bool horizontal => m_Direction.IsX();
 
         [SerializeField]
         private MovementType m_MovementType = MovementType.Elastic;
