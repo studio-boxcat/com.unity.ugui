@@ -63,8 +63,8 @@ namespace UnityEngine.UI
         private float m_PointerStartLocalCursor;
         private float m_ContentStartPosition;
 
-        private Rect m_ContentBounds;
-        private Rect m_ViewBounds;
+        private Bounds m_ContentBounds;
+        private Bounds m_ViewBounds;
 
         private float m_Velocity;
         public float velocity => m_Velocity;
@@ -73,8 +73,8 @@ namespace UnityEngine.UI
         private bool m_Scrolling;
 
         private float m_PrevPosition;
-        private Rect m_PrevContentBounds;
-        private Rect m_PrevViewBounds;
+        private Bounds m_PrevContentBounds;
+        private Bounds m_PrevViewBounds;
         [NonSerialized]
         private bool m_HasRebuiltLayout = false;
 
@@ -202,7 +202,7 @@ namespace UnityEngine.UI
             float offset = CalculateOffset(position[di] - m_Content.anchoredPosition[di]);
             position[di] += offset;
             if (m_MovementType == MovementType.Elastic && offset != 0)
-                position[di] -= RubberDelta(offset, m_ViewBounds.size[di]);
+                position[di] -= RubberDelta(offset, m_ViewBounds.size);
 
             SetContentAnchoredPosition(position);
         }
@@ -298,9 +298,8 @@ namespace UnityEngine.UI
         private void UpdateScrollbar(float offset)
         {
             if (!m_Scrollbar) return;
-            var i = di;
-            if (m_ContentBounds.size[i] > 0)
-                m_Scrollbar.size = Mathf.Clamp01((m_ViewBounds.size[i] - Mathf.Abs(offset)) / m_ContentBounds.size[i]);
+            if (m_ContentBounds.size > 0)
+                m_Scrollbar.size = Mathf.Clamp01((m_ViewBounds.size - Mathf.Abs(offset)) / m_ContentBounds.size);
             else
                 m_Scrollbar.size = 1;
             m_Scrollbar.value = normalizedPosition;
@@ -311,10 +310,7 @@ namespace UnityEngine.UI
             get
             {
                 UpdateBounds();
-                var i = di;
-                if (m_ContentBounds.size[i] <= m_ViewBounds.size[i] || Mathf.Approximately(m_ContentBounds.size[i], m_ViewBounds.size[i]))
-                    return m_ViewBounds.min[i] > m_ContentBounds.min[i] ? 1 : 0;
-                return (m_ViewBounds.min[i] - m_ContentBounds.min[i]) / (m_ContentBounds.size[i] - m_ViewBounds.size[i]);
+                return m_ViewBounds.NormalizedPosition(m_ContentBounds);
             }
             set => SetNormalizedPosition(value);
         }
@@ -324,12 +320,9 @@ namespace UnityEngine.UI
             EnsureLayoutHasRebuilt();
             UpdateBounds();
             var i = di;
-            // How much the content is larger than the view.
-            float hiddenLength = m_ContentBounds.size[i] - m_ViewBounds.size[i];
-            // Where the position of the lower left corner of the content bounds should be, in the space of the view.
-            float contentBoundsMinPosition = m_ViewBounds.min[i] - value * hiddenLength;
-            // The new content localPosition, in the space of the view.
-            float newAnchoredPosition = m_Content.anchoredPosition[i] + contentBoundsMinPosition - m_ContentBounds.min[i];
+            float hiddenLength = m_ContentBounds.size - m_ViewBounds.size;
+            float contentBoundsMinPosition = m_ViewBounds.min - value * hiddenLength;
+            float newAnchoredPosition = m_Content.anchoredPosition[i] + contentBoundsMinPosition - m_ContentBounds.min;
 
             Vector3 anchoredPosition = m_Content.anchoredPosition;
             if (Mathf.Abs(anchoredPosition[i] - newAnchoredPosition) > 0.01f)
@@ -351,12 +344,12 @@ namespace UnityEngine.UI
             SetDirty();
         }
 
-        private bool scrollingNeeded => m_ContentBounds.size[di] > m_ViewBounds.size[di] + 0.01f;
+        private bool scrollingNeeded => m_ContentBounds.size > m_ViewBounds.size + 0.01f;
 
         void ILayoutController.SetLayoutVertical()
         {
-            m_ViewBounds = viewport.rect;
-            m_ContentBounds = GetBounds();
+            m_ViewBounds = Bounds.FromRect(viewport.rect, di);
+            m_ContentBounds = GetContentBounds();
         }
 
         private void UpdateScrollbarVisibility()
@@ -369,102 +362,72 @@ namespace UnityEngine.UI
 
         protected void UpdateBounds()
         {
-            m_ViewBounds = viewport.rect;
-            m_ContentBounds = GetBounds();
+            var viewRect = viewport.rect;
+            var i = di;
+            m_ViewBounds = Bounds.FromRect(viewRect, i);
 
             if (m_Content == null)
                 return;
 
-            Vector2 contentSize = m_ContentBounds.size;
-            Vector2 contentPos = m_ContentBounds.center;
+            // Get content bounds in viewport-local space, expand to fill view on both axes.
+            m_Content.CalcWorldCorners2D(default,
+                out var p0, out var p1, out var p2, out var p3, out _);
+            var m = viewport.worldToLocalMatrix;
+            Vector2 v0 = m.MultiplyPoint2D(p0), v1 = m.MultiplyPoint2D(p1);
+            Vector2 v2 = m.MultiplyPoint2D(p2), v3 = m.MultiplyPoint2D(p3);
+            var cMin = Vector2.Min(Vector2.Min(v0, v1), Vector2.Min(v2, v3));
+            var cMax = Vector2.Max(Vector2.Max(v0, v1), Vector2.Max(v2, v3));
+            Vector2 contentSize = cMax - cMin;
+            Vector2 contentPos = (cMin + cMax) * 0.5f;
+
+            // Ensure content bounds are at least as large as view by expanding around the content pivot.
             var contentPivot = m_Content.pivot;
-            AdjustBounds(ref m_ViewBounds, ref contentPivot, ref contentSize, ref contentPos);
-            m_ContentBounds.size = contentSize;
-            m_ContentBounds.center = contentPos;
-
-            if (movementType == MovementType.Clamped)
-            {
-                // Clamp scroll axis so content never leaves a gap inside the view.
-                // AdjustBounds above guarantees contentSize >= viewSize, so at most one side overflows.
-                var i = di;
-                float minDiff = m_ViewBounds.min[i] - m_ContentBounds.min[i];
-                float maxDiff = m_ViewBounds.max[i] - m_ContentBounds.max[i];
-
-                float clampDelta = 0;
-                if (maxDiff > 0)
-                    clampDelta = Math.Min(minDiff, maxDiff);
-                else if (minDiff < 0)
-                    clampDelta = Math.Max(minDiff, maxDiff);
-
-                if (Mathf.Abs(clampDelta) > float.Epsilon)
-                {
-                    contentPos = m_Content.anchoredPosition;
-                    contentPos[i] += clampDelta;
-                    AdjustBounds(ref m_ViewBounds, ref contentPivot, ref contentSize, ref contentPos);
-                }
-            }
-        }
-
-        // Ensure content bounds are at least as large as view by expanding around the content pivot.
-        // E.g. if pivot is at top, bounds expand downwards. Works well with ContentSizeFitter.
-        internal static void AdjustBounds(ref Rect viewBounds, ref Vector2 contentPivot, ref Vector2 contentSize, ref Vector2 contentPos)
-        {
-            Vector3 excess = viewBounds.size - contentSize;
+            Vector2 excess = viewRect.size - contentSize;
             if (excess.x > 0)
             {
                 contentPos.x -= excess.x * (contentPivot.x - 0.5f);
-                contentSize.x = viewBounds.size.x;
+                contentSize.x = viewRect.size.x;
             }
             if (excess.y > 0)
             {
                 contentPos.y -= excess.y * (contentPivot.y - 0.5f);
-                contentSize.y = viewBounds.size.y;
+                contentSize.y = viewRect.size.y;
             }
-        }
 
-        private static readonly Vector3[] s_TempCorners = new Vector3[4];
-        private Rect GetBounds()
-        {
-            if (m_Content == null)
-                return new Rect();
-            m_Content.GetWorldCorners(s_TempCorners);
-            var viewWorldToLocalMatrix = viewport.worldToLocalMatrix;
-            return InternalGetBounds(s_TempCorners, ref viewWorldToLocalMatrix);
-        }
+            m_ContentBounds = Bounds.FromCenterSize(contentPos[i], contentSize[i]);
 
-        private static Rect InternalGetBounds(Vector3[] corners, ref Matrix4x4 viewWorldToLocalMatrix)
-        {
-            var vMin = new Vector2(float.MaxValue, float.MaxValue);
-            var vMax = new Vector2(float.MinValue, float.MinValue);
-
-            for (int j = 0; j < 4; j++)
+            if (movementType == MovementType.Clamped)
             {
-                Vector2 v = viewWorldToLocalMatrix.MultiplyPoint2D(corners[j]);
-                vMin = Vector2.Min(v, vMin);
-                vMax = Vector2.Max(v, vMax);
+                float clampDelta = m_ViewBounds.ClampDelta(m_ContentBounds);
+                if (Mathf.Abs(clampDelta) > float.Epsilon)
+                {
+                    float newCenter = m_Content.anchoredPosition[i] + clampDelta;
+                    m_ContentBounds = m_ViewBounds.Adjust(newCenter, contentSize[i], contentPivot[i]);
+                }
             }
-
-            return new Rect(vMin, vMax - vMin);
         }
 
-        // Calculates how much content should move to stay within view bounds.
-        // The 0.001 threshold prevents tiny adjustments that would trigger unnecessary layout recalculations.
         private float CalculateOffset(float delta)
         {
             if (m_MovementType == MovementType.Unrestricted)
                 return 0;
+            return m_ViewBounds.Offset(m_ContentBounds, delta);
+        }
 
+        // Used by SetLayoutVertical (before full UpdateBounds).
+        private Bounds GetContentBounds()
+        {
+            if (m_Content == null)
+                return default;
+            m_Content.CalcWorldCorners2D(default,
+                out var p0, out var p1, out var p2, out var p3, out _);
+            var m = viewport.worldToLocalMatrix;
             var i = di;
-            float contentMin = m_ContentBounds.min[i] + delta;
-            float contentMax = m_ContentBounds.max[i] + delta;
-            float minOffset = m_ViewBounds.min[i] - contentMin;
-            float maxOffset = m_ViewBounds.max[i] - contentMax;
-
-            if (minOffset < -0.001f)
-                return minOffset;
-            if (maxOffset > 0.001f)
-                return maxOffset;
-            return 0;
+            float a = m.MultiplyPoint2D(p0)[i], b = m.MultiplyPoint2D(p1)[i];
+            float c = m.MultiplyPoint2D(p2)[i], d = m.MultiplyPoint2D(p3)[i];
+            return new Bounds(
+                Mathf.Min(Mathf.Min(a, b), Mathf.Min(c, d)),
+                Mathf.Max(Mathf.Max(a, b), Mathf.Max(c, d)));
         }
 
         private void SetDirty()
@@ -481,5 +444,77 @@ namespace UnityEngine.UI
             m_Viewport = (RectTransform)transform;
         }
 #endif
+
+        /// <summary>1D interval [min, max] for single-axis scroll calculations.</summary>
+        private struct Bounds : IEquatable<Bounds>
+        {
+            public float min, max;
+
+            public Bounds(float min, float max) { this.min = min; this.max = max; }
+
+            public float size => max - min;
+
+            public static Bounds FromCenterSize(float center, float size)
+            {
+                float half = size * 0.5f;
+                return new Bounds(center - half, center + half);
+            }
+
+            public static Bounds FromRect(Rect rect, int axis) => new(rect.min[axis], rect.max[axis]);
+
+            /// <summary>
+            /// How much content must shift (after applying delta) to stay within this (view) range.
+            /// Returns 0 if within threshold. Threshold prevents jitter from micro-corrections.
+            /// </summary>
+            public float Offset(Bounds content, float delta = 0, float threshold = 0.001f)
+            {
+                float cMin = content.min + delta;
+                float cMax = content.max + delta;
+                float minOff = min - cMin;
+                float maxOff = max - cMax;
+                if (minOff < -threshold) return minOff;
+                if (maxOff > threshold) return maxOff;
+                return 0;
+            }
+
+            /// <summary>Normalized position of this (view) within content. 0 = start, 1 = end.</summary>
+            public float NormalizedPosition(Bounds content)
+            {
+                if (content.size <= size || Mathf.Approximately(content.size, size))
+                    return min > content.min ? 1 : 0;
+                return (min - content.min) / (content.size - size);
+            }
+
+            /// <summary>
+            /// Clamp delta: how much to shift content so it fills this (view) range.
+            /// Assumes content.size >= view.size (guaranteed by Adjust).
+            /// </summary>
+            public float ClampDelta(Bounds content)
+            {
+                float minDiff = min - content.min;
+                float maxDiff = max - content.max;
+                if (maxDiff > 0) return Math.Min(minDiff, maxDiff);
+                if (minDiff < 0) return Math.Max(minDiff, maxDiff);
+                return 0;
+            }
+
+            /// <summary>Expand content range around pivot so it's at least as large as this (view) range.</summary>
+            public Bounds Adjust(float contentCenter, float contentSize, float pivot)
+            {
+                float excess = size - contentSize;
+                if (excess > 0)
+                {
+                    contentCenter -= excess * (pivot - 0.5f);
+                    contentSize = size;
+                }
+                return FromCenterSize(contentCenter, contentSize);
+            }
+
+            public bool Equals(Bounds other) => min == other.min && max == other.max;
+            public override bool Equals(object? obj) => obj is Bounds other && Equals(other);
+            public override int GetHashCode() => HashCode.Combine(min, max);
+            public static bool operator ==(Bounds a, Bounds b) => a.min == b.min && a.max == b.max;
+            public static bool operator !=(Bounds a, Bounds b) => a.min != b.min || a.max != b.max;
+        }
     }
 }
