@@ -28,17 +28,12 @@ namespace Coffee.UIEffects
             }
         }
 
-        public static Material GetEffect(string baseShaderName, ColorMode colorMode)
+        public static Material GetEffect(ColorMode colorMode, bool isPremult)
         {
-#if DEBUG
-            Assert.IsTrue(IsValidShaderName(baseShaderName, colorMode),
-                $"Invalid shader name: {baseShaderName}");
-#endif
-
             return colorMode switch
             {
                 ColorMode.Add => _effect_Add ??= LoadMaterial(MaterialNames.UIEffectAdd, ParamEffect),
-                ColorMode.Fill when baseShaderName is ShaderNames.UIPremult
+                ColorMode.Fill when isPremult
                     => _effect_Fill_Premult ??= LoadMaterial(MaterialNames.UIEffectFillPremult, ParamEffect),
                 ColorMode.Fill => _effect_Fill ??= LoadMaterial(MaterialNames.UIEffectFill, ParamEffect),
                 _ => throw new System.NotSupportedException("Only ColorMode.Add and ColorMode.Fill are supported.")
@@ -46,24 +41,21 @@ namespace Coffee.UIEffects
         }
 
 #if DEBUG
-        internal static bool IsValidShaderName(string shaderName, ColorMode colorMode)
+        internal static bool IsValidForEffect(ColorMode colorMode, bool isPremult)
         {
-            if (colorMode is ColorMode.Add) // premult would need Blend ONE+ONE, not implemented
-                return shaderName is ShaderNames.UIDefault;
+            if (colorMode is ColorMode.Add)
+                return !isPremult; // premult would need Blend ONE+ONE, not implemented
             if (colorMode is ColorMode.Fill)
-                return shaderName is ShaderNames.UIDefault or ShaderNames.UIPremult;
+                return true;
             throw new System.NotSupportedException($"Unsupported ColorMode: {colorMode}");
         }
 #endif
 
-        public static Material GetShiny(string baseShaderName)
+        public static Material GetShiny(bool isPremult)
         {
-            Assert.IsTrue(baseShaderName is ShaderNames.UIDefault or ShaderNames.UIPremult,
-                $"Unsupported shader: {baseShaderName}");
-
-            return baseShaderName is ShaderNames.UIDefault
-                ? _shiny ??= LoadMaterial(MaterialNames.UIShiny, ParamShiny)
-                : _shiny_Premult ??= LoadMaterial(MaterialNames.UIShinyPremult, ParamShiny);
+            return isPremult
+                ? _shiny_Premult ??= LoadMaterial(MaterialNames.UIShinyPremult, ParamShiny)
+                : _shiny ??= LoadMaterial(MaterialNames.UIShiny, ParamShiny);
         }
 
         static Material LoadMaterial(string path, ParameterTexture paramTex)

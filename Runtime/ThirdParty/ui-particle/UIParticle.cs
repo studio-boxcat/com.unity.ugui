@@ -111,10 +111,8 @@ namespace Coffee.UIExtensions
                 var mat = r.trailMaterial;
                 var cr = canvasRenderer;
 
-                // depth is already set by base class. (UpdateMaterial() -> MaterialModifierUtils.ResolveMaterialForRendering() -> GetModifiedMaterial())
                 var d = StencilMaterial.GetDepthFromRenderMaterial(cr.GetMaterial(0));
                 if (d is not 0) mat = StencilMaterial.AddMaskable(r.trailMaterial); // make maskable.
-                mat = MaterialModifierUtils.ResolveMaterialForRenderingExceptSelf(r, mat); // skip self, since it just for enabling stencil.
 
                 cr.materialCount = 2;
                 cr.SetMaterial(mat, 1);

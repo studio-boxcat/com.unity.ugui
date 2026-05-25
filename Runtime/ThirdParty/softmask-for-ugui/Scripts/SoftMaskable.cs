@@ -1,4 +1,4 @@
-﻿// ReSharper disable InconsistentNaming
+// ReSharper disable InconsistentNaming
 
 #nullable enable
 using Sirenix.OdinInspector;
@@ -28,26 +28,24 @@ namespace Coffee.UISoftMask
         private MaterialLink? _materialLink;
         public Material? modifiedMaterial => _materialLink?.Material;
 
-        public override Material GetModifiedMaterial(Material baseMaterial)
+        public override Material? GetModifiedMaterial(GraphicMaterialKey material)
         {
-            // If this component is disabled, the material is returned as is.
-            // If the parents do not have a soft mask component, the material is returned as is.
             if (!isActiveAndEnabled)
             {
-                L.W("[SoftMaskable] is not active. Returning base material: " + this, this);
-                return baseMaterial;
+                L.W("[SoftMaskable] is not active. Falling back to base: " + this, this);
+                return null;
             }
 
             var softMask = transform.NearestUpwards_GOActiveAndCompEnabled<SoftMask>();
             if (!softMask)
             {
-                L.I("[SoftMaskable] No SoftMask component found in the parent hierarchy. Returning base material: " + this, this);
-                return baseMaterial;
+                L.I("[SoftMaskable] No SoftMask in parent hierarchy. Falling back to base: " + this, this);
+                return null;
             }
 
             // Generate soft maskable material.
             var maskRt = softMask!.PopulateMaskRt();
-            MaterialCache.Rent(ref _materialLink, baseMaterial, m_MaskInteraction, maskRt);
+            MaterialCache.Rent(ref _materialLink, material, m_MaskInteraction, maskRt);
 
             var mat = _materialLink!.Material;
 #if UNITY_EDITOR
@@ -63,9 +61,6 @@ namespace Coffee.UISoftMask
             return mat;
         }
 
-        /// <summary>
-        /// Set the interaction for each mask.
-        /// </summary>
         public void SetMaskInteraction(bool visibleInside)
         {
             m_MaskInteraction = visibleInside
@@ -73,9 +68,6 @@ namespace Coffee.UISoftMask
             SetMaterialDirty();
         }
 
-        /// <summary>
-        /// This function is called when the object becomes enabled and active.
-        /// </summary>
         protected override void OnEnable()
         {
             base.OnEnable();
@@ -85,9 +77,6 @@ namespace Coffee.UISoftMask
 #endif
         }
 
-        /// <summary>
-        /// This function is called when the behaviour becomes disabled.
-        /// </summary>
         protected override void OnDisable()
         {
             base.OnDisable();
@@ -106,9 +95,10 @@ namespace Coffee.UISoftMask
 #if UNITY_EDITOR
         void ISelfValidator.Validate(SelfValidationResult result)
         {
-            var g = GetComponent<Graphic>();
-            if (MaterialCache.TryResolveShaderIndex(g.material.shader.name, out _) is false)
-                result.AddError($"Shader '{g.material.shader.name}' is not supported by SoftMaskable.");
+            var g = Graphic;
+            var material = GraphicMaterialResolver.ResolveKey(g);
+            if (MaterialCache.TryResolveShaderIndex(material, out _) is false)
+                result.AddError($"Material '{material}' is not supported by SoftMaskable.");
 
             if (m_MaskInteraction is not (MaskInteraction.VisibleInside or MaskInteraction.VisibleOutside))
                 result.AddError($"Invalid mask interaction value: {m_MaskInteraction}.");

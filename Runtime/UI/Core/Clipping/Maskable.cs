@@ -24,16 +24,18 @@ namespace UnityEngine.UI
             }
         }
 
-        public override Material GetModifiedMaterial(Material baseMaterial)
+        public override Material? GetModifiedMaterial(GraphicMaterialKey key)
         {
             // We don't support multiple masking levels, so only the first mask will work.
-            // This means we don't need to the mask component changed or not,
+            // This means we don't need to check if the mask component changed or not,
             // as material remains the same as long as the base material is the same.
 
-            // If the graphic is not enabled, return the base material.
+            // If the graphic is not enabled, return null to fall back to base.
             // don't invalidate the mask material, as it will be used when the graphic is enabled again.
             if (enabled is false)
-                return baseMaterial;
+                return null;
+
+            var baseMaterial = GraphicMaterialResolver.ResolveBase(key.Kind, Graphic);
 
             // if the baseMaterial is not changed, return the cached mask material.
             var unchanged = _baseMaterial.RefEq(baseMaterial);
@@ -44,7 +46,7 @@ namespace UnityEngine.UI
 #endif
                 return _maskMaterial!;
             }
-            _baseMaterial = baseMaterial; // update base material reference
+            _baseMaterial = baseMaterial;
 
             // invalidate cached mask material first.
             if (_maskMaterial is not null)
@@ -53,8 +55,8 @@ namespace UnityEngine.UI
                 _maskMaterial = null;
             }
 
-            // create a new mask material. (StencilMaterial is pooling materials, so need to worry about leaks)
-            return _maskMaterial = StencilMaterial.AddMaskable(baseMaterial); // hardcoded to 1, as we don't support multiple masks.
+            // create a new mask material. (StencilMaterial pools materials internally)
+            return _maskMaterial = StencilMaterial.AddMaskable(baseMaterial); // hardcoded to depth 1, as we don't support multiple masks.
         }
 
 #if UNITY_EDITOR

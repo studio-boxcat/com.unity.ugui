@@ -60,10 +60,10 @@ namespace UnityEngine.UI
             CanvasUpdateRegistry.QueueGraphicRebuildCallback(this);
         }
 
-        public override Material GetModifiedMaterial(Material baseMaterial)
+        public override Material? GetModifiedMaterial(GraphicMaterialKey key)
         {
             CanvasUpdateRegistry.QueueGraphicRebuildCallback(this);
-            return baseMaterial;
+            return null;
         }
 
         // override material after graphic rebuild
@@ -97,8 +97,8 @@ namespace UnityEngine.UI
             var g = Graphic;
             if (g)
             {
-                if (g.material.RefNq(Graphic.defaultGraphicMaterial))
-                    result.AddError($"[Mask] Graphic ({g.SafeName()}) must have default material.");
+                if (g.material is not GraphicMaterialKind.Normal)
+                    result.AddError($"[Mask] Graphic ({g.SafeName()}) must have Normal material.");
                 if (g.gameObject.RefNq(gameObject))
                     result.AddError($"[Mask] Graphic ({g.SafeName()}) must be on the same GameObject as Mask ({gameObject.name})");
             }

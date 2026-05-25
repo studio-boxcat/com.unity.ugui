@@ -140,10 +140,10 @@ namespace Coffee.UISoftMask
 
         void IMeshModifier.ModifyMesh(MeshBuilder mb) => QueueRenderMaskRt();
 
-        public override Material GetModifiedMaterial(Material baseMaterial)
+        public override Material? GetModifiedMaterial(GraphicMaterialKey material)
         {
             QueueRenderMaskRt();
-            return baseMaterial;
+            return null;
         }
 
         private void QueueRenderMaskRt() =>

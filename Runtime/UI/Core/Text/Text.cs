@@ -43,9 +43,6 @@ namespace UnityEngine.UI
                 if (font != null && font.material != null && font.material.mainTexture != null)
                     return font.material.mainTexture;
 
-                if (m_Material != null)
-                    return m_Material.mainTexture;
-
                 return base.mainTexture;
             }
         }

@@ -597,10 +597,6 @@ namespace UnityEngine.UI
             {
                 if (activeSprite == null)
                 {
-                    if (material != null && material.mainTexture != null)
-                    {
-                        return material.mainTexture;
-                    }
                     return whiteTexture;
                 }
 
@@ -663,24 +659,6 @@ namespace UnityEngine.UI
         protected float multipliedPixelsPerUnit
         {
             get { return pixelsPerUnit * m_PixelsPerUnitMultiplier; }
-        }
-
-        /// <summary>
-        /// The specified Material used by this Image. The default Material is used instead if one wasn't specified.
-        /// </summary>
-        public override Material material
-        {
-            get
-            {
-                if (m_Material != null)
-                    return m_Material;
-                return defaultGraphicMaterial;
-            }
-
-            set
-            {
-                base.material = value;
-            }
         }
 
         private void PreserveSpriteAspectRatio(ref Rect rect, Vector2 spriteSize)

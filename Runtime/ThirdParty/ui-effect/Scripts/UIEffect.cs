@@ -59,9 +59,9 @@ namespace Coffee.UIEffects
         /// </summary>
         public override ParameterTexture paramTex => MaterialCatalog.ParamEffect;
 
-        protected override Material GetEffectMaterial(Material baseMaterial)
+        protected override Material GetEffectMaterial(bool isPremult)
         {
-            return MaterialCatalog.GetEffect(baseMaterial.shader.name, colorMode);
+            return MaterialCatalog.GetEffect(colorMode, isPremult);
         }
 
         /// <summary>
@@ -90,9 +90,10 @@ namespace Coffee.UIEffects
 #if UNITY_EDITOR
         void ISelfValidator.Validate(SelfValidationResult result)
         {
-            var shaderName = GetComponent<Graphic>().material.shader.name;
-            if (!MaterialCatalog.IsValidShaderName(shaderName, colorMode))
-                result.AddError($"The shader '{shaderName}' is not a valid UIEffect shader.");
+            var g = GetComponent<Graphic>();
+            var isPremult = GraphicMaterialResolver.IsPremult(g.mainTexture);
+            if (!MaterialCatalog.IsValidForEffect(colorMode, isPremult))
+                result.AddError($"UIEffect with colorMode={colorMode} does not support premult={isPremult}.");
         }
 #endif
     }

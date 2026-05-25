@@ -6,6 +6,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Rendering;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace Coffee.UISoftMask
@@ -92,38 +93,36 @@ namespace Coffee.UISoftMask
     {
         private static readonly Dictionary<ulong, MaterialLink> _cache = new();
 
-        internal static bool TryResolveShaderIndex(string shaderName, out byte shaderIndex)
+        internal static bool TryResolveShaderIndex(GraphicMaterialKey material, out byte shaderIndex)
         {
-            shaderIndex = shaderName switch
+            shaderIndex = (material.Kind, material.IsPremult) switch
             {
-                ShaderNames.UIDefault => 0,
-                ShaderNames.UIAdditive => 1,
-                ShaderNames.UIPremult => 2,
-                _ => byte.MaxValue, // Not supported
+                (GraphicMaterialKind.Normal, false)  => 0,
+                (GraphicMaterialKind.Normal, true)   => 2,
+                (GraphicMaterialKind.Additive, _)    => 1,
+                _ => byte.MaxValue,
             };
 
             return shaderIndex is not byte.MaxValue;
         }
 
-        private static byte ResolveShaderIndex(string shaderName)
+        private static byte ResolveShaderIndex(GraphicMaterialKey material)
         {
-            if (TryResolveShaderIndex(shaderName, out var shaderIndex))
+            if (TryResolveShaderIndex(material, out var shaderIndex))
                 return shaderIndex;
-            L.E($"[SoftMask.MaterialCache] Shader '{shaderName}' is not supported. Using default shader index 0.");
+            L.E($"[SoftMask.MaterialCache] Material '{material}' is not supported. Using default shader index 0.");
             return 0; // Fallback to default shader index.
         }
 
-        private static ulong Hash(Material orgMat, MaskInteraction maskInteraction, RenderTexture maskRt, out byte shaderIndex)
+        private static ulong Hash(GraphicMaterialKey material, MaskInteraction maskInteraction, RenderTexture maskRt, out byte shaderIndex)
         {
-            shaderIndex = ResolveShaderIndex(orgMat.shader.name);
+            shaderIndex = ResolveShaderIndex(material);
             return Numeric.PackU64(maskRt.GetInstanceID(), shaderIndex, (byte) maskInteraction);
         }
 
-        public static void Rent(ref MaterialLink? link, Material orgMat, MaskInteraction maskInteraction, RenderTexture maskRt)
+        public static void Rent(ref MaterialLink? link, GraphicMaterialKey material, MaskInteraction maskInteraction, RenderTexture maskRt)
         {
-            // L.I($"[SoftMask.MaterialCache] Registering material: {orgMat.name}, maskInteraction={maskInteraction}, depth={depth}, stencil={stencil}, mask={mask}");
-
-            var hash = Hash(orgMat, maskInteraction, maskRt, out var shaderIndex);
+            var hash = Hash(material, maskInteraction, maskRt, out var shaderIndex);
             if (link is not null && link.Equals(hash)) return;
 
             // Release the old material link.
@@ -135,7 +134,7 @@ namespace Coffee.UISoftMask
                 return;
             }
 
-            L.I($"[SoftMask.MaterialCache] Creating material: {orgMat.name}, hash={hash}");
+            L.I($"[SoftMask.MaterialCache] Creating material: material={material}, hash={hash}");
 
             link = new MaterialLink(hash, shaderIndex, maskInteraction, maskRt);
             Assert.IsTrue(link.ReferenceCount is 1, "Reference count should be 1 after creation.");
@@ -150,7 +149,6 @@ namespace Coffee.UISoftMask
 
         internal static void Unregister(ulong hash)
         {
-            // L.I($"[SoftMask.MaterialCache] Unregistering material, hash={hash}");
             _cache.Remove(hash);
         }
     }

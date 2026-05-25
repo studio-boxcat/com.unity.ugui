@@ -169,9 +169,9 @@ namespace Coffee.UIEffects
             effectPlayer.OnDisable();
         }
 
-        protected override Material GetEffectMaterial(Material baseMaterial)
+        protected override Material GetEffectMaterial(bool isPremult)
         {
-            return MaterialCatalog.GetShiny(baseMaterial.shader.name);
+            return MaterialCatalog.GetShiny(isPremult);
         }
 
         /// <summary>
@@ -250,21 +250,14 @@ namespace Coffee.UIEffects
         void ISelfValidator.Validate(SelfValidationResult result)
         {
             var g = GetComponent<Graphic>();
-            if (!g || !g.material || !g.material.shader)
+            if (!g)
             {
-                result.AddError("Graphic component is missing or has no material/shader.");
+                result.AddError("Graphic component is missing.");
                 return;
             }
 
-            var shader = g.material.shader;
-            try
-            {
-                MaterialCatalog.GetShiny(shader.name);
-            }
-            catch (Exception e)
-            {
-                result.AddError(e.Message);
-            }
+            if (g.material is not GraphicMaterialKind.Normal)
+                result.AddError($"UIShiny only supports Normal material (got {g.material}).");
         }
 #endif
     }

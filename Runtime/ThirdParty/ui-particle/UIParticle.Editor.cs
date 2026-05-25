@@ -19,8 +19,8 @@ namespace Coffee.UIExtensions
             if (!_texture)
                 _texture = AssetDatabaseUtils.LoadTextureWithGUID("0311aa56f4c25498ebd31febe866c3cf")!; // Particle_Bling_Y
 
-            if (!m_Material)
-                m_Material = AssetDatabaseUtils.LoadMaterialWithGUID("d8984a0a3a8bb45d48946817c2152326");
+            if (material == default)
+                material = GraphicMaterialKind.Particle;
 
             if (!Source)
             {

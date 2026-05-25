@@ -21,10 +21,8 @@ namespace UnityEngine.UI
         private static Texture2D? s_WhiteTexture;
         protected static Texture2D whiteTexture => s_WhiteTexture ??= Texture2D.whiteTexture;
 
-        // Cached and saved values
-        [FormerlySerializedAs("m_Mat")]
         [ShowIf("@CanShow(GraphicPropertyFlag.Material)"), PropertyOrder(GraphicPropOrder.Material), OnValueChanged("OnInspectorMaterialChanged")]
-        [SerializeField] protected Material? m_Material;
+        [SerializeField] private GraphicMaterialKind m_Material;
 
         [ShowIf("@CanShow(GraphicPropertyFlag.Color)"), PropertyOrder(GraphicPropOrder.Color), OnValueChanged("SetVerticesDirty"), DontValidate]
         [SerializeField]
@@ -240,27 +238,18 @@ namespace UnityEngine.UI
         // The CanvasRenderer is a required component that must not be destroyed. Based on this assumption, a null-reference check is sufficient.
         public CanvasRenderer canvasRenderer => m_CanvasRenderer ??= GetComponent<CanvasRenderer>();
 
-        /// <summary>
-        /// The Material set by the user
-        /// </summary>
-        public virtual Material material
+        public GraphicMaterialKind material
         {
-            get => m_Material ? m_Material! : defaultGraphicMaterial;
+            get => m_Material;
             set
             {
-                if (m_Material.RefEq(value)) return;
+                if (m_Material == value) return;
                 m_Material = value;
                 SetMaterialDirty();
             }
         }
 
-        /// <summary>
-        /// The material that will be sent for Rendering (Read only).
-        /// </summary>
-        /// <remarks>
-        /// This is the material that actually gets sent to the CanvasRenderer. By default it's the same as [[Graphic.material]]. When extending Graphic you can override this to send a different material to the CanvasRenderer than the one set by Graphic.material. This is useful if you want to modify the user set material in a non destructive manner.
-        /// </remarks>
-        public virtual Material materialForRendering => MaterialModifierUtils.ResolveMaterialForRendering(this, material);
+
 
         /// <summary>
         /// The graphic's texture. (Read Only).
@@ -401,7 +390,7 @@ namespace UnityEngine.UI
 
             var cr = canvasRenderer;
             cr.materialCount = 1;
-            cr.SetMaterial(materialForRendering, 0);
+            cr.SetMaterial(GraphicMaterialResolver.ResolveRender(this), 0);
             cr.SetTexture(mainTexture);
         }
 
