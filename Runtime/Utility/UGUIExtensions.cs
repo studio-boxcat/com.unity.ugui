@@ -34,6 +34,22 @@ namespace UnityEngine.UI
         public static float GetScaledWidth(this Canvas canvas)
             => canvas.pixelRect.width / canvas.scaleFactor;
 
+        /// The (0..1) normalized 2D position the anchor represents.
+        /// LowerLeft → (0,0); UpperRight → (1,1); MiddleCenter → (0.5,0.5). Pivot-shaped.
+        public static Vector2 Norm(this TextAnchor a) => a switch
+        {
+            TextAnchor.UpperLeft => new Vector2(0f, 1f),
+            TextAnchor.UpperCenter => new Vector2(0.5f, 1f),
+            TextAnchor.UpperRight => new Vector2(1f, 1f),
+            TextAnchor.MiddleLeft => new Vector2(0f, 0.5f),
+            TextAnchor.MiddleCenter => new Vector2(0.5f, 0.5f),
+            TextAnchor.MiddleRight => new Vector2(1f, 0.5f),
+            TextAnchor.LowerLeft => new Vector2(0f, 0f),
+            TextAnchor.LowerCenter => new Vector2(0.5f, 0f),
+            TextAnchor.LowerRight => new Vector2(1f, 0f),
+            _ => new Vector2(0.5f, 0.5f),
+        };
+
         public static void AddOnClick(this Button button, UnityAction action)
         {
             button.onClick ??= new Button.ButtonClickedEvent();
