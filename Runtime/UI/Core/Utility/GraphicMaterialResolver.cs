@@ -8,6 +8,16 @@ namespace UnityEngine.UI
     {
         private static readonly Dictionary<int, bool> _premultCache = new(128);
 
+        // Runtime-created textures (e.g. SWF RenderTextures) carry no baked tpsheet name, so the premult
+        // state can't be derived from PremultTextureNames. Owners seed the cache directly on creation and
+        // clear it on disposal, letting such graphics stay Normal+premult (and thus SoftMaskable-compatible)
+        // instead of resorting to a Custom material.
+        public static void RegisterRuntimePremultTexture(Texture tex) => _premultCache[tex.GetInstanceID()] = true;
+
+        // GetInstanceID stays valid after the texture is destroyed, so no fake-null guard —
+        // a destroyed RT is precisely the entry we want to clear.
+        public static void UnregisterRuntimePremultTexture(Texture tex) => _premultCache.Remove(tex.GetInstanceID());
+
         public static GraphicMaterialKey ResolveKey(Graphic graphic)
         {
             return new GraphicMaterialKey(graphic.material, IsPremult(graphic.mainTexture));
