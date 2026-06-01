@@ -2,17 +2,14 @@
 using System;
 using System.Diagnostics;
 #if UNITY_EDITOR
-using System.Collections;
 using Sirenix.OdinInspector.Editor.Validation;
-using UnityEngine;
 using UnityEngine.UI;
 
 [assembly: RegisterValidator(typeof(MaterialConstraintValidator))]
-[assembly: RegisterValidator(typeof(MaterialConstraintValidator_List))]
 #endif
 
 [Conditional("UNITY_EDITOR")]
-[AttributeUsage(AttributeTargets.Field | AttributeTargets.Class)]
+[AttributeUsage(AttributeTargets.Class)]
 public class MaterialConstraintAttribute : Attribute
 {
     public readonly GraphicMaterialKind[] Allowed;
@@ -24,35 +21,20 @@ public class MaterialConstraintAttribute : Attribute
 }
 
 #if UNITY_EDITOR
-internal class MaterialConstraintValidator : AttributeValidator<MaterialConstraintAttribute, Graphic>
+internal class MaterialConstraintValidator : AttributeValidator<MaterialConstraintAttribute>
 {
     protected override void Validate(ValidationResult result)
     {
-        var g = ValueEntry.SmartValue;
-        if (!g) return;
-        ValidateGraphic(g, Attribute.Allowed, result);
-    }
-
-    internal static void ValidateGraphic(Graphic g, GraphicMaterialKind[] allowed, ValidationResult result)
-    {
-        var actual = g.material;
-        if (Array.IndexOf(allowed, actual) < 0)
-            result.AddError($"Material must be {string.Join(" or ", allowed)} (got {actual}).");
-    }
-}
-
-internal class MaterialConstraintValidator_List : AttributeValidator<MaterialConstraintAttribute>
-{
-    protected override void Validate(ValidationResult result)
-    {
-        var value = Property.ValueEntry.WeakSmartValue;
-        if (value is not IList list) return;
-        var allowed = Attribute.Allowed;
-        foreach (var item in list)
+        // Class-level attribute, so the validated value is the component itself. A non-Graphic owner
+        // can't be auto-validated — it must check the material manually (see UISwfBase).
+        if (Property.ValueEntry.WeakSmartValue is not Graphic g)
         {
-            if (item is Graphic g && g)
-                MaterialConstraintValidator.ValidateGraphic(g, allowed, result);
+            result.AddError("[MaterialConstraint] only applies to a Graphic class.");
+            return;
         }
+        if (!g) return;
+        if (Array.IndexOf(Attribute.Allowed, g.material) < 0)
+            result.AddError($"Material must be {string.Join(" or ", Attribute.Allowed)} (got {g.material}).");
     }
 }
 #endif
