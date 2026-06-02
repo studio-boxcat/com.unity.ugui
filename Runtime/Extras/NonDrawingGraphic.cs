@@ -5,6 +5,7 @@
     [GraphicPropertyHide(GraphicPropertyFlag.Color | GraphicPropertyFlag.Material)]
     public class NonDrawingGraphic : Graphic
     {
+        public override Texture mainTexture => null!;
         public override void SetMaterialDirty() { }
         public override void SetVerticesDirty() { }
         protected override void UpdateGeometry() => canvasRenderer.Clear();
