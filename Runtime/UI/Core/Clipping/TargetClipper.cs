@@ -52,7 +52,7 @@ namespace UnityEngine.UI
             var clipRect = CanvasUtils.BoundingRect(
                 rectTransform, canvas, _padding, out var validRect);
 
-            var p = Pruner.Create(_targets);
+            var p = ObjectPruner.Create(_targets);
             while (p.Next(out var g))
             {
                 Assert.IsTrue(g, "Target graphic is null.");
