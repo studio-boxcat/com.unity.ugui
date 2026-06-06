@@ -867,7 +867,7 @@ namespace UnityEngine.UI
 
             // Add button since it's needed to block, and to close the dropdown when blocking area is clicked.
             Button blockerButton = blocker.AddComponent<Button>();
-            blockerButton.onClick.AddListener(Hide);
+            blockerButton.OnClick += _ => Hide();
 
             //add canvas group to ensure clicking outside the dropdown will hide it (UUM-33691)
             CanvasGroup blockerCanvasGroup = blocker.AddComponent<CanvasGroup>();

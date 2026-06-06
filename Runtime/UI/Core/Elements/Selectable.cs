@@ -2,7 +2,6 @@ using UnityEngine.EventSystems;
 
 namespace UnityEngine.UI
 {
-    [AddComponentMenu("UI/Selectable", 35)]
     [ExecuteAlways]
     [SelectionBase]
     [DisallowMultipleComponent]
@@ -15,25 +14,7 @@ namespace UnityEngine.UI
         IPointerDownHandler, IPointerUpHandler,
         ISelectHandler, IDeselectHandler
     {
-        [Tooltip("Can the Selectable be interacted with?")]
-        [SerializeField]
-        private bool m_Interactable = true;
-
         private GroupAllowsInteraction m_GroupsAllowInteraction;
-
-        public bool              interactable
-        {
-            get { return m_Interactable; }
-            set
-            {
-                if (SetPropertyUtility.SetValue(ref m_Interactable, value))
-                {
-                    if (!m_Interactable && EventSystem.current != null && EventSystem.current.currentSelectedGameObject == gameObject)
-                        EventSystem.current.SetSelectedGameObject(null);
-                    OnSetProperty();
-                }
-            }
-        }
 
         public bool              isPointerDown     { get; private set; }
         private bool             hasSelection      { get; set; }
@@ -58,7 +39,7 @@ namespace UnityEngine.UI
 
         public bool IsInteractable()
         {
-            return m_Interactable && m_GroupsAllowInteraction.IsInteractable(this);
+            return m_GroupsAllowInteraction.IsInteractable(this);
         }
 
         // Call from unity if animation properties have changed

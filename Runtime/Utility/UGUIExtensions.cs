@@ -1,5 +1,4 @@
 using System;
-using UnityEngine.Events;
 
 namespace UnityEngine.UI
 {
@@ -49,11 +48,5 @@ namespace UnityEngine.UI
             TextAnchor.LowerRight => new Vector2(1f, 0f),
             _ => new Vector2(0.5f, 0.5f),
         };
-
-        public static void AddOnClick(this Button button, UnityAction action)
-        {
-            button.onClick ??= new Button.ButtonClickedEvent();
-            button.onClick.AddListener(action);
-        }
     }
 }

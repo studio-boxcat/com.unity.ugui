@@ -1,9 +1,7 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace UnityEditor.UI
 {
-    [CustomEditor(typeof(Selectable), true)]
     /// <summary>
     /// Custom Editor for the Selectable Component.
     /// Extend this class to write a custom editor for a component derived from Selectable.
