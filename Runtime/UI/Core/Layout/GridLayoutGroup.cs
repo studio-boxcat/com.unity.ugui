@@ -13,7 +13,7 @@ namespace UnityEngine.UI
 #endif
     {
         [SerializeField, OnValueChanged("SetLayoutDirty")]
-        private Vector2 m_CellSize = new(100, 100);
+        private Vector2 m_CellSize;
         [SerializeField, OnValueChanged("SetLayoutDirty")]
         private Vector2Int m_Padding; // x=top, y=bottom
         [SerializeField, OnValueChanged("SetLayoutDirty")]
@@ -82,7 +82,6 @@ namespace UnityEngine.UI
             {
                 var child = _children[i];
                 child.anchorMin = child.anchorMax = new Vector2(0, 1); // Vector2.up
-                child.sizeDelta = m_CellSize;
                 child.pivot = new Vector2(0.5f, 0.5f);
 
                 var posX = startX + cws * (i % _cellCountX);
@@ -124,7 +123,6 @@ namespace UnityEngine.UI
                 tracker.SetChildren(transform,
                     DrivenTransformProperties.Anchors
                     | DrivenTransformProperties.AnchoredPosition
-                    | DrivenTransformProperties.SizeDelta
                     | DrivenTransformProperties.Pivot);
             }
         }
