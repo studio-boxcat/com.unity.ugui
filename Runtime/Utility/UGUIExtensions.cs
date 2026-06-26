@@ -24,6 +24,12 @@ namespace UnityEngine.UI
         public static float GetAlpha(this Graphic g) => g.color.a;
         public static void SetAlpha(this Graphic g, float alpha) => g.color = g.color.WithA(alpha);
 
+        public static void SetColor(this Graphic[] graphics, Color color)
+        {
+            foreach (var g in graphics)
+                g.color = color;
+        }
+
         public static void SetVisualDirty(this Graphic g)
         {
             g.SetVerticesDirty();
