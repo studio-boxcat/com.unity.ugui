@@ -5,6 +5,9 @@ using System;
 using JetBrains.Annotations;
 using Sirenix.OdinInspector;
 using UnityEngine.Serialization;
+#if UNITY_EDITOR
+using UnityEngine.Experimental.Rendering;
+#endif
 
 namespace UnityEngine.UI
 {
@@ -15,6 +18,9 @@ namespace UnityEngine.UI
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform), typeof(CanvasRenderer))]
     public abstract class Graphic : UIBehaviour
+#if UNITY_EDITOR
+        , ISelfValidator
+#endif
     {
         private static Material? s_DefaultUI;
         public static Material defaultGraphicMaterial => s_DefaultUI ??= Canvas.GetDefaultCanvasMaterial();
@@ -248,7 +254,6 @@ namespace UnityEngine.UI
                 SetMaterialDirty();
             }
         }
-
 
 
         /// <summary>
@@ -529,6 +534,24 @@ namespace UnityEngine.UI
         {
             UnityEditor.Undo.RecordObject(this, "Reset Raycast Inset");
             raycastInset = Vector4.zero;
+        }
+
+        void ISelfValidator.Validate(SelfValidationResult result)
+        {
+            if (GetComponents<IMaterialModifier>().Length > 1)
+                result.AddError("Multiple IMaterialModifier components on the same GameObject are not supported.");
+
+            if (m_Material is GraphicMaterialKind.Additive)
+            {
+                var tex = mainTexture;
+                if (tex && tex.graphicsFormat is GraphicsFormat.R8_UNorm or GraphicsFormat.R16_UNorm or (GraphicsFormat)54 /* A8 */)
+                    result.AddError("Additive material with R8 or A8 texture.");
+            }
+
+            var useCustomMaterial = m_Material is GraphicMaterialKind.Custom;
+            var hasCustomMaterialProvider = this.HasComponent<ICustomMaterialProvider>();
+            if (useCustomMaterial != hasCustomMaterialProvider)
+                result.AddError("GraphicMaterialKind.Custom requires an ICustomMaterialProvider component (and vice versa).");
         }
 #endif
     }
