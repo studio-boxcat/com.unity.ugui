@@ -77,7 +77,7 @@ namespace UnityEngine.UI
             Assert.IsNotNull(Data, "MeshChannel.SetUp() must be called before editing.");
 
             // If the data is already writable, return it.
-            if (ReferenceEquals(_buf, Data))
+            if (ReferenceEquals(_buf, Data!))
                 return _buf.AsSpan(0, Count);
 
             // Otherwise, copy the data to a writable array.
@@ -97,7 +97,7 @@ namespace UnityEngine.UI
             if (_buf.Length >= count)
             {
                 // Nothing to do when the data is already writable.
-                if (ReferenceEquals(_buf, Data))
+                if (ReferenceEquals(_buf, Data!))
                 {
                     Count = count;
                     return _buf;
@@ -106,7 +106,7 @@ namespace UnityEngine.UI
                 Array.Copy(Data!, 0, _buf, 0, Mathf.Min(Count, count));
             }
             // When the data is already writable.
-            else if (ReferenceEquals(_buf, Data))
+            else if (ReferenceEquals(_buf, Data!))
             {
                 Array.Resize(ref _buf, count);
             }
@@ -119,7 +119,7 @@ namespace UnityEngine.UI
 
             Data = _buf;
             Count = count;
-            return _buf;
+            return _buf!;
         }
 
         public void TrimAfter(int fromIndex)
@@ -286,7 +286,7 @@ namespace UnityEngine.UI
             var toAdd = increment;
             for (var j = 0; j < repeat - 1; j++, toAdd += increment)
             for (var i = 0; i < count; i++)
-                data[indexPtr++] = (ushort) (src[i] + toAdd);
+                data[indexPtr++] = (ushort)(src[i] + toAdd);
         }
 
         private static readonly List<ushort> _meshIndexBuf = new();

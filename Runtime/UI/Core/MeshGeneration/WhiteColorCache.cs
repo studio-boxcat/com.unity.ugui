@@ -1,4 +1,6 @@
+#nullable enable
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace UnityEngine.UI
@@ -15,7 +17,8 @@ namespace UnityEngine.UI
             Array.Fill(_transparent, new Color32(255, 255, 255, 0));
         }
 
-        public static bool TryGet(Color32 color, int count, out Color32[] colors)
+        public static bool TryGet(Color32 color, int count,
+            [NotNullWhen(true)] out Color32[]? colors)
         {
             if (color is not { r: 255, g: 255, b: 255 })
             {

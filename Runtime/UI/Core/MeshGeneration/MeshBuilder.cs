@@ -1,3 +1,4 @@
+#nullable enable
 using System.Diagnostics;
 using JetBrains.Annotations;
 using Unity.Collections;
