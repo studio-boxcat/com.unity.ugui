@@ -30,12 +30,6 @@ namespace UnityEngine.UI
                 g.color = color;
         }
 
-        public static void SetVisualDirty(this Graphic g)
-        {
-            g.SetVerticesDirty();
-            g.SetMaterialDirty();
-        }
-
         public static float GetScaledWidth(this Canvas canvas)
             => canvas.pixelRect.width / canvas.scaleFactor;
 

@@ -163,6 +163,12 @@ namespace UnityEngine.UI
             CanvasUpdateRegistry.QueueGraphic(this);
         }
 
+        public void SetVisualDirty()
+        {
+            SetVerticesDirty();
+            SetMaterialDirty();
+        }
+
         public void SetRaycastDirty()
         {
             m_RaycastRegisterLink.Reset(canvas, this);

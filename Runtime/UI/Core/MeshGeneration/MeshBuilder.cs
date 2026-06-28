@@ -146,6 +146,20 @@ namespace UnityEngine.UI
             Indices.SetUp(QuadIndexCache.Single);
         }
 
+        // Arbitrary quad (e.g. a sheared parallelogram) with a single shared UV. Corners: 0=bl, 1=br, 2=tl, 3=tr.
+        public void SetUp_Quad(Vector2 bl, Vector2 br, Vector2 tl, Vector2 tr, Vector2 uv, Color32 color)
+        {
+            var poses = Poses.SetUp(4);
+            poses[0] = bl;
+            poses[1] = br;
+            poses[2] = tl;
+            poses[3] = tr;
+
+            UVs.SetUp(uv, 4);
+            Colors.SetUp(color, 4);
+            Indices.SetUp(QuadIndexCache.Single);
+        }
+
         public void SetUp_Quad_FullUV(Vector2 pos1, Vector2 pos2, Color32 color) => SetUp_Quad(pos1, pos2, new Vector2(0, 0), new Vector2(1, 1), color);
         public void SetUp_Quad_FullUV(Rect rect, Color32 color) => SetUp_Quad_FullUV(rect.min, rect.max, color);
 
