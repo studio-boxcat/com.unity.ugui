@@ -1,3 +1,5 @@
+using Sirenix.OdinInspector;
+
 namespace UnityEngine.UI
 {
     /// <summary>
@@ -21,6 +23,7 @@ namespace UnityEngine.UI
     public interface ILayoutElementH : ILayoutPriority
     {
         void CalculateLayoutInputHorizontal() { }
+        [ShowInInspector, DisplayAsString, FoldoutGroup(GraphicEditorConst.Advanced)]
         float preferredWidth { get; }
     }
 
@@ -37,6 +40,7 @@ namespace UnityEngine.UI
     public interface ILayoutElementV : ILayoutPriority
     {
         void CalculateLayoutInputVertical() { }
+        [ShowInInspector, DisplayAsString, FoldoutGroup(GraphicEditorConst.Advanced)]
         float preferredHeight { get; }
     }
 
@@ -44,9 +48,7 @@ namespace UnityEngine.UI
     /// Composite interface for components that provide both horizontal and vertical layout input.
     /// Backward-compatible — existing implementors need no changes beyond updating explicit interface references.
     /// </summary>
-    public interface ILayoutElement : ILayoutElementH, ILayoutElementV
-    {
-    }
+    public interface ILayoutElement : ILayoutElementH, ILayoutElementV { }
 
     /// <summary>
     /// Base interface to be implemented by components that control the layout of RectTransforms.
@@ -81,9 +83,7 @@ namespace UnityEngine.UI
     /// <remarks>
     /// ILayoutGroup derives from ILayoutController and requires the same members to be implemented.
     /// </remarks>
-    public interface ILayoutGroup : ILayoutController
-    {
-    }
+    public interface ILayoutGroup : ILayoutController { }
 
     /// <summary>
     /// ILayoutSelfController is an ILayoutController that should drive its own RectTransform.
@@ -161,7 +161,5 @@ namespace UnityEngine.UI
     /// ]]>
     ///</code>
     /// </example>
-    public interface ILayoutSelfController : ILayoutController
-    {
-    }
+    public interface ILayoutSelfController : ILayoutController { }
 }

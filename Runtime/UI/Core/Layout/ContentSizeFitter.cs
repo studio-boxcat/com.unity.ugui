@@ -17,21 +17,14 @@ namespace UnityEngine.UI
     {
         [SerializeField, OnValueChanged(nameof(SetDirty))]
         private bool m_HorizontalFit = true;
-        public bool HorizontalFit => m_HorizontalFit;
         [SerializeField, OnValueChanged(nameof(SetDirty))]
         private bool m_VerticalFit;
-        public bool VerticalFit => m_VerticalFit;
-
-        [System.NonSerialized]
-        private RectTransform? m_Rect;
-        private RectTransform rectTransform => m_Rect ??= (RectTransform)transform;
 
         private bool _performingSetLayout;
 
         private void OnEnable() => SetDirty();
         private void OnDisable() => SetDirty();
-
-        private void SetDirty() => LayoutRebuilder.SetDirty(rectTransform);
+        private void SetDirty() => LayoutRebuilder.SetDirty(this);
 
         private void OnRectTransformDimensionsChange()
         {
@@ -47,14 +40,13 @@ namespace UnityEngine.UI
             var fitting = axis.Select(m_HorizontalFit, m_VerticalFit);
             if (fitting is false) return;
 
-            _performingSetLayout = true;
-
-            var t = rectTransform;
+            var t = this.GetRectTransform();
+            if (LayoutUtility.CalcPreferredSize(t, axis).UnwrapOrElse(out var size))
+                return;
 
             // Set size to preferred size
-            var size = LayoutUtility.CalcPreferredSize(t, axis);
+            _performingSetLayout = true;
             t.SetSizeWithCurrentAnchors((RectTransform.Axis)axis, size);
-
             _performingSetLayout = false;
         }
 

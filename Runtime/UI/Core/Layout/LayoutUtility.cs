@@ -21,21 +21,22 @@ namespace UnityEngine.UI
 
         public static bool Select(this Axis axis, bool x, bool y) => axis.IsX() ? x : y;
 
-        public static float CalcPreferredSize(RectTransform rect, Axis axis) => axis.IsX() ? CalcPreferredWidth(rect) : CalcPreferredHeight(rect);
-
-        public static float CalcPreferredWidth(RectTransform rect)
-            => ResolveLayoutElement<ILayoutElementH>(rect)?.preferredWidth ?? 0;
-
-        public static float CalcPreferredHeight(RectTransform rect)
-            => ResolveLayoutElement<ILayoutElementV>(rect)?.preferredHeight ?? 0;
+        public static float? CalcPreferredSize(Component comp, Axis axis) =>
+            axis.IsX() ? CalcPreferredWidth(comp) : CalcPreferredHeight(comp);
+        public static float? CalcPreferredWidth(Component comp) =>
+            ResolveLayoutElement<ILayoutElementH>(comp)?.preferredWidth;
+        public static float CalcPreferredWidthOrRect(Component comp) =>
+            CalcPreferredWidth(comp) ?? comp.GetRectTransform().rect.width;
+        public static float? CalcPreferredHeight(Component comp) =>
+            ResolveLayoutElement<ILayoutElementV>(comp)?.preferredHeight;
 
         /// <summary>
         /// Resolves the highest-priority enabled layout element from a RectTransform.
         /// Returns null if no enabled element is found.
         /// </summary>
-        public static T? ResolveLayoutElement<T>(RectTransform rect) where T : class, ILayoutPriority
+        public static T? ResolveLayoutElement<T>(Component comp) where T : class, ILayoutPriority
         {
-            using var _ = CompBuf.GetComponents(rect, typeof(T), out var components);
+            using var _ = CompBuf.GetComponents(comp, typeof(T), out var components);
             var count = components.Count;
             if (count is 0) return null;
             var first = (T)(object)components[0];
