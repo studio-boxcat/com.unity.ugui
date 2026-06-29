@@ -6,22 +6,22 @@ namespace UnityEngine.UI
 {
     public static class GraphicManipulator
     {
-        public static readonly List<Graphic> Instance = new(16);
+        private static readonly List<Graphic> _shared = new(16);
 
         public static List<Graphic> GetGraphicsInChildrenShared(this GameObject target, bool includeInactive = false)
         {
             // any existing values in the list are overwritten.
             // https://docs.unity3d.com/ScriptReference/Component.GetComponentsInChildren.html
-            target.GetComponentsInChildren(includeInactive, Instance);
-            return Instance;
+            target.GetComponentsInChildren(includeInactive, _shared);
+            return _shared;
         }
 
         public static List<Graphic> GetGraphicsInChildrenShared(this Component target, bool includeInactive = false)
         {
             // any existing values in the list are overwritten.
             // https://docs.unity3d.com/ScriptReference/Component.GetComponentsInChildren.html
-            target.GetComponentsInChildren(includeInactive, Instance);
-            return Instance;
+            target.GetComponentsInChildren(includeInactive, _shared);
+            return _shared;
         }
 
         public static void SetGraphicPropertyRecursive(this GameObject target, GraphicMaterialKind material, bool includeInactive = false)

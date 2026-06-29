@@ -58,18 +58,10 @@ namespace UnityEngine.UI
             return true;
         }
 
-        public static bool SetVector2(ref Vector2 currentValue, Vector2 newValue)
-        {
-            if (currentValue.Equals(newValue))
-                return false;
-
-            currentValue = newValue;
-            return true;
-        }
-
         public static bool SetColor(ref Color currentValue, Color newValue)
         {
-            if (currentValue.r == newValue.r && currentValue.g == newValue.g && currentValue.b == newValue.b && currentValue.a == newValue.a)
+            // exact comparison
+            if (currentValue.Equals(newValue))
                 return false;
 
             currentValue = newValue;

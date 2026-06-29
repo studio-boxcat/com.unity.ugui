@@ -357,14 +357,12 @@ namespace UnityEngine.UI
             {
                 var localCanvas = canvas;
                 if (!localCanvas)
+                {
+                    L.W("[Text] Canvas is null, returning default scale factor of 1.", this);
                     return 1;
-                // For dynamic fonts, ensure we use one pixel per pixel on the screen.
-                if (!font || font.dynamic)
-                    return localCanvas.scaleFactor;
-                // For non-dynamic fonts, calculate pixels per unit based on specified font size relative to font object's own font size.
-                if (m_FontData.fontSize <= 0 || font.fontSize <= 0)
-                    return 1;
-                return font.fontSize / (float) m_FontData.fontSize;
+                }
+
+                return localCanvas.scaleFactor;
             }
         }
 
@@ -425,7 +423,6 @@ namespace UnityEngine.UI
             settings.textAnchor = m_FontData.alignment;
             settings.alignByGeometry = m_FontData.alignByGeometry;
             settings.scaleFactor = pixelsPerUnit;
-            settings.color = color;
             settings.font = font;
             settings.pivot = rectTransform.pivot;
             settings.richText = m_FontData.richText;
@@ -439,7 +436,7 @@ namespace UnityEngine.UI
             return settings;
         }
 
-        protected override void OnPopulateMesh(MeshBuilder toFill)
+        protected override void OnPopulateMesh(Color color, MeshBuilder toFill)
         {
             if (!font || string.IsNullOrEmpty(text))
                 return;
@@ -450,13 +447,14 @@ namespace UnityEngine.UI
             m_DisableFontTextureRebuiltCallback = true;
             var extents = rectTransform.rect.size;
             var settings = GetGenerationSettings(extents);
+            settings.color = color;
             cachedTextGenerator.PopulateWithErrors(text, settings, gameObject);
             m_DisableFontTextureRebuiltCallback = false;
 
             TextMeshUtils.Translate(cachedTextGenerator, pixelsPerUnit, 0, toFill);
         }
 
-        public void ForcePopulateMesh(MeshBuilder toFill) => OnPopulateMesh(toFill);
+        public void ForcePopulateMesh(MeshBuilder toFill) => OnPopulateMesh(color, toFill);
 
         public float preferredWidth
         {
@@ -471,7 +469,7 @@ namespace UnityEngine.UI
         {
             get
             {
-                var settings = GetGenerationSettings(new Vector2(GetPixelAdjustedRect().size.x, 0.0f));
+                var settings = GetGenerationSettings(new Vector2(rectTransform.rect.size.x, 0.0f));
                 return cachedTextGeneratorForLayout.GetPreferredHeight(m_Text, settings) / pixelsPerUnit;
             }
         }
@@ -503,6 +501,8 @@ namespace UnityEngine.UI
 
         void ISelfValidator.Validate(SelfValidationResult result)
         {
+            if (font.dynamic is false)
+                result.AddError($"Non-dynamic font '{font.name}' used.");
             // geometry + no vertical overflow -> potential text clipping, when sizeDelta set to preferredHeight by ILayoutController ContentSizeFitter.
             if (verticalOverflow is false && alignByGeometry)
                 result.AddError("Align By Geometry is not compatible with Vertical Overflow set to Truncate. This may cause text clipping.");

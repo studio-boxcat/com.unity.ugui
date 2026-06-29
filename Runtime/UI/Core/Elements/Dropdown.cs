@@ -412,7 +412,7 @@ namespace UnityEngine.UI
             #endif
 
             if (m_CaptionImage)
-                m_CaptionImage.enabled = (m_CaptionImage.sprite != null);
+                m_CaptionImage.enabled = (m_CaptionImage.Sprite != null);
 
             if (m_Template)
                 m_Template.gameObject.SetActive(false);
@@ -469,10 +469,10 @@ namespace UnityEngine.UI
             if (m_CaptionImage)
             {
                 if (data != null)
-                    m_CaptionImage.sprite = data.image;
+                    m_CaptionImage.Sprite = data.image;
                 else
-                    m_CaptionImage.sprite = null;
-                m_CaptionImage.enabled = (m_CaptionImage.sprite != null);
+                    m_CaptionImage.Sprite = null;
+                m_CaptionImage.enabled = (m_CaptionImage.Sprite != null);
             }
         }
 
@@ -958,8 +958,8 @@ namespace UnityEngine.UI
                 item.text.text = data.text;
             if (item.image)
             {
-                item.image.sprite = data.image;
-                item.image.enabled = (item.image.sprite != null);
+                item.image.Sprite = data.image;
+                item.image.enabled = (item.image.Sprite != null);
             }
 
             items.Add(item);

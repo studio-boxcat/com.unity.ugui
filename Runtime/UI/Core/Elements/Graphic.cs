@@ -42,7 +42,8 @@ namespace UnityEngine.UI
             get => m_Color;
             set
             {
-                if (SetPropertyUtility.SetColor(ref m_Color, value)) SetVerticesDirty();
+                if (SetPropertyUtility.SetColor(ref m_Color, value))
+                    SetVerticesDirty();
             }
         }
 
@@ -416,7 +417,9 @@ namespace UnityEngine.UI
             try // XXX: never shouldn't be happening, but just in case.
 #endif
             {
-                OnPopulateMesh(mb);
+                var color = m_Color;
+                this.OverlayColorToRender(ref color);
+                OnPopulateMesh(color, mb);
             }
 #if UNITY_EDITOR
             catch (Exception e)
@@ -453,7 +456,7 @@ namespace UnityEngine.UI
         /// <remarks>
         /// Used by Text, UI.Image, and RawImage for example to generate vertices specific to their use case.
         /// </remarks>
-        protected virtual void OnPopulateMesh(MeshBuilder mb)
+        protected virtual void OnPopulateMesh(Color color, MeshBuilder mb)
         {
 #if UNITY_EDITOR
             L.E("[Graphic] OnPopulateMesh not implemented: " + GetType().Name);
@@ -466,15 +469,6 @@ namespace UnityEngine.UI
         {
             SetAllDirty();
         }
-
-        /// <summary>
-        /// Returns a pixel perfect Rect closest to the Graphic RectTransform.
-        /// </summary>
-        /// <remarks>
-        /// Note: This is only accurate if the Graphic root Canvas is in Screen Space.
-        /// </remarks>
-        /// <returns>A Pixel perfect Rect.</returns>
-        protected Rect GetPixelAdjustedRect() => rectTransform.rect;
 
 #if UNITY_EDITOR
         [BoxGroup("Advanced/Top", showLabel: false, order: GraphicPropOrder.Advanced_Info)]

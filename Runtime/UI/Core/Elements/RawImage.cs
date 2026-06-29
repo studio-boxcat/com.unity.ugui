@@ -34,24 +34,12 @@ namespace UnityEngine.UI
             }
         }
 
-        public Rect uvRect
-        {
-            get => m_UVRect;
-            set
-            {
-                if (m_UVRect == value)
-                    return;
-                m_UVRect = value;
-                SetVerticesDirty();
-            }
-        }
-
-        protected override void OnPopulateMesh(MeshBuilder mb)
+        protected override void OnPopulateMesh(Color color, MeshBuilder mb)
         {
             var tex = mainTexture;
             if (tex is null) return;
 
-            var r = GetPixelAdjustedRect();
+            var r = rectTransform.rect;
             var pos1 = r.min;
             var pos2 = r.max;
             var uvScale = new Vector2(tex.width * tex.texelSize.x, tex.height * tex.texelSize.y);
