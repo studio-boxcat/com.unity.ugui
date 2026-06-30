@@ -21,7 +21,7 @@ namespace UnityEngine.UI
         public static void SetColorOrPreview(this Graphic graphic, Color color)
         {
 #if UNITY_EDITOR
-            if (Override.Set(graphic, _colorPreviewKey, color) is false)
+            if (Override.SetOrElse(graphic, _colorPreviewKey, color))
 #endif
                 graphic.color = color;
         }
@@ -38,9 +38,16 @@ namespace UnityEngine.UI
         public static void SetSpriteOrPreview(this UIImageBase icon, Sprite sprite)
         {
 #if UNITY_EDITOR
-            if (Override.Set(icon, _spritePreviewKey, sprite) is false)
+            if (Override.SetOrElse(icon, _spritePreviewKey, sprite))
 #endif
                 icon.Sprite = sprite;
+        }
+
+        public static void PreviewSprite(this UIImageBase icon, Sprite sprite)
+        {
+#if UNITY_EDITOR
+            _ = Override.SetOrElse(icon, _spritePreviewKey, sprite);
+#endif
         }
 
         [Conditional("UNITY_EDITOR")]

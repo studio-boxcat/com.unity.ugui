@@ -204,13 +204,7 @@ namespace UnityEngine.UI
             UpdateVisuals();
         }
 
-        enum Axis
-        {
-            Horizontal = 0,
-            Vertical = 1
-        }
-
-        Axis axis { get { return (m_Direction == Direction.LeftToRight || m_Direction == Direction.RightToLeft) ? Axis.Horizontal : Axis.Vertical; } }
+        Axis axis { get { return (m_Direction == Direction.LeftToRight || m_Direction == Direction.RightToLeft) ? Axis.X : Axis.Y; } }
         bool reverseValue { get { return m_Direction == Direction.RightToLeft || m_Direction == Direction.TopToBottom; } }
 
         // Force-update the scroll bar. Useful if you've changed the properties and want it to update visually.

@@ -11,17 +11,8 @@ namespace Coffee.UIEffects
     [AddComponentMenu("UI/UIEffects/UIGradient", 101)]
     public class UIGradient : BaseMeshEffect
     {
-        /// <summary>
-        /// Gradient direction.
-        /// </summary>
-        public enum Direction
-        {
-            Horizontal,
-            Vertical,
-        }
-
         [Tooltip("Gradient Direction.")] [SerializeField]
-        Direction m_Direction;
+        Axis m_Direction;
 
         [Tooltip("Color1: Top or Left.")] [SerializeField]
         Color m_Color1 = Color.white;
@@ -45,7 +36,7 @@ namespace Coffee.UIEffects
             var rect = graphic.rectTransform.rect;
 
             // Calculate min max range.
-            var (min, max) = m_Direction == Direction.Horizontal
+            var (min, max) = m_Direction == Axis.X
                 ? (rect.xMin, rect.xMax)
                 : (rect.yMin, rect.yMax);
 
@@ -56,7 +47,7 @@ namespace Coffee.UIEffects
             for (var i = 0; i < vertCount; i++)
             {
                 // Normalize vertex position.
-                var pos = m_Direction == Direction.Horizontal ? poses[i].x : poses[i].y;
+                var pos = m_Direction == Axis.X ? poses[i].x : poses[i].y;
                 var normalizedPos = Mathf.InverseLerp(min, max, pos) + m_Offset1;
 
                 // Interpolate vertex color.

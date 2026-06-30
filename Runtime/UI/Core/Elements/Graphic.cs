@@ -536,7 +536,7 @@ namespace UnityEngine.UI
             raycastInset = Vector4.zero;
         }
 
-        void ISelfValidator.Validate(SelfValidationResult result)
+        public virtual void Validate(SelfValidationResult result)
         {
             if (GetComponents<IMaterialModifier>().Length > 1)
                 result.AddError("Multiple IMaterialModifier components on the same GameObject are not supported.");

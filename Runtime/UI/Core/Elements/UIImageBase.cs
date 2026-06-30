@@ -1,5 +1,8 @@
 #nullable enable
+using System;
+using System.Diagnostics;
 using Sirenix.OdinInspector;
+using Sirenix.Utilities;
 using UnityEngine.Serialization;
 
 namespace UnityEngine.UI
@@ -7,6 +10,14 @@ namespace UnityEngine.UI
     public interface IUIImage
     {
         public Sprite Sprite { get; set; }
+    }
+
+    [Conditional("UNITY_EDITOR")]
+    [AttributeUsage(AttributeTargets.Class)]
+    public class UIImageSpriteConstraintAttribute : Attribute
+    {
+        public bool Quad;
+        public Side FullBorders;
     }
 
     public abstract class UIImageBase : Graphic, IUIImage
@@ -81,6 +92,29 @@ namespace UnityEngine.UI
         protected virtual void Editor_OnSpriteChanged()
         {
             SetVisualDirty();
+        }
+
+        public override void Validate(SelfValidationResult result)
+        {
+            base.Validate(result);
+
+            // Enforce the concrete component's declared sprite constraints (e.g. UIRoundedRect needs a
+            // full-border quarter quad). Null sprite is already covered by [Required].
+            var constraint = GetType().GetCustomAttribute<UIImageSpriteConstraintAttribute>();
+            if (constraint is null) return;
+            var sprite = _sprite;
+            if (!sprite) return;
+
+            if (constraint.Quad && !sprite.IsQuad())
+                result.AddError($"Sprite '{sprite.name}' must be a quad (4-vertex axis-aligned rect).");
+
+            var border = sprite.border;
+            var size = sprite.rect.size;
+            constraint.FullBorders.ForEach(side =>
+            {
+                if (!border.Get(side).Equals(side.IsLR() ? size.x : size.y))
+                    result.AddError($"Sprite '{sprite.name}' {side} border must span the full width or height.");
+            });
         }
 #endif
     }
