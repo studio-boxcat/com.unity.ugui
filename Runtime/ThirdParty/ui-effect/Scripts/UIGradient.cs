@@ -33,64 +33,8 @@ namespace Coffee.UIEffects
         float m_Offset1;
 
         [Tooltip("Color space to correct color.")] [SerializeField]
-        [HideIf("@m_ColorSpace == ColorSpace.Uninitialized")] // Will be removed.
-        ColorSpace m_ColorSpace = ColorSpace.Uninitialized;
-
-        /// <summary>
-        /// Gradient Direction.
-        /// </summary>
-        public Direction direction
-        {
-            get => m_Direction;
-            set
-            {
-                if (m_Direction == value) return;
-                m_Direction = value;
-                SetVerticesDirty();
-            }
-        }
-
-        /// <summary>
-        /// Color1: Top or Left.
-        /// </summary>
-        public Color color1
-        {
-            get => m_Color1;
-            set
-            {
-                if (m_Color1 == value) return;
-                m_Color1 = value;
-                SetVerticesDirty();
-            }
-        }
-
-        /// <summary>
-        /// Color2: Bottom or Right.
-        /// </summary>
-        public Color color2
-        {
-            get => m_Color2;
-            set
-            {
-                if (m_Color2 == value) return;
-                m_Color2 = value;
-                SetVerticesDirty();
-            }
-        }
-
-        /// <summary>
-        /// Gradient offset for Horizontal, Vertical or Angle.
-        /// </summary>
-        public float offset
-        {
-            get { return m_Offset1; }
-            set
-            {
-                if (Mathf.Approximately(m_Offset1, value)) return;
-                m_Offset1 = value;
-                SetVerticesDirty();
-            }
-        }
+        [HideIf("@m_ColorSpace == ColorSpace.Gamma")] // Will be removed.
+        ColorSpace m_ColorSpace = ColorSpace.Gamma;
 
         /// <summary>
         /// Call used to modify mesh.
