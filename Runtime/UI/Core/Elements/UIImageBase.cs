@@ -26,7 +26,7 @@ namespace UnityEngine.UI
         [FormerlySerializedAs("m_Sprite")] // for legacy Image component
         [FormerlySerializedAs("_white")] // for legacy UIPolygon compat.
         [OnValueChanged("Editor_OnSpriteChanged", InvokeOnUndoRedo = false)]
-        protected Sprite? _sprite;
+        private Sprite? _sprite;
 
         public Sprite? Sprite
         {
