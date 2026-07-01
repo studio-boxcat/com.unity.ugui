@@ -123,40 +123,12 @@ namespace UnityEngine.UI
         /// <summary>
         /// Whether this Text will support rich text.
         /// </summary>
-        public bool supportRichText
-        {
-            get
-            {
-                return m_FontData.richText;
-            }
-            set
-            {
-                if (m_FontData.richText == value)
-                    return;
-                m_FontData.richText = value;
-                SetVerticesDirty();
-                SetLayoutDirty();
-            }
-        }
+        public bool supportRichText => m_FontData.richText;
 
         /// <summary>
         /// Should the text be allowed to auto resized.
         /// </summary>
-        public bool resizeTextForBestFit
-        {
-            get
-            {
-                return m_FontData.bestFit;
-            }
-            set
-            {
-                if (m_FontData.bestFit == value)
-                    return;
-                m_FontData.bestFit = value;
-                SetVerticesDirty();
-                SetLayoutDirty();
-            }
-        }
+        public bool resizeTextForBestFit => m_FontData.bestFit;
 
         /// <summary>
         /// The minimum size the text is allowed to be.
