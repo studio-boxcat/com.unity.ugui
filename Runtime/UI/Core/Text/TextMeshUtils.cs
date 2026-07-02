@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine.Assertions;
 
@@ -6,14 +5,10 @@ namespace UnityEngine.UI
 {
     public static class TextMeshUtils
     {
-        static readonly List<UIVertex> _vertBuf = new();
+        private static readonly List<UIVertex> _vertBuf = new();
 
-        public static void Translate(TextGenerator textGen, float pixelsPerUnit, float yOffset, MeshBuilder toFill)
+        public static unsafe void Translate(TextGenerator textGen, float pixelsPerUnit, float yOffset, MeshBuilder toFill)
         {
-            // Vertex order:
-            // 0 1
-            // 3 2
-
             _vertBuf.Clear();
             textGen.GetVertices(_vertBuf);
 
@@ -28,59 +23,39 @@ namespace UnityEngine.UI
             Assert.IsTrue(vertCount % 4 == 0);
             var quadCount = vertCount / 4;
 
-            var poses = toFill.Poses.SetUp(vertCount);
-            var uvs = toFill.UVs.SetUp(vertCount);
-            var colors = toFill.Colors.SetUp(vertCount);
+            var pf = toFill.Poses.SetUpUnsafe(vertCount).Ptr;
+            var uf = toFill.UVs.SetUpUnsafe(vertCount).Ptr;
+            var cp = toFill.Colors.SetUpUnsafe(vertCount);
 
-            // Apply the offset to the vertices and add them to the mesh.
+            // The generator emits quads in perimeter order (0=TL 1=TR 2=BR 3=BL); write them in the
+            // channel convention (0=BL 1=BR 2=TL 3=TR) so the shared QuadIndexCache applies.
             var unitsPerPixel = 1 / pixelsPerUnit;
-            for (var i = 0; i < vertCount; ++i)
+            for (var q = 0; q < quadCount; ++q)
             {
-                var v = _vertBuf[i];
-                var pos = v.position;
-                pos.y += yOffset;
-                pos.x *= unitsPerPixel;
-                pos.y *= unitsPerPixel;
-                poses[i] = pos;
-                uvs[i] = v.uv0;
-                colors[i] = v.color;
+                var v = q * 4;
+                Write(v + 3, ref pf, ref uf, ref cp, unitsPerPixel, yOffset); // BL
+                Write(v + 2, ref pf, ref uf, ref cp, unitsPerPixel, yOffset); // BR
+                Write(v + 0, ref pf, ref uf, ref cp, unitsPerPixel, yOffset); // TL
+                Write(v + 1, ref pf, ref uf, ref cp, unitsPerPixel, yOffset); // TR
             }
 
-            // Add indices.
-            toFill.Indices.SetUp(GetIndex(quadCount), quadCount * 6);
+            toFill.Indices.SetUp_Quad(quadCount);
         }
 
-        static ushort[] _indexCache = Array.Empty<ushort>();
-
-        static ushort[] GetIndex(int quadCount)
+        // One vert from the generator buffer to the packed channels; advances the cursors. z stays 0.
+        private static unsafe void Write(int src, ref float* pf, ref float* uf, ref Color32* cp,
+            float unitsPerPixel, float yOffset)
         {
-            // Minimum 80 quads.
-            if (quadCount < 80)
-                quadCount = 80;
-
-            var oldIndexCount = _indexCache.Length;
-            var newIndexCount = quadCount * 6;
-
-            if (oldIndexCount >= newIndexCount)
-                return _indexCache;
-
-            Array.Resize(ref _indexCache, newIndexCount);
-
-            Assert.IsTrue(oldIndexCount % 6 == 0);
-            var oldQuadCount = oldIndexCount / 6;
-            for (var q = oldQuadCount; q < quadCount; q++)
-            {
-                var si = q * 6; // start index.
-                var sv = q * 4; // start vertex.
-                _indexCache[si] = (ushort) sv;
-                _indexCache[si + 1] = (ushort) (sv + 1);
-                _indexCache[si + 2] = (ushort) (sv + 2);
-                _indexCache[si + 3] = (ushort) (sv + 2);
-                _indexCache[si + 4] = (ushort) (sv + 3);
-                _indexCache[si + 5] = (ushort) sv;
-            }
-
-            return _indexCache;
+            var vert = _vertBuf[src];
+            var pos = vert.position;
+            pf[0] = pos.x * unitsPerPixel;
+            pf[1] = (pos.y + yOffset) * unitsPerPixel;
+            pf += 3;
+            var uv = vert.uv0;
+            uf[0] = uv.x;
+            uf[1] = uv.y;
+            uf += 2;
+            *cp++ = vert.color;
         }
     }
 }

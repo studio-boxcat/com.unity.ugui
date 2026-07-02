@@ -1,25 +1,30 @@
 #if UNITY_EDITOR
 #nullable enable
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using UnityEditor;
 
 namespace UnityEngine.UI
 {
-    // Editor-only: seeds a freshly added UISolid/UIPolygon with the white sprite of its own
-    // content folder (e.g. OG_0603_White) instead of the global CM_White. The per-folder white
-    // is the 1x1 atlas cell every solid/polygon in that prefab should source from — see
-    // OrgelContent.ValidateSpriteAtlas.
+    // Editor-only: resolves the *_White 1x1 atlas cell a solid/polygon should source from — the
+    // per-folder white (e.g. OG_0603_White), else the global CM_White. See OrgelContent.ValidateSpriteAtlas.
     public static class WhiteSpriteFinder
     {
         // Anchor atlas texture (instanceID) -> resolved folder white, or null when the folder has
         // no *_White (negative marker, so the scan never repeats). Absent key = not yet scanned.
         private static readonly Dictionary<int, Sprite?> _cache = new();
 
+        public static bool IsWhiteSprite(Sprite sprite)
+        {
+            return sprite.name.EndsWith("_White")
+                   && sprite.SizeInPx().MaxComp() <= 4
+                   && sprite.IsQuad();
+        }
+
         // Climb from `go` up the hierarchy; at each level scan descendant graphics for one whose
         // sprite folder holds a *_White sprite (nearest wins). Falls back to the global CM_White —
         // loaded by GUID since ugui can't reference CommonAssets in the higher Boxcat.Core layer.
-        public static Sprite? Find(GameObject go)
+        public static Sprite ResolveBestMatch(GameObject go)
         {
             for (var t = go.transform; t; t = t.parent)
             {
@@ -32,14 +37,12 @@ namespace UnityEngine.UI
                 }
             }
 
-            // CM_White.asset — keep this GUID in sync with CommonAssets.WhiteSprite (CommonAssets.cs).
-            return (Sprite)AssetDatabase.LoadMainAssetAtGUID(
-                new GUID("ab3570c4e0a070a122f2a1424533e216"));
+            return CommonAssets.WhiteSprite;
         }
 
-        private static bool TryResolveFolderWhite(Graphic g, out Sprite white)
+        private static bool TryResolveFolderWhite(Graphic g, [NotNullWhen(true)] out Sprite? white)
         {
-            white = null!;
+            white = null;
 
             if (g is not UIImageBase img) return false;
             var anchor = img.Sprite;

@@ -299,11 +299,6 @@ namespace UnityEngine.UI
         // Doesn't include dot and @ on purpose! See usage for details.
         const string kEmailSpecialCharacters = "!#$%&'*+-/=?^_`{|}~";
 
-        protected InputField()
-        {
-            EnforceTextHOverflow();
-        }
-
         protected TextGenerator cachedInputTextGenerator
         {
             get
@@ -578,7 +573,6 @@ namespace UnityEngine.UI
                 if (SetPropertyUtility.SetEnum(ref m_LineType, value))
                 {
                     SetToCustomIfContentTypeIsNot(ContentType.Standard, ContentType.Autocorrected);
-                    EnforceTextHOverflow();
                 }
             }
         }
@@ -767,7 +761,6 @@ namespace UnityEngine.UI
         private void OnValidate()
         {
             EnforceContentType();
-            EnforceTextHOverflow();
 
             m_CharacterLimit = Math.Max(0, m_CharacterLimit);
 
@@ -1257,7 +1250,7 @@ namespace UnityEngine.UI
         /// <returns>Character index with in value.</returns>
         protected int GetCharacterIndexFromPosition(Vector2 pos)
         {
-            TextGenerator gen = m_TextComponent.cachedTextGenerator;
+            TextGenerator gen = m_TextComponent.TextGen;
 
             if (gen.lineCount == 0)
                 return 0;
@@ -2427,7 +2420,7 @@ namespace UnityEngine.UI
 
             float width = m_CaretWidth;
             int adjustedPos = Mathf.Max(0, caretPositionInternal - m_DrawStart);
-            TextGenerator gen = m_TextComponent.cachedTextGenerator;
+            TextGenerator gen = m_TextComponent.TextGen;
 
             if (gen == null)
                 return;
@@ -2489,7 +2482,7 @@ namespace UnityEngine.UI
                 (startChar, endChar) = (endChar, startChar);
 
             endChar -= 1;
-            TextGenerator gen = m_TextComponent.cachedTextGenerator;
+            TextGenerator gen = m_TextComponent.TextGen;
 
             if (gen.lineCount <= 0)
                 return;
@@ -2849,14 +2842,6 @@ namespace UnityEngine.UI
                     break;
                 }
             }
-
-            EnforceTextHOverflow();
-        }
-
-        void EnforceTextHOverflow()
-        {
-            if (m_TextComponent)
-                m_TextComponent.horizontalOverflow = !multiLine;
         }
 
         void SetToCustomIfContentTypeIsNot(params ContentType[] allowedContentTypes)
@@ -2899,7 +2884,7 @@ namespace UnityEngine.UI
                 const float minWidth = 5;
                 if (textComponent == null) return minWidth;
                 var settings = textComponent.GetGenerationSettings(Vector2.zero);
-                var w = textComponent.cachedTextGeneratorForLayout.GetPreferredWidth(m_Text, settings) / textComponent.pixelsPerUnit;
+                var w = textComponent.TextGenForLayout.GetPreferredWidth(m_Text, settings) / textComponent.pixelsPerUnit;
                 return Mathf.Max(w, minWidth);
             }
         }
@@ -2914,7 +2899,7 @@ namespace UnityEngine.UI
                 if (textComponent == null)
                     return 0;
                 var settings = textComponent.GetGenerationSettings(new Vector2(textComponent.rectTransform.rect.size.x, 0.0f));
-                return textComponent.cachedTextGeneratorForLayout.GetPreferredHeight(m_Text, settings) / textComponent.pixelsPerUnit;
+                return textComponent.TextGenForLayout.GetPreferredHeight(m_Text, settings) / textComponent.pixelsPerUnit;
             }
         }
 

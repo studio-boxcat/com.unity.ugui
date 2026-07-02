@@ -110,6 +110,14 @@ namespace UnityEngine.UI
             // ReSharper restore MustUseReturnValue
         }
 
+        // Fills an empty mesh (colours only) when `isEmpty`; returns true so a caller can bail on a zero-area rect.
+        public bool TrySetUpEmpty(bool isEmpty)
+        {
+            if (!isEmpty) return false;
+            SetUp_EmptyExceptColors();
+            return true;
+        }
+
         public void SetUp_EmptyExceptColors()
         {
             // ReSharper disable MustUseReturnValue

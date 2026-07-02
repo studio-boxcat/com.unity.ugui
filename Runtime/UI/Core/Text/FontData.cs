@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using Sirenix.OdinInspector;
 using UnityEngine.Serialization;
@@ -10,164 +11,81 @@ namespace UnityEngine.UI
         : ISelfValidator
 #endif
     {
-        [SerializeField]
-        [FormerlySerializedAs("font")]
-        private Font m_Font;
+        [Required]
+        [FormerlySerializedAs("font"), FormerlySerializedAs("m_Font")]
+        public Font Font = null!; // Required — always assigned.
 
-        [SerializeField, HideIf("@m_BestFit")]
-        [FormerlySerializedAs("fontSize")]
-        private int m_FontSize;
+        [HideIf("@BestFit")]
+        [FormerlySerializedAs("fontSize"), FormerlySerializedAs("m_FontSize")]
+        public int FontSize;
 
-        [SerializeField]
-        [FormerlySerializedAs("fontStyle")]
-        private FontStyle m_FontStyle;
+        [FormerlySerializedAs("fontStyle"), FormerlySerializedAs("m_FontStyle")]
+        public FontStyle FontStyle;
 
-        [SerializeField, HorizontalGroup("Toggles", order: 100), ToggleLeft]
-        private bool m_BestFit;
+        [HorizontalGroup("Toggles", order: 100), ToggleLeft]
+        [FormerlySerializedAs("m_BestFit")]
+        public bool BestFit;
 
-        [SerializeField, HorizontalGroup("BestFit", Width = 0.7f, DisableAutomaticLabelWidth = true), LabelText("Font Size")]
-        [ShowIf("@m_BestFit")]
-        private int m_MinSize;
+        [HorizontalGroup("BestFit", Width = 0.7f, DisableAutomaticLabelWidth = true), LabelText("Font Size")]
+        [ShowIf("@BestFit")]
+        [FormerlySerializedAs("m_MinSize")]
+        public int MinSize;
 
-        [SerializeField, HorizontalGroup("BestFit", Width = 0.3f), HideLabel]
-        [ShowIf("@m_BestFit")]
-        private int m_MaxSize;
+        [HorizontalGroup("BestFit", Width = 0.3f), HideLabel]
+        [ShowIf("@BestFit")]
+        [FormerlySerializedAs("m_MaxSize")]
+        public int MaxSize;
 
-        [SerializeField]
-        [FormerlySerializedAs("alignment")]
-        private TextAnchor m_Alignment;
+        [FormerlySerializedAs("alignment"), FormerlySerializedAs("m_Alignment")]
+        public TextAnchor Alignment;
 
-        [SerializeField, HorizontalGroup("Toggles"), ToggleLeft]
-        private bool m_AlignByGeometry;
+        [HorizontalGroup("Toggles"), ToggleLeft]
+        [FormerlySerializedAs("m_AlignByGeometry")]
+        public bool AlignByGeometry;
 
-        [SerializeField, HorizontalGroup("Toggles"), ToggleLeft]
-        [FormerlySerializedAs("richText")]
-        private bool m_RichText;
+        [HorizontalGroup("Toggles"), ToggleLeft]
+        [FormerlySerializedAs("richText"), FormerlySerializedAs("m_RichText")]
+        public bool RichText;
 
-        [SerializeField, HorizontalGroup("WrapMode", DisableAutomaticLabelWidth = true), LabelText("Overflow (H/V)")]
-        private bool m_HorizontalOverflow;
+        [HorizontalGroup("WrapMode", DisableAutomaticLabelWidth = true), LabelText("Overflow (H/V)")]
+        [FormerlySerializedAs("m_HorizontalOverflow")]
+        public bool HorizontalOverflow;
 
-        [SerializeField, HorizontalGroup("WrapMode", Width = 0.3f), HideLabel]
-        private bool m_VerticalOverflow;
+        [HorizontalGroup("WrapMode", Width = 0.3f), HideLabel]
+        [FormerlySerializedAs("m_VerticalOverflow")]
+        public bool VerticalOverflow;
 
-        [SerializeField, Range(0, 2)]
-        private float m_LineSpacing;
+        [Range(0, 2)]
+        [FormerlySerializedAs("m_LineSpacing")]
+        public float LineSpacing;
 
-        /// <summary>
-        /// The Font to use for this generated Text object.
-        /// </summary>
-        public Font font
+        // Populate the font-config-driven fields of the generation settings in place. Component/transform-driven
+        // fields (generationExtents, scaleFactor, pivot) are the caller's responsibility.
+        public void SetGenerationSettings(ref TextGenerationSettings settings)
         {
-            get { return m_Font; }
-            set { m_Font = value; }
-        }
+            settings.font = Font;
+            if (Font.dynamic)
+            {
+                settings.fontSize = FontSize;
+                settings.resizeTextMinSize = MinSize;
+                settings.resizeTextMaxSize = MaxSize;
+            }
 
-        /// <summary>
-        /// The Font size to use for this generated Text object.
-        /// </summary>
-        public int fontSize
-        {
-            get { return m_FontSize; }
-            set { m_FontSize = value; }
-        }
-
-        /// <summary>
-        /// The font style to use for this generated Text object.
-        /// </summary>
-        public FontStyle fontStyle
-        {
-            get { return m_FontStyle; }
-            set { m_FontStyle = value; }
-        }
-
-        /// <summary>
-        /// Is best fit used for this generated Text object.
-        /// </summary>
-        public bool bestFit
-        {
-            get { return m_BestFit; }
-            set { m_BestFit = value; }
-        }
-
-        /// <summary>
-        /// The min size for this generated Text object.
-        /// </summary>
-        public int minSize
-        {
-            get { return m_MinSize; }
-            set { m_MinSize = value; }
-        }
-
-        /// <summary>
-        /// The max size for this generated Text object.
-        /// </summary>
-        public int maxSize
-        {
-            get { return m_MaxSize; }
-            set { m_MaxSize = value; }
-        }
-
-        /// <summary>
-        /// How is the text aligned for this generated Text object.
-        /// </summary>
-        public TextAnchor alignment
-        {
-            get { return m_Alignment; }
-            set { m_Alignment = value; }
-        }
-
-        /// <summary>
-        /// Use the extents of glyph geometry to perform horizontal alignment rather than glyph metrics.
-        /// </summary>
-        /// <remarks>
-        /// This can result in better fitting left and right alignment, but may result in incorrect positioning when attempting to overlay multiple fonts (such as a specialized outline font) on top of each other.
-        /// </remarks>
-        public bool alignByGeometry
-        {
-            get { return m_AlignByGeometry; }
-            set { m_AlignByGeometry = value; }
-        }
-
-        /// <summary>
-        /// Should rich text be used for this generated Text object.
-        /// </summary>
-        public bool richText
-        {
-            get { return m_RichText; }
-            set { m_RichText = value; }
-        }
-
-        /// <summary>
-        /// The horizontal overflow policy for this generated Text object.
-        /// </summary>
-        public bool horizontalOverflow
-        {
-            get { return m_HorizontalOverflow; }
-            set { m_HorizontalOverflow = value; }
-        }
-
-        /// <summary>
-        /// The vertical overflow policy for this generated Text object.
-        /// </summary>
-        public bool verticalOverflow
-        {
-            get { return m_VerticalOverflow; }
-            set { m_VerticalOverflow = value; }
-        }
-
-        /// <summary>
-        /// The line spaceing for this generated Text object.
-        /// </summary>
-        public float lineSpacing
-        {
-            get { return m_LineSpacing; }
-            set { m_LineSpacing = value; }
+            settings.textAnchor = Alignment;
+            settings.alignByGeometry = AlignByGeometry;
+            settings.richText = RichText;
+            settings.lineSpacing = LineSpacing;
+            settings.fontStyle = FontStyle;
+            settings.resizeTextForBestFit = BestFit;
+            settings.updateBounds = false;
+            settings.horizontalOverflow = HorizontalOverflow ? HorizontalWrapMode.Overflow : HorizontalWrapMode.Wrap;
+            settings.verticalOverflow = VerticalOverflow ? VerticalWrapMode.Overflow : VerticalWrapMode.Truncate;
         }
 
 #if UNITY_EDITOR
         void ISelfValidator.Validate(SelfValidationResult result)
         {
-            if (m_MinSize != 0)
+            if (MinSize != 0)
                 result.AddError("Min Size is not supported anymore.");
         }
 #endif

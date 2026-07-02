@@ -1,60 +1,9 @@
 using System;
-using System.Diagnostics;
 
 namespace UnityEngine.UI
 {
     public static class UGUIExtensions
     {
-        static UGUIExtensions()
-        {
-            // Set(...) only stashes the overlay; the side-effect repaints the target so a preview shows immediately.
-            Override.RegisterSideEffect(_colorPreviewKey,
-                static (target, _) => ((Graphic)target).SetVisualDirty());
-            Override.RegisterSideEffect(_spritePreviewKey,
-                static (target, _) => ((Graphic)target).SetVisualDirty());
-        }
-
-        private const int _colorPreviewKey = 1060026621;
-
-        // Apply the color for runtime use, or — while editing — overlay it as an editor-only preview so a
-        // data-driven tint renders in-editor without baking into the prefab.
-        public static void SetColorOrPreview(this Graphic graphic, Color color)
-        {
-#if UNITY_EDITOR
-            if (Override.SetOrElse(graphic, _colorPreviewKey, color))
-#endif
-                graphic.color = color;
-        }
-
-        [Conditional("UNITY_EDITOR")]
-        internal static void OverlayColorToRender(this Graphic graphic, ref Color color) =>
-            Override.Overlay(graphic, _colorPreviewKey, ref color);
-
-
-        private const int _spritePreviewKey = 1294963985;
-
-        // Apply the sprite for runtime use, or — while editing — overlay it as an editor-only preview so a
-        // bundle-loaded sprite renders in-editor without baking into the prefab.
-        public static void SetSpriteOrPreview(this UIImageBase icon, Sprite sprite)
-        {
-#if UNITY_EDITOR
-            if (Override.SetOrElse(icon, _spritePreviewKey, sprite))
-#endif
-                icon.Sprite = sprite;
-        }
-
-        public static void PreviewSprite(this UIImageBase icon, Sprite sprite)
-        {
-#if UNITY_EDITOR
-            _ = Override.SetOrElse(icon, _spritePreviewKey, sprite);
-#endif
-        }
-
-        [Conditional("UNITY_EDITOR")]
-        internal static void OverlaySpriteToRender(this UIImageBase icon, ref Sprite? sprite) =>
-            Override.Overlay(icon, _spritePreviewKey, ref sprite);
-
-
         private static readonly Type[] _graphicTypes = { typeof(RectTransform), typeof(CanvasRenderer) };
 
         public static GameObject NewGraphicChildBase(this Transform t, string name = "")

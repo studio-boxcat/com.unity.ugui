@@ -123,6 +123,19 @@ namespace UnityEngine.UI
             return _buf!;
         }
 
+        // Resize to `copies` blocks of the current content, replicating it into each new block.
+        // (cf. SetUp_Repeat — the modify-phase, in-place variant.)
+        public T[] Resize_Repeat(int copies)
+        {
+            Assert.IsTrue(copies > 0);
+
+            var count = Count;
+            var data = Resize(count * copies);
+            for (var b = 1; b < copies; b++)
+                Array.Copy(data, 0, data, count * b, count);
+            return data;
+        }
+
         public void TrimAfter(int fromIndex)
         {
             Assert.IsNotNull(Data, "MeshChannel.SetUp() must be called before trimming.");
@@ -162,6 +175,23 @@ namespace UnityEngine.UI
             return count == 0 ? null : UnsafeUtility.AddressOf(ref data[0]);
         }
 
+        // Resize variant of SetUpUnsafeCore — existing content is kept (copy-on-write). Same GC contract.
+        [MustUseReturnValue]
+        protected unsafe void* ResizeUnsafeCore(int count)
+        {
+            var data = Resize(count);
+            return count == 0 ? null : UnsafeUtility.AddressOf(ref data[0]);
+        }
+
+        // Edit variant of SetUpUnsafeCore — in-place modify of the current content (copy-on-write).
+        // Same GC contract.
+        [MustUseReturnValue]
+        protected unsafe void* EditUnsafeCore()
+        {
+            _ = Edit(); // ensure the buffer is writable
+            return Count == 0 ? null : UnsafeUtility.AddressOf(ref _buf[0]);
+        }
+
         protected abstract void Internal_FillMesh(Mesh mesh);
     }
 
@@ -177,9 +207,15 @@ namespace UnityEngine.UI
                 data[i] = src[i];
         }
 
-        // Raw float* into the buffer (3 floats/vert) for by-axis writes. See SetUpUnsafeCore for the GC contract.
+        // Raw view into the buffer (3 floats/vert) for by-axis writes. See SetUpUnsafeCore for the GC contract.
         [MustUseReturnValue]
-        public unsafe float* SetUpUnsafe(int vertCount) => (float*)SetUpUnsafeCore(vertCount);
+        public unsafe UnsafeVecArray SetUpUnsafe(int vertCount) => new((float*)SetUpUnsafeCore(vertCount), 3, vertCount);
+
+        [MustUseReturnValue]
+        public unsafe UnsafeVecArray ResizeUnsafe(int vertCount) => new((float*)ResizeUnsafeCore(vertCount), 3, vertCount);
+
+        [MustUseReturnValue]
+        public unsafe UnsafeVecArray EditUnsafe() => new((float*)EditUnsafeCore(), 3, Count);
 
         public Rect CalculateBoundingRect()
         {
@@ -226,9 +262,12 @@ namespace UnityEngine.UI
             Array.Fill(data, uv, 0, count);
         }
 
-        // Raw float* into the buffer (2 floats/vert) for by-axis writes. See SetUpUnsafeCore for the GC contract.
+        // Raw view into the buffer (2 floats/vert) for by-axis writes. See SetUpUnsafeCore for the GC contract.
         [MustUseReturnValue]
-        public unsafe float* SetUpUnsafe(int vertCount) => (float*)SetUpUnsafeCore(vertCount);
+        public unsafe UnsafeVecArray SetUpUnsafe(int vertCount) => new((float*)SetUpUnsafeCore(vertCount), 2, vertCount);
+
+        [MustUseReturnValue]
+        public unsafe UnsafeVecArray EditUnsafe() => new((float*)EditUnsafeCore(), 2, Count);
 
         public void SetUp_Repeat(Vector2[] src, int repeat)
         {
@@ -252,6 +291,14 @@ namespace UnityEngine.UI
     public class MeshColorChannel : MeshChannel<Color32>
     {
         public MeshColorChannel(int capacity) : base(capacity) { }
+
+        // Raw Color32* into the buffer for cursor writes.
+        [MustUseReturnValue]
+        public unsafe Color32* SetUpUnsafe(int vertCount)
+        {
+            var data = SetUp(vertCount);
+            return vertCount == 0 ? null : (Color32*)UnsafeUtility.AddressOf(ref data[0]);
+        }
 
         public void SetUp(Color32 color, int count)
         {
@@ -288,6 +335,26 @@ namespace UnityEngine.UI
         public void SetUp_Quad(int quadCount)
         {
             SetUp(QuadIndexCache.Get(quadCount), quadCount * 6);
+        }
+
+        // Grow by `copies` index blocks for effect copies drawn behind the original: draw block
+        // c < copies references vert block c+1, the last draw block keeps vert block 0 (the original,
+        // on top). Written high-to-low so block 0 stays readable as the source until its in-place offset.
+        public void Resize_CopiesBehind(int copies, int vertStride)
+        {
+            Assert.IsTrue(copies > 0);
+
+            var count = Count;
+            var data = Resize(count * (copies + 1));
+            for (var p = copies; p >= 1; --p)
+            {
+                var dst = p * count;
+                var vertOffset = p == copies ? 0 : (p + 1) * vertStride;
+                for (var k = 0; k < count; ++k)
+                    data[dst + k] = (ushort) (data[k] + vertOffset);
+            }
+            for (var k = 0; k < count; ++k) // draw block 0 = copy 0 (vert block 1), in place
+                data[k] = (ushort) (data[k] + vertStride);
         }
 
         public void SetUp_Incremental(ushort[] src, int increment, int repeat)

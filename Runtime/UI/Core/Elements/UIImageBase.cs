@@ -87,7 +87,7 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
-        protected virtual void Reset() => _sprite = WhiteSpriteFinder.Find(gameObject);
+        protected virtual void Reset() => _sprite = WhiteSpriteFinder.ResolveBestMatch(gameObject);
 
         protected virtual void Editor_OnSpriteChanged()
         {
