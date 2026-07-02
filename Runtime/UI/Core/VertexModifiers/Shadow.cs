@@ -114,8 +114,13 @@ namespace UnityEngine.UI
             }
 
             var sprite = img.Sprite;
-            if (sprite && !WhiteSpriteFinder.IsWhiteSprite(sprite))
+            if (sprite
+                && !WhiteSpriteFinder.IsWhiteSprite(sprite)
+                // fully white sprites are allowed.
+                && sprite.name is not "CM_Question")
+            {
                 result.AddError($"Shadow needs a white sprite for non-Solid materials, but the current sprite is '{sprite.name}'.");
+            }
         }
 #endif
     }

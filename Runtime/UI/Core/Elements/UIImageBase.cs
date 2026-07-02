@@ -16,13 +16,14 @@ namespace UnityEngine.UI
     [AttributeUsage(AttributeTargets.Class)]
     public class UIImageSpriteConstraintAttribute : Attribute
     {
+        public bool RequireSprite = true;
         public bool Quad;
         public Side FullBorders;
     }
 
     public abstract class UIImageBase : Graphic, IUIImage
     {
-        [SerializeField, Required]
+        [SerializeField]
         [FormerlySerializedAs("m_Sprite")] // for legacy Image component
         [FormerlySerializedAs("_white")] // for legacy UIPolygon compat.
         [OnValueChanged("Editor_OnSpriteChanged", InvokeOnUndoRedo = false)]
@@ -99,11 +100,17 @@ namespace UnityEngine.UI
             base.Validate(result);
 
             // Enforce the concrete component's declared sprite constraints (e.g. UIRoundedRect needs a
-            // full-border quarter quad). Null sprite is already covered by [Required].
+            // full-border quarter quad).
             var constraint = GetType().GetCustomAttribute<UIImageSpriteConstraintAttribute>();
             if (constraint is null) return;
+
             var sprite = _sprite;
-            if (!sprite) return;
+            if (!sprite)
+            {
+                if (constraint.RequireSprite)
+                    result.AddError("Sprite is required.");
+                return;
+            }
 
             if (constraint.Quad && !sprite.IsQuad())
                 result.AddError($"Sprite '{sprite.name}' must be a quad (4-vertex axis-aligned rect).");
