@@ -3,6 +3,7 @@ using System;
 using Sirenix.OdinInspector;
 using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
+
 // ReSharper disable InconsistentNaming
 
 namespace UnityEngine.UI
@@ -18,15 +19,9 @@ namespace UnityEngine.UI
     {
         public enum MovementType
         {
-            Unrestricted,
-            Elastic,
-            Clamped,
-        }
-
-        public enum ScrollbarVisibility
-        {
-            Permanent,
-            AutoHide,
+            Unrestricted = 0,
+            Elastic = 1,
+            Clamped = 2,
         }
 
         [SerializeField, Required, ChildGameObjectsOnly]
@@ -35,7 +30,6 @@ namespace UnityEngine.UI
 
         [SerializeField, FormerlySerializedAs("m_Vertical")]
         private Axis m_Direction = Axis.Y;
-        public Axis direction => m_Direction;
         public bool horizontal => m_Direction.IsX();
 
         [SerializeField]
@@ -43,15 +37,8 @@ namespace UnityEngine.UI
         public MovementType movementType { get => m_MovementType; set => m_MovementType = value; }
 
         [SerializeField]
-        private float m_Elasticity = 0.1f;
-        [SerializeField]
         private bool m_Inertia = true;
         public bool inertia { set => m_Inertia = value; }
-
-        [SerializeField]
-        private float m_DecelerationRate = 0.135f; // Only used when inertia is enabled
-        [SerializeField]
-        private float m_ScrollSensitivity = 1.0f;
 
         [SerializeField, Required]
         private RectTransform m_Viewport;
@@ -59,8 +46,6 @@ namespace UnityEngine.UI
 
         [SerializeField, FormerlySerializedAs("m_VerticalScrollbar")]
         private Scrollbar? m_Scrollbar;
-        [SerializeField, FormerlySerializedAs("m_VerticalScrollbarVisibility"), ShowIf("m_Scrollbar")]
-        private ScrollbarVisibility m_ScrollbarVisibility;
 
         private float m_PointerStartLocalCursor;
         private float m_ContentStartPosition;
@@ -83,8 +68,12 @@ namespace UnityEngine.UI
         [NonSerialized] private RectTransform? m_Rect;
         private RectTransform rectTransform => m_Rect ??= (RectTransform)transform;
 
-        private int di => m_Direction.Idx();   // scroll axis index
-        private int li => 1 - di;              // locked axis index
+        private int di => m_Direction.Idx(); // scroll axis index
+        private int li => 1 - di; // locked axis index
+
+        private const float m_Elasticity = 0.1f;
+        private const float m_DecelerationRate = 0.135f; // Only used when inertia is enabled
+        private const float m_ScrollSensitivity = 1.0f;
 
         void IPostLayoutRebuildCallback.PostLayoutRebuild()
         {
@@ -97,18 +86,12 @@ namespace UnityEngine.UI
 
         private void OnEnable()
         {
-            if (m_Scrollbar)
-                m_Scrollbar.onValueChanged.AddListener(SetNormalizedPosition);
-
             CanvasUpdateRegistry.QueueLayoutRebuildCallback(this);
             SetDirty();
         }
 
         private void OnDisable()
         {
-            if (m_Scrollbar)
-                m_Scrollbar.onValueChanged.RemoveListener(SetNormalizedPosition);
-
             m_Dragging = false;
             m_Scrolling = false;
             m_HasRebuiltLayout = false;
@@ -286,7 +269,6 @@ namespace UnityEngine.UI
                 UISystemProfilerApi.AddMarker("ScrollRect.value", this);
                 UpdatePrevData();
             }
-            UpdateScrollbarVisibility();
             m_Scrolling = false;
         }
 
@@ -354,17 +336,9 @@ namespace UnityEngine.UI
             m_ContentBounds = GetContentBounds();
         }
 
-        private void UpdateScrollbarVisibility()
+        private void UpdateBounds()
         {
-            if (!m_Scrollbar) return;
-            bool shouldBeActive = m_ScrollbarVisibility == ScrollbarVisibility.Permanent || scrollingNeeded;
-            if (m_Scrollbar.gameObject.activeSelf != shouldBeActive)
-                m_Scrollbar.gameObject.SetActive(shouldBeActive);
-        }
-
-        protected void UpdateBounds()
-        {
-            var viewRect = viewport.rect;
+            var viewRect = m_Viewport.rect;
             var i = di;
             m_ViewBounds = Bounds.FromRect(viewRect, i);
 
@@ -418,6 +392,15 @@ namespace UnityEngine.UI
             m_Viewport = (RectTransform)transform;
         }
 
+        private void OnValidate()
+        {
+            if (DrivenRectTransManager.Reset(this, out var t))
+            {
+                if (m_Content)
+                    t.Set(m_Content, DrivenTransformProperties.AnchoredPosition);
+            }
+        }
+
         void ISelfValidator.Validate(SelfValidationResult result)
         {
             if (m_Content && m_Viewport && m_Content.parent != m_Viewport)
@@ -432,7 +415,11 @@ namespace UnityEngine.UI
         {
             public float min, max;
 
-            public Bounds(float min, float max) { this.min = min; this.max = max; }
+            public Bounds(float min, float max)
+            {
+                this.min = min;
+                this.max = max;
+            }
 
             public float size => max - min;
 

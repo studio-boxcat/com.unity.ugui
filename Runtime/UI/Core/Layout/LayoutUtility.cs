@@ -4,23 +4,11 @@ using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
-    public enum Axis : byte
-    {
-        X = 0,
-        Y = 1
-    }
-
     /// <summary>
     /// Utility functions for querying layout elements for their minimum, preferred, and flexible sizes.
     /// </summary>
     public static class LayoutUtility
     {
-        public static int Idx(this Axis axis) => (int)axis;
-        public static bool IsX(this Axis axis) => axis == Axis.X;
-        public static bool IsY(this Axis axis) => axis == Axis.Y;
-
-        public static bool Select(this Axis axis, bool x, bool y) => axis.IsX() ? x : y;
-
         public static float? CalcPreferredSize(Component comp, Axis axis) =>
             axis.IsX() ? CalcPreferredWidth(comp) : CalcPreferredHeight(comp);
         public static float? CalcPreferredWidth(Component comp) =>

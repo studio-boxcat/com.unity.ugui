@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine.Assertions;
 using UnityEngine.Rendering;
 
@@ -151,6 +152,16 @@ namespace UnityEngine.UI
             Count = MeshBuilder.Invalid;
         }
 
+        // Raw pointer into the buffer for by-component writes. Unpinned managed pointer - valid only
+        // under Unity's non-moving GC (Boehm, Mono and IL2CPP alike); consume within the current
+        // build scope, never hold across allocations or frames. Breaks under a moving GC (CoreCLR).
+        [MustUseReturnValue]
+        protected unsafe void* SetUpUnsafeCore(int count)
+        {
+            var data = SetUp(count);
+            return count == 0 ? null : UnsafeUtility.AddressOf(ref data[0]);
+        }
+
         protected abstract void Internal_FillMesh(Mesh mesh);
     }
 
@@ -165,6 +176,10 @@ namespace UnityEngine.UI
             for (var i = 0; i < count; ++i)
                 data[i] = src[i];
         }
+
+        // Raw float* into the buffer (3 floats/vert) for by-axis writes. See SetUpUnsafeCore for the GC contract.
+        [MustUseReturnValue]
+        public unsafe float* SetUpUnsafe(int vertCount) => (float*)SetUpUnsafeCore(vertCount);
 
         public Rect CalculateBoundingRect()
         {
@@ -210,6 +225,10 @@ namespace UnityEngine.UI
             var data = SetUp(count);
             Array.Fill(data, uv, 0, count);
         }
+
+        // Raw float* into the buffer (2 floats/vert) for by-axis writes. See SetUpUnsafeCore for the GC contract.
+        [MustUseReturnValue]
+        public unsafe float* SetUpUnsafe(int vertCount) => (float*)SetUpUnsafeCore(vertCount);
 
         public void SetUp_Repeat(Vector2[] src, int repeat)
         {
