@@ -9,14 +9,14 @@ namespace UnityEngine.UI
     [DisallowMultipleComponent]
     public class Clippable : MonoBehaviour
     {
-        [SerializeField, Required, ChildGameObjectsOnly, HideIf("@m_Graphic")]
-        private Graphic m_Graphic;
-        public Graphic Graphic => m_Graphic;
+        [SerializeField, Required, ChildGameObjectsOnly, HideIf("@m_CanvasRenderer")]
+        private CanvasRenderer m_CanvasRenderer;
+        public CanvasRenderer CanvasRenderer => m_CanvasRenderer;
 
         private void Awake()
         {
             // for the component added at runtime
-            m_Graphic ??= GetComponent<Graphic>();
+            m_CanvasRenderer ??= GetComponent<CanvasRenderer>();
         }
 
         private void OnEnable()
@@ -43,7 +43,7 @@ namespace UnityEngine.UI
 
         private void OnCanvasHierarchyChanged() => OnTransformParentChanged();
 
-        public static void MakeTreeClippable(GameObject root)
+        public static void MakeTreeGraphicClippable(GameObject root)
         {
             foreach (var graphic in root.GetGraphicsInChildrenShared(includeInactive: true))
             {
@@ -61,7 +61,7 @@ namespace UnityEngine.UI
             {
                 var sb = SbPool.Rent();
 
-                var cr = m_Graphic.canvasRenderer;
+                var cr = m_CanvasRenderer;
                 sb.Append("hasRectClipping: ").Append(cr.hasRectClipping).Append(", ");
                 sb.Append("clippingSoftness: ").Append(cr.clippingSoftness).Append(", ");
                 sb.Append("clipper: \"").Append(ClipperRegistry.GetCachedClipper(this).SafeName()).Append("\"");
@@ -70,8 +70,8 @@ namespace UnityEngine.UI
             }
         }
 
-        private void Reset() => m_Graphic = GetComponent<Graphic>();
-        private void OnValidate() => m_Graphic ??= GetComponent<Graphic>(); // ensure m_Graphic is set in the editor
+        private void Reset() => m_CanvasRenderer = GetComponent<CanvasRenderer>();
+        private void OnValidate() => m_CanvasRenderer ??= GetComponent<CanvasRenderer>();
 #endif
     }
 }

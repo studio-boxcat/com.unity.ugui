@@ -38,7 +38,7 @@ namespace UnityEngine.UI
             // graphic might not be a child of this GameObject, so we cannot guarantee whether graphic is destroyed or not.
             foreach (var g in _targets)
             {
-                if (g) ClipperRegistry.RestoreCullState(g);
+                if (g) g.canvasRenderer.DisableCullAndClipRect();
             }
         }
 
@@ -48,16 +48,17 @@ namespace UnityEngine.UI
             var len = _targets.Length;
             if (len is 0) return;
 
-            var canvas = _targets[0].canvas;
+            var wtc = _targets[0].canvas.rootCanvas.transform.worldToLocalMatrix;
             var clipRect = CanvasUtils.BoundingRect(
-                rectTransform, canvas, _padding, out var validRect);
+                rectTransform, wtc, _padding, out var validRect);
 
             var p = ObjectPruner.Create(_targets);
             while (p.Next(out var g))
             {
                 Assert.IsTrue(g, "Target graphic is null.");
-                g!.SetClipSoftness(_softness);
-                g.SetClipRect(clipRect, validRect);
+                var cr = g!.canvasRenderer;
+                cr.clippingSoftness = _softness;
+                cr.SetClipRect(clipRect, validRect);
             }
             _targets = p.Shrink();
         }

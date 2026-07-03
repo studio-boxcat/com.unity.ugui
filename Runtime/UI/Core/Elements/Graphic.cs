@@ -34,8 +34,8 @@ namespace UnityEngine.UI
         [SerializeField]
         private Color m_Color = Color.white;
 
-        [NonSerialized] protected bool m_SkipLayoutUpdate;
-        [NonSerialized] protected bool m_SkipMaterialUpdate;
+        [NonSerialized] private bool m_SkipLayoutUpdate;
+        [NonSerialized] private bool m_SkipMaterialUpdate;
 
         public virtual Color color
         {
@@ -142,11 +142,9 @@ namespace UnityEngine.UI
         /// </remarks>
         public virtual void SetVerticesDirty()
         {
-            if (!IsActive())
-                return;
-
             m_VertsDirty = true;
-            CanvasUpdateRegistry.QueueGraphic(this);
+            if (isActiveAndEnabled)
+                CanvasUpdateRegistry.QueueGraphic(this);
         }
 
         /// <summary>
@@ -157,11 +155,9 @@ namespace UnityEngine.UI
         /// </remarks>
         public virtual void SetMaterialDirty()
         {
-            if (!IsActive())
-                return;
-
             m_MaterialDirty = true;
-            CanvasUpdateRegistry.QueueGraphic(this);
+            if (isActiveAndEnabled)
+                CanvasUpdateRegistry.QueueGraphic(this);
         }
 
         public void SetVisualDirty()
@@ -326,47 +322,12 @@ namespace UnityEngine.UI
             m_RaycastRegisterLink.Reset(m_Canvas, this);
         }
 
-        /// <summary>
-        /// See IClippable.Cull
-        /// </summary>
-        public void Cull(Rect clipRect, bool validRect)
+        // Notified by CanvasRenderer.UpdateCull after the cull flag flips. When we become un-culled we
+        // may have skipped Rebuild calls while culled, so re-queue if verts/material are still dirty.
+        internal void OnUncull()
         {
-            if (validRect is false)
-            {
-                UpdateCull(true); // true = don't draw
-                return;
-            }
-
-            var graphicRect = CanvasUtils.BoundingRect(rectTransform, canvas);
-            var cull = !clipRect.Overlaps(graphicRect);
-            UpdateCull(cull);
-        }
-
-        internal void UpdateCull(bool cull)
-        {
-            var cr = canvasRenderer;
-            if (cr.cull == cull) return;
-
-            cr.cull = cull;
-            // When we were culled, we potentially skipped calls to Rebuild.
-            if (!cull && (m_VertsDirty || m_MaterialDirty))
+            if ((m_VertsDirty || m_MaterialDirty))
                 CanvasUpdateRegistry.QueueGraphic(this);
-        }
-
-        /// <summary>
-        /// See IClippable.SetClipRect
-        /// </summary>
-        public void SetClipRect(Rect clipRect, bool validRect)
-        {
-            if (validRect)
-                canvasRenderer.EnableRectClipping(clipRect);
-            else
-                canvasRenderer.DisableRectClipping();
-        }
-
-        public void SetClipSoftness(Vector2 clipSoftness)
-        {
-            canvasRenderer.clippingSoftness = clipSoftness;
         }
 
         /// <summary>
@@ -400,10 +361,7 @@ namespace UnityEngine.UI
             if (!IsActive())
                 return;
 
-            var cr = canvasRenderer;
-            cr.materialCount = 1;
-            cr.SetMaterial(GraphicMaterialResolver.ResolveRender(this), 0);
-            cr.SetTexture(mainTexture);
+            canvasRenderer.SetMaterialSingle(GraphicMaterialResolver.ResolveRender(this), mainTexture);
         }
 
         /// <summary>
@@ -447,8 +405,6 @@ namespace UnityEngine.UI
             // set the mesh to the CanvasRenderer
             mb.SetMeshAndInvalidate(canvasRenderer);
         }
-
-        public virtual void ForceUpdateGeometry() => UpdateGeometry();
 
         /// <summary>
         /// Callback function when a UI element needs to generate vertices. Fills the vertex buffer data.
@@ -549,9 +505,8 @@ namespace UnityEngine.UI
             }
 
             var useCustomMaterial = m_Material is GraphicMaterialKind.Custom;
-            var hasCustomMaterialProvider = this.HasComponent<ICustomMaterialProvider>();
-            if (useCustomMaterial != hasCustomMaterialProvider)
-                result.AddError("GraphicMaterialKind.Custom requires an ICustomMaterialProvider component (and vice versa).");
+            if (useCustomMaterial && this.NoComponent<ICustomMaterialProvider>())
+                result.AddError("GraphicMaterialKind.Custom requires an ICustomMaterialProvider component.");
         }
 #endif
     }

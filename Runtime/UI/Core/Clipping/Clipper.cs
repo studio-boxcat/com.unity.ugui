@@ -66,44 +66,48 @@ namespace UnityEngine.UI
 
         internal void PerformClipping(List<Clippable> targets)
         {
-            Assert.IsTrue(targets.TrueForAll(x => x.Graphic),
-                "Destroyed Graphic components are not allowed in Clipper.PerformClipping.");
+            Assert.IsTrue(targets.TrueForAll(x => x.CanvasRenderer),
+                "Destroyed CanvasRenderer components are not allowed in Clipper.PerformClipping.");
 
             var canvas = GetCanvas();
 
             //TODO See if an IsActive() test would work well here or whether it might cause unexpected side effects (re case 776771)
 
+            // World->canvas transform (root canvas' worldToLocal) — invariant across all targets, so
+            // compute once and hoist it out of the per-target cull loop.
+            var wtc = canvas.rootCanvas.transform.worldToLocalMatrix;
+
             // get the compound rects from
             // the clippers that are valid
             var clipRect = CanvasUtils.BoundingRect(
-                rectTransform, canvas, m_Padding, out var validRect);
+                rectTransform, wtc, m_Padding, out var validRect);
 
             if (clipRect != _lastClipRect)
             {
                 foreach (var target in targets)
                 {
-                    var g = target.Graphic;
-                    g.SetClipRect(clipRect, validRect);
-                    g.Cull(clipRect, validRect);
+                    var cr = target.CanvasRenderer;
+                    cr.SetClipRect(clipRect, validRect);
+                    cr.UpdateCullAgainstClipRect(clipRect, validRect, wtc);
                 }
             }
             else if (_forceClip) // clipRect is the same as last time, but we need to force a clip update
             {
                 foreach (var target in targets)
                 {
-                    var g = target.Graphic;
-                    g.SetClipRect(clipRect, validRect);
-                    if (g.canvasRenderer.hasMoved)
-                        g.Cull(clipRect, validRect);
+                    var cr = target.CanvasRenderer;
+                    cr.SetClipRect(clipRect, validRect);
+                    if (cr.hasMoved)
+                        cr.UpdateCullAgainstClipRect(clipRect, validRect, wtc);
                 }
             }
             else
             {
                 foreach (var target in targets)
                 {
-                    var g = target.Graphic;
+                    var cr = target.CanvasRenderer;
                     //Case 1170399 - hasMoved is not a valid check when animating on pivot of the object
-                    g.Cull(clipRect, validRect);
+                    cr.UpdateCullAgainstClipRect(clipRect, validRect, wtc);
                 }
             }
 
@@ -111,10 +115,7 @@ namespace UnityEngine.UI
             _forceClip = false;
 
             foreach (var target in targets)
-            {
-                var g = target.Graphic;
-                g.SetClipSoftness(m_Softness);
-            }
+                target.CanvasRenderer.clippingSoftness = m_Softness;
         }
 
         public void MarkNeedClip() => _forceClip = true;

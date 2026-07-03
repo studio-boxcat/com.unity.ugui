@@ -19,9 +19,12 @@ namespace UnityEngine.UI
         , ISelfValidator
 #endif
     {
-        [SerializeField] private ShadowStyle m_Style = ShadowStyle.Shadow;
-        [SerializeField] private Vector2 m_EffectDistance = new(1f, -1f);
-        [SerializeField] private Color m_EffectColor = new(0f, 0f, 0f, 0.5f);
+        [SerializeField, OnValueChanged("Editor_SetVerticesDirty")]
+        private ShadowStyle m_Style = ShadowStyle.Shadow;
+        [SerializeField, OnValueChanged("Editor_SetVerticesDirty")]
+        private Vector2 m_EffectDistance = new(1f, -1f);
+        [SerializeField, OnValueChanged("Editor_SetVerticesDirty")]
+        private Color m_EffectColor = new(0f, 0f, 0f, 0.5f);
 
         /// <summary>
         /// Color for the effect
@@ -92,6 +95,8 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
+        private void Editor_SetVerticesDirty() => graphic.SetVerticesDirty();
+
         void ISelfValidator.Validate(SelfValidationResult result)
         {
             var g = graphic;

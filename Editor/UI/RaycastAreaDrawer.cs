@@ -59,25 +59,23 @@ namespace UnityEngine.UI
             var p3 = p3Temp.WithZ(0);
             Handles.DrawSolidRectangleWithOutline(
                 new[] { p0, p1, p2, p3 },
-                Color.magenta.WithA(0.15f),
+                Color.clear,
                 Color.magenta);
             return rect;
         }
 
         private static void DrawHandle(Graphic graphic, Rect rect)
         {
-            // configure handles
-            var handleSize = HandleUtility.GetHandleSize(default) * 0.08f;
             Handles.color = Color.magenta;
 
             var t = graphic.rectTransform;
             var ltw = t.localToWorldMatrix;
             var wtl = t.worldToLocalMatrix;
             var inset = graphic.raycastInset;
-            var changed = ProcessHandle(Side.L, rect, ltw, wtl, ref inset, handleSize)
-                          || ProcessHandle(Side.R, rect, ltw, wtl, ref inset, handleSize)
-                          || ProcessHandle(Side.B, rect, ltw, wtl, ref inset, handleSize)
-                          || ProcessHandle(Side.T, rect, ltw, wtl, ref inset, handleSize);
+            var changed = ProcessHandle(Side.L, rect, ltw, wtl, ref inset)
+                          || ProcessHandle(Side.R, rect, ltw, wtl, ref inset)
+                          || ProcessHandle(Side.B, rect, ltw, wtl, ref inset)
+                          || ProcessHandle(Side.T, rect, ltw, wtl, ref inset);
             if (changed)
             {
                 Undo.RecordObject(graphic, "Adjust Raycast Inset");
@@ -90,11 +88,8 @@ namespace UnityEngine.UI
                 Rect r, // transform rect in local-space
                 Matrix4x4 ltw,
                 Matrix4x4 wtl,
-                ref Vector4 padding, // The padding being updated this frame
-                float hSize)
+                ref Vector4 padding) // The padding being updated this frame
             {
-                EditorGUI.BeginChangeCheck();
-
                 var ctrlX = side is Side.L or Side.R; // controlling x?
                 var ltr = side is Side.L or Side.B; // left -> right, bottom -> top
 
@@ -110,35 +105,37 @@ namespace UnityEngine.UI
                 center += (padding.Get(side.Repeat(1)) - padding.Get(side.Repeat(3))).Half() * centerFlow.Sign(); // adjust center
                 var oldHandle = new Vector2(pos + signedPadding, center); // x for control point, y for center
                 if (!ctrlX) oldHandle = oldHandle.YX(); // flip for vertical handles (T, B)
-                oldHandle = ltw.MultiplyPoint2D(oldHandle); // translate into world-space
+                var oldHandleW = ltw.MultiplyPoint2D(oldHandle); // translate into world-space
 
-                var newHandle = (Vector2)Handles.FreeMoveHandle(oldHandle, hSize, Vector3.zero, Handles.DotHandleCap);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    var newPos = wtl.MultiplyPoint1D(newHandle, axisX: ctrlX); // translate back to local-space
-                    var mirror = Event.current.alt;
+                if (!IMGUIUtils.FreeMoveHandle(oldHandleW, out var newHandleW, 0.08f))
+                    return false;
 
-                    var a = newPos - pos;
-                    if (!ltr) a = -a; // flip for right and top sides
-                    var b = mirror ? len.Half() : len - paddingOpposite;
-                    paddingControl = Mathf.Min(a, b).Round(); // snap to integer
-                    if (mirror) paddingOpposite = paddingControl;
-                    return true;
-                }
+                var newPos = wtl.MultiplyPoint1D(newHandleW, axisX: ctrlX); // translate back to local-space
+                var mirror = Event.current.alt;
 
-                return false;
+                var a = newPos - pos;
+                if (!ltr) a = -a; // flip for right and top sides
+                var b = mirror ? len.Half() : len - paddingOpposite;
+                paddingControl = Mathf.Min(a, b).Round(); // snap to integer
+                if (mirror) paddingOpposite = paddingControl;
+                return true;
             }
+        }
+
+        private static readonly GUIContent _toggleContent = new("R", "Toggle Raycast Area (Alt: Deep)");
+
+        [ToolbarGUI(left: false, priority: 10)]
+        private static void ToolbarGUI()
+        {
+            var rect = GUILayoutUtility.GetRect(20, 20);
+            var on = _mode is not 0;
+            if (GUI.Toggle(rect, on, _toggleContent, ToolbarStyles.IconButton) == on) return;
+            // Off -> plain (or Deep with Alt); On -> off.
+            SetMode(on ? 0 : Event.current.modifiers.Any(KeyMod.A) ? 2 : 1);
         }
 
         private static EditorPrefInt? _modePref;
         private static int _mode => _modePref ??= new EditorPrefInt("G0HmzQzL", 1); // 0: disabled, 1: enabled, 2: enabled (deep)
-
-        [MenuItem(MenuPath.UI + "Hide Raycast Area")]
-        private static void HideRaycastArea() => SetMode(0);
-        [MenuItem(MenuPath.UI + "Show Raycast Area")]
-        private static void ShowRaycastArea() => SetMode(1);
-        [MenuItem(MenuPath.UI + "Show Raycast Area (Deep)")]
-        private static void ShowRaycastAreaDeep() => SetMode(2);
 
         private static void SetMode(int value)
         {

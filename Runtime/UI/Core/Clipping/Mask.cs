@@ -74,9 +74,7 @@ namespace UnityEngine.UI
             var cr = Graphic.canvasRenderer;
             var (maskMat, unmaskMat) = StencilMaterial.LoadMaskPair(_showMaskGraphic);
             cr.SetMaterial(maskMat, 0);
-            cr.hasPopInstruction = true;
-            cr.popMaterialCount = 1;
-            cr.SetPopMaterial(unmaskMat, 0);
+            cr.SetPopMaterialSingle(unmaskMat);
         }
 
 #if UNITY_EDITOR

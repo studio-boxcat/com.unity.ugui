@@ -114,36 +114,36 @@ namespace UnityEngine.UI
 
             if (_dirtyClippables.NotEmpty())
             {
-                // prune destroyed graphics
-                _dirtyClippables.RemoveAll(static c => !c.Graphic);
+                // prune destroyed renderers
+                _dirtyClippables.RemoveAll(static c => !c.CanvasRenderer);
 
                 // to ensure that we don't process the same clipper multiple times.
                 _dirtyClippables.Sort(static (a, b) =>
-                    a.Graphic.GetHashCode().CompareTo(b.Graphic.GetHashCode()));
+                    a.CanvasRenderer.GetHashCode().CompareTo(b.CanvasRenderer.GetHashCode()));
 
                 var prevHash = 0; // Unity ensures that GetHashCode() is unique for each object and not 0.
                 foreach (var c in _dirtyClippables)
                 {
-                    var g = c.Graphic; // destroyed graphic is already pruned.
-                    var h = g.GetHashCode();
+                    var cr = c.CanvasRenderer; // destroyed renderer is already pruned.
+                    var h = cr.GetHashCode();
                     if (h == prevHash) continue; // skip duplicates.
                     prevHash = h;
 
-                    // if the graphic is no longer managed by ClipperRegistry, restore its cull state.
+                    // if the renderer is no longer managed by ClipperRegistry, restore its cull state.
                     if (_clippables.TryGetValue(c, out var orgClipper) is false)
                     {
-                        V($"Graphic {g} is not registered in ClipperRegistry, restoring cull state.");
-                        RestoreCullState(g);
+                        V($"Clippable {cr} is not registered in ClipperRegistry, restoring cull state.");
+                        cr.DisableCullAndClipRect();
                         continue;
                     }
 
-                    var newClipper = ActiveClipperFor(g);
+                    var newClipper = ActiveClipperFor(c);
                     if (newClipper.RefEq(orgClipper))
                     {
-                        V($"Graphic {g} already has the same clipper {orgClipper}, no need to update.");
+                        V($"Clippable {cr} already has the same clipper {orgClipper}, no need to update.");
 #if DEBUG
                         if (orgClipper is not null && (_clippers.TryGetValue(orgClipper, out var l) is false || l is null || l.ContainsRef(c) is false))
-                            L.E($"[ClipperRegistry] Graphic {g} is already registered in ClipperRegistry, but not found in the clipper {orgClipper}. This is a bug.");
+                            L.E($"[ClipperRegistry] Clippable {cr} is already registered in ClipperRegistry, but not found in the clipper {orgClipper}. This is a bug.");
 #endif
                         continue;
                     }
@@ -152,17 +152,17 @@ namespace UnityEngine.UI
                         && _clippers.TryGetValue(orgClipper, out var clippablesByOrgClipper) // could be not exist if the clipper is unregistered.
                         && clippablesByOrgClipper is not null) // could be null if the clipper is re-registered.
                     {
-                        V($"Graphic {g} is reparented from clipper {orgClipper} to {newClipper}, removing from the old clipper.");
+                        V($"Clippable {cr} is reparented from clipper {orgClipper} to {newClipper}, removing from the old clipper.");
                         clippablesByOrgClipper.Remove(c);
                     }
 
                     // update the clipper for the clippable.
-                    V($"Graphic {g} is reparented to clipper {newClipper}, updating clippable.");
+                    V($"Clippable {cr} is reparented to clipper {newClipper}, updating clippable.");
                     _clippables[c] = newClipper;
 
                     if (newClipper is not null)
                     {
-                        V($"Graphic {g} is now clipped by {newClipper}, updating cull state.");
+                        V($"Clippable {cr} is now clipped by {newClipper}, updating cull state.");
 
                         newClipper.MarkNeedClip(); // will be used in PerformClipping().
 
@@ -178,8 +178,8 @@ namespace UnityEngine.UI
                     }
                     else
                     {
-                        V($"Graphic {g} is not clipped by any clipper, restoring cull state.");
-                        RestoreCullState(g); // no active clipper, restore cull state.
+                        V($"Clippable {cr} is not clipped by any clipper, restoring cull state.");
+                        cr.DisableCullAndClipRect(); // no active clipper, restore cull state.
                     }
                 }
 
@@ -195,25 +195,27 @@ namespace UnityEngine.UI
             }
         }
 
-        private static Clipper? ActiveClipperFor(Graphic g)
+        private static Clipper? ActiveClipperFor(Clippable c)
         {
             // Don't use "isActiveAndEnabled" here, as it will return false when it called from OnEnable.
             // activeInHierarchy = true means all the parent GameObjects are active, only need to check component enabled state.
-            Assert.IsTrue(g is { enabled: true, gameObject: { activeInHierarchy: true } },
+            Assert.IsTrue(c is { enabled: true, gameObject: { activeInHierarchy: true } },
                 "Clippable must be active and enabled to get its active Clipper.");
 
-            var t = g.transform;
+            // Reuse the sibling Graphic's cached canvas instead of re-walking the hierarchy on every resolve.
+            var canvas = c.CanvasRenderer.ResolveCanvas();
+            var t = c.transform;
 
             do
             {
                 // get the nearest Clipper in the hierarchy.
-                // Do not skip inactive, graphic is activeInHierarchy so Clipper (in parent) must be too.
+                // Do not skip inactive, clippable is activeInHierarchy so Clipper (in parent) must be too.
                 var clipper = t.GetComponentInParent<Clipper>(includeInactive: true);
                 if (clipper is null) return null; // No mask at all.
 
-                // if the nearest clipper is not on the same canvas as the graphic,
+                // if the nearest clipper is not on the same canvas as the clippable,
                 // no need to check further.
-                if (clipper.GetCanvas().RefNq(g.canvas)) return null;
+                if (clipper.GetCanvas().RefNq(canvas)) return null;
 
                 // if the clipper is enabled, return it.
                 if (clipper.enabled)
@@ -223,13 +225,6 @@ namespace UnityEngine.UI
             } while (t is not null);
 
             throw new System.InvalidOperationException();
-        }
-
-        internal static void RestoreCullState(Graphic g)
-        {
-            // L.I($"[ClipperRegistry] Restoring cull state for {g}");
-            g.SetClipRect(new Rect(), validRect: false);
-            g.UpdateCull(cull: false);
         }
 
         [Conditional("VERBOSE")]

@@ -1,5 +1,4 @@
-﻿using System;
-using Sirenix.OdinInspector;
+﻿using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
@@ -57,94 +56,6 @@ namespace Coffee.UIEffects
         }
 
         /// <summary>
-        /// Width for shiny effect.
-        /// </summary>
-        public float width
-        {
-            get { return m_Width; }
-            set
-            {
-                value = Mathf.Clamp(value, 0, 1);
-                if (Mathf.Approximately(m_Width, value)) return;
-                m_Width = value;
-                SetEffectParamsDirty();
-            }
-        }
-
-        /// <summary>
-        /// Softness for shiny effect.
-        /// </summary>
-        public float softness
-        {
-            get { return m_Softness; }
-            set
-            {
-                value = Mathf.Clamp(value, 0.01f, 1);
-                if (Mathf.Approximately(m_Softness, value)) return;
-                m_Softness = value;
-                SetEffectParamsDirty();
-            }
-        }
-
-        /// <summary>
-        /// Brightness for shiny effect.
-        /// </summary>
-        public float brightness
-        {
-            get { return m_Brightness; }
-            set
-            {
-                value = Mathf.Clamp(value, 0, 1);
-                if (Mathf.Approximately(m_Brightness, value)) return;
-                m_Brightness = value;
-                SetEffectParamsDirty();
-            }
-        }
-
-        /// <summary>
-        /// Gloss factor for shiny effect.
-        /// </summary>
-        public float gloss
-        {
-            get { return m_Gloss; }
-            set
-            {
-                value = Mathf.Clamp(value, 0, 1);
-                if (Mathf.Approximately(m_Gloss, value)) return;
-                m_Gloss = value;
-                SetEffectParamsDirty();
-            }
-        }
-
-        /// <summary>
-        /// Rotation for shiny effect.
-        /// </summary>
-        public float rotation
-        {
-            get { return m_Rotation; }
-            set
-            {
-                if (Mathf.Approximately(m_Rotation, value)) return;
-                m_Rotation = value;
-                SetVerticesDirty();
-            }
-        }
-
-        /// <summary>
-        /// The area for effect.
-        /// </summary>
-        public EffectArea effectArea
-        {
-            get { return m_EffectArea; }
-            set
-            {
-                if (m_EffectArea == value) return;
-                m_EffectArea = value;
-                SetVerticesDirty();
-            }
-        }
-
-        /// <summary>
         /// Gets the parameter texture.
         /// </summary>
         public override ParameterTexture paramTex => MaterialCatalog.ParamShiny;
@@ -182,24 +93,18 @@ namespace Coffee.UIEffects
             var normalizedIndex = paramTex.GetNormalizedIndex(this);
             var rect = m_EffectArea.GetEffectArea(mb, rectTransform.rect);
 
-            // rotation.
-            var rad = m_Rotation * Mathf.Deg2Rad;
-            var dir = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
-            dir.x *= rect.height / rect.width;
-            dir = dir.normalized;
-
             // Calculate vertex position.
             var poses = mb.Poses;
             var uvs = mb.UVs.Edit();
             var vertCount = poses.Count;
-            var localMatrix = new Matrix2x3(rect, dir.x, dir.y); // Get local matrix.
+            var localMatrix = Matrix2x3.NormalizeRotated(rect, m_Rotation * Mathf.Deg2Rad); // Get local matrix.
             for (int i = 0; i < vertCount; i++)
             {
-                var normalizedPos = localMatrix * poses[i];
+                var normalizedPos = localMatrix.MultiplyPoint(poses[i]);
                 var uv = uvs[i];
                 uvs[i] = new Vector2(
-                    Packer.Pack(uv.x, uv.y),
-                    Packer.Pack(normalizedPos.y, normalizedIndex)
+                    Numeric.PackUNorm12x2(uv.x, uv.y),
+                    Numeric.PackUNorm12x2(normalizedPos.y, normalizedIndex)
                 );
             }
         }
