@@ -372,38 +372,39 @@ namespace UnityEngine.UI
             // Populate the mesh builder with the vertices of the graphic.
             using var _ = MeshBuilderPool.Rent(out var mb); // automatically returns the MeshBuilder to the pool
 #if UNITY_EDITOR
-            try // XXX: never shouldn't be happening, but just in case.
+            try
 #endif
             {
                 var color = m_Color;
                 this.OverlayColorToRender(ref color);
                 OnPopulateMesh(color, mb);
+
+                // When no vertices are generated, SetMesh with an empty mesh.
+                // If we call canvasRenderer.Clear() to clear the mesh,
+                // it will also remove the material, which is not what we want.
+                if (mb.HasSetUp() is false)
+                {
+                    canvasRenderer.SetMesh(MeshPool.Empty);
+                    return;
+                }
+
+
+                // modify the mesh.
+                MeshModifierUtils.GetComponentsAndModifyMesh(this, mb);
+
+
+                // set the mesh to the CanvasRenderer
+                mb.SetMeshAndInvalidate(canvasRenderer);
             }
 #if UNITY_EDITOR
             catch (Exception e)
             {
-                L.E($"OnPopulateMesh failed for {name}", this);
+                L.E($"UpdateGeometry failed for {name}", this);
                 L.E(e);
+                mb.Invalidate(); // keep the pool consistent so Return() doesn't mask this exception
                 throw;
             }
 #endif
-
-            // When no vertices are generated, SetMesh with an empty mesh.
-            // If we call canvasRenderer.Clear() to clear the mesh,
-            // it will also remove the material, which is not what we want.
-            if (mb.HasSetUp() is false)
-            {
-                canvasRenderer.SetMesh(MeshPool.Empty);
-                return;
-            }
-
-
-            // modify the mesh.
-            MeshModifierUtils.GetComponentsAndModifyMesh(this, mb);
-
-
-            // set the mesh to the CanvasRenderer
-            mb.SetMeshAndInvalidate(canvasRenderer);
         }
 
         /// <summary>

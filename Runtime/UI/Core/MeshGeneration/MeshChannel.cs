@@ -66,12 +66,6 @@ namespace UnityEngine.UI
             Count = count;
         }
 
-        public void Clear()
-        {
-            Data = null;
-            Count = 0;
-        }
-
         [MustUseReturnValue]
         public Span<T> Edit()
         {

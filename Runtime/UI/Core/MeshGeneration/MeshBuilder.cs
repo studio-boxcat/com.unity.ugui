@@ -181,14 +181,6 @@ namespace UnityEngine.UI
             Indices.Invalidate();
         }
 
-        public void Clear()
-        {
-            Poses.Clear();
-            UVs.Clear();
-            Colors.Clear();
-            Indices.Clear();
-        }
-
         public void TrimAfter(int trimVert, int trimIndex)
         {
             AssertPrepared();
