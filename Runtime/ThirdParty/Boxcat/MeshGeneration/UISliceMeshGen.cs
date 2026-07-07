@@ -529,6 +529,9 @@ namespace UnityEngine.UI
         // Tiled border frame from one edge sprite; left/right are the top/bottom edge rotated 90°.
         public static void CAP_MXY(RectTransform t, Sprite sprite, float borderMult, MeshBuilder mb) => Tiling.CapMXY(t, sprite, borderMult, mb);
 
+        // Top/bottom caps (border.w/border.y); body tiles in Y between them; width stretches.
+        public static void CAP_TY(RectTransform t, Sprite sprite, float borderMult, MeshBuilder mb) => Tiling.CapTY(t, sprite, borderMult, mb);
+
         private static (Vector2 Scale, Vector2 Translate, Vector2 Offset) GetSliceVertexTranslation(
             RectTransform t, Sprite sprite, Vector2 slice, Vector2 mirrorPivot)
         {

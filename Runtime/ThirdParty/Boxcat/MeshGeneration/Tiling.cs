@@ -42,67 +42,48 @@ namespace UnityEngine.UI
             cols.BuildIndices(bands: 1, mb);
         }
 
-        // TX_MX_C3: mirrored left/right edges (border.z wide, border.x == 0) with a tiled ping-pong centre.
-        // Columns left→right, each 2 verts (bottom/top): [leftOuter leftInner tiles... rightInner rightOuter].
+        // TX_MX_C3: mirrored left/right edges (border.z wide, border.x == 0) with a mirror ping-pong
+        // tiled centre.
         public static void TileX_MX_C3(RectTransform t, Sprite sprite, float borderMult, MeshBuilder mb)
         {
             Assert.AreEqual(0, sprite.border.x, "Left border should be 0 for TX_MX_C3.");
             Assert.IsTrue(sprite.border.z > 0, "Right border should be > 0 for TX_MX_C3.");
 
             var rect = t.rect;
+            if (mb.TrySetUpEmpty(rect.width <= 0f)) return;
+
+            // inner U max = the center/edge UV seam
+            sprite.GetUV44(out var uMin, out _, out var innerU, out var uMax, out var vMin, out _, out _, out var vMax);
+
             var edgeW = sprite.border.z * borderMult;
-            var rectW = rect.width;
+            var x0 = rect.xMin;
+            var x3 = rect.xMax;
+            var y0 = rect.yMin;
+            var y1 = rect.yMax;
+            var xL = x0 + edgeW; // left edge inner boundary
+            var xR = x3 - edgeW; // right edge inner boundary
+            var centerW = xR - xL;
 
-            if (mb.TrySetUpEmpty(rectW <= 0f)) return;
+            // Both centre ends anchor at the edge seam (innerU), so the mirror ping-pong needs an even
+            // half-tile count — round to it and scale the body uniformly (a proportional partial tile
+            // can't land back on the seam).
+            var tileW = (sprite.rect.width - sprite.border.z) * borderMult; // body width scaled like the edges
+            var n = centerW <= _eps || tileW <= _eps ? 0 : Mathf.Max(2, Mathf.RoundToInt(centerW / tileW * 0.5f) * 2);
 
-            sprite.GetOuterUV(out var uMin, out var vMin, out var uMax, out var vMax);
-            var spriteW = sprite.rect.width;
-            var innerU = Mathf.Lerp(uMin, uMax, (spriteW - sprite.border.z) / spriteW); // center/edge UV seam
+            var quadCount = 2 + n;
+            var b = new StripBuilder(quadCount * 4, mb);
 
-            var xMin = rect.xMin;
-            var xMax = rect.xMax;
-            var yMin = rect.yMin;
-            var yMax = rect.yMax;
-            var xL = xMin + edgeW; // left edge inner boundary
-            var xR = xMax - edgeW; // right edge inner boundary
-            var centerW = Mathf.Max(0, xR - xL);
+            b.Quad(x0, xL, y0, y1, uMax, innerU, vMin, vMax); // left edge (mirrored)
 
-            var tileSizeRect = (spriteW - sprite.border.z) * (edgeW / sprite.border.z);
-            var tiles = centerW <= _eps || tileSizeRect <= _eps ? 0f : centerW / tileSizeRect;
-            var (segments, tailFract, hasTail) = SplitTiles(tiles);
-            var tileCols = Mathf.Max(0, segments - 1); // internal tile boundaries (excluding xL/xR)
-
-            var totalCols = 4 + tileCols; // leftOuter, leftInner, [tileCols], rightInner, rightOuter
-            var b = new StripBuilder(totalCols * 2, mb);
-
-            WriteCol(ref b, xMin, yMin, yMax, uMax, vMin, vMax); // left edge outer (mirrored → uMax)
-            WriteCol(ref b, xL, yMin, yMax, innerU, vMin, vMax); // left edge inner
-
-            var x = xL;
-            for (var i = 0; i < tileCols; ++i)
+            for (var i = 0; i < n; i++)
             {
-                var isLast = (i == tileCols - 1) && hasTail;
-                x += isLast ? tailFract * tileSizeRect : tileSizeRect;
-
-                // ping-pong: even columns land on uMin, odd on innerU; the partial tail lerps the seam
-                // span by the tail fraction — the same expression for either flow direction.
-                var u = isLast ? Mathf.Lerp(uMin, innerU, tailFract)
-                    : (i + 1).IsEven() ? uMin : innerU;
-
-                WriteCol(ref b, x, yMin, yMax, u, vMin, vMax);
+                var (uA, uB) = i.IsEven() ? (innerU, uMin) : (uMin, innerU); // ping-pong: seam→body, then back
+                b.Quad(xL + centerW * i / n, xL + centerW * (i + 1) / n, y0, y1, uA, uB, vMin, vMax);
             }
 
-            WriteCol(ref b, xR, yMin, yMax, innerU, vMin, vMax); // right edge inner
-            WriteCol(ref b, xMax, yMin, yMax, uMax, vMin, vMax); // right edge outer
+            b.Quad(xR, x3, y0, y1, innerU, uMax, vMin, vMax); // right edge
 
-            // Left→right strip: adjacent columns share verts (quad i spans columns i, i+1), so step 2 verts.
-            var quadCount = totalCols - 1;
-            var ib = new IndexBuilder(quadCount, mb);
-            for (var i = 0; i < quadCount; ++i)
-            {
-                var a = i * 2;
-                ib.Quad(a, a + 1, a + 2, a + 3);
-            }
+            mb.Indices.SetUp_Quad(quadCount);
         }
 
         // One shared-strip column: bottom + top verts at `x`.
@@ -143,6 +124,46 @@ namespace UnityEngine.UI
             WriteCol(ref b, rect.xMax, y1, y2, uMin, vMin, vMin);
 
             cols.BuildIndices(bands: 2, mb, midVert);
+        }
+
+        // CAP_TY: top/bottom caps from the sprite's top (border.w) / bottom (border.y) borders; the body
+        // between them tiles in Y. Width stretches. (vs MY_R3C1: real caps instead of mirrored, tiled
+        // middle instead of stretched.)
+        public static void CapTY(RectTransform t, Sprite sprite, float borderMult, MeshBuilder mb)
+        {
+            Assert.IsTrue(sprite.border is { x: 0, z: 0 }, "Left/right borders must be 0 for CAP_TY: " + sprite.name);
+            Assert.IsTrue(sprite.border is { y: > 0, w: > 0 }, "Bottom (y) and top (w) borders must define the cap heights for CAP_TY: " + sprite.name);
+
+            var rect = t.rect;
+            if (mb.TrySetUpEmpty(rect.height <= 0f)) return;
+
+            // inner V = the cap/body UV seams
+            sprite.GetUV44(out var uMin, out _, out _, out var uMax, out var vMin, out var vBotSeam, out var vTopSeam, out var vMax);
+
+            var x0 = rect.xMin;
+            var x1 = rect.xMax;
+            var y0 = rect.yMin;
+            var y3 = rect.yMax;
+            var y1 = y0 + sprite.border.y * borderMult; // bottom cap inner boundary
+            var y2 = y3 - sprite.border.w * borderMult; // top cap inner boundary
+            var bodyH = y2 - y1;
+
+            // Both body ends anchor at a cap seam, so round to a whole tile count and scale the body
+            // uniformly to fit (a proportional partial tile would leave a cut against one cap).
+            var tileH = (sprite.rect.height - sprite.border.y - sprite.border.w) * borderMult; // body height scaled like the caps
+            var n = bodyH <= _eps || tileH <= _eps ? 0 : Mathf.Max(1, Mathf.RoundToInt(bodyH / tileH));
+
+            var quadCount = 2 + n;
+            var b = new StripBuilder(quadCount * 4, mb);
+
+            b.Quad(x0, x1, y2, y3, uMin, uMax, vTopSeam, vMax); // top cap
+
+            for (var i = 0; i < n; i++)
+                b.Quad(x0, x1, y2 - bodyH * (i + 1) / n, y2 - bodyH * i / n, uMin, uMax, vBotSeam, vTopSeam);
+
+            b.Quad(x0, x1, y0, y1, uMin, uMax, vMin, vBotSeam); // bottom cap
+
+            mb.Indices.SetUp_Quad(quadCount);
         }
 
         // CAP_MXY: tiled border frame from one edge sprite (thickness border.w). Top/bottom tile in X;

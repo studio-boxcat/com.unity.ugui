@@ -1,7 +1,6 @@
 #nullable enable
 using System;
 using Sirenix.OdinInspector;
-using UnityEngine;
 
 namespace UnityEngine.UI
 {
@@ -54,25 +53,6 @@ namespace UnityEngine.UI
 
 #if UNITY_EDITOR
         private static readonly DLog _log = new(nameof(UIIcon));
-
-        [UnityEditor.MenuItem("CONTEXT/Image/Convert to Icon")]
-        private static void ConvertToSpriteImage(UnityEditor.MenuCommand cmd)
-        {
-            var image = (Image)cmd.context;
-            var sprite = image.Sprite;
-            var mat = image.material;
-            var color = image.color;
-
-            var go = image.gameObject;
-            UnityEditor.Undo.DestroyObjectImmediate(image);
-
-            var comp = UnityEditor.Undo.AddComponent<UIIcon>(go);
-            comp.Sprite = sprite;
-            comp.material = mat;
-            comp.color = color;
-            comp.raycastTarget = image.raycastTarget;
-            comp.raycastInset = image.raycastInset;
-        }
 
         public void SetSpriteAndMatchDimension(Sprite sprite)
         {

@@ -42,6 +42,7 @@ namespace UnityEngine.UI
         MXY_R3C3_NF = 19,
         CAP_MY = 26, // mirror-Y caps (top/bottom) tile in X; middle stretches
         CAP_MXY = 27, // tiled border frame from one edge sprite (border.w); L/R = top/bottom rotated 90°
+        CAP_TY = 30, // top/bottom caps (border.w/border.y); body tiles in Y between them; width stretches
     }
 
     [Icon("Packages/com.unity.ugui/Runtime/ThirdParty/Boxcat/Image/UISlice.png")]
@@ -52,7 +53,7 @@ namespace UnityEngine.UI
     {
         [SerializeField]
         [OnValueChanged("SetVerticesDirty")]
-        private UISliceMethod _method;
+        private UISliceMethod _method = UISliceMethod.Identity;
         [SerializeField, Range(0.01f, 5f)]
         [OnValueChanged("SetVerticesDirty")]
         [HideIf("_borderMultiplier_HideIf")]
@@ -185,6 +186,9 @@ namespace UnityEngine.UI
                 case UISliceMethod.CAP_MXY:
                     UISliceMeshGen.CAP_MXY(t, sprite, _borderMultiplier, mb);
                     break;
+                case UISliceMethod.CAP_TY:
+                    UISliceMeshGen.CAP_TY(t, sprite, _borderMultiplier, mb);
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -200,6 +204,28 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
+        [UnityEditor.MenuItem("CONTEXT/UIIcon/Convert to Slice")]
+        private static void ConvertFromIcon(UnityEditor.MenuCommand cmd)
+        {
+            var icon = (UIIcon)cmd.context;
+            var sprite = icon.Sprite;
+            var mat = icon.material;
+            var color = icon.color;
+            var raycastTarget = icon.raycastTarget;
+            var raycastInset = icon.raycastInset;
+
+            var go = icon.gameObject;
+            UnityEditor.Undo.DestroyObjectImmediate(icon);
+
+            var comp = UnityEditor.Undo.AddComponent<UISlice>(go);
+            UnityEditor.Undo.RecordObject(comp, ""); // keep the copied values across undo→redo
+            comp.Sprite = sprite;
+            comp.material = mat;
+            comp.color = color;
+            comp.raycastTarget = raycastTarget;
+            comp.raycastInset = raycastInset;
+        }
+
         private bool _borderMultiplier_HideIf()
         {
             return _method
@@ -230,7 +256,7 @@ namespace UnityEngine.UI
                 or UISliceMethod.MY_R2C2 or UISliceMethod.MY_R2C3
                 or UISliceMethod.MY_R3C1 or UISliceMethod.MY_R3C2 or UISliceMethod.MY_R3C3
                 or UISliceMethod.MXY_R3C2 or UISliceMethod.MXY_R3C3 or UISliceMethod.MXY_R3C3_NF
-                or UISliceMethod.CAP_MY or UISliceMethod.CAP_MXY;
+                or UISliceMethod.CAP_MY or UISliceMethod.CAP_MXY or UISliceMethod.CAP_TY;
         }
 
         void ISelfValidator.Validate(SelfValidationResult result)
