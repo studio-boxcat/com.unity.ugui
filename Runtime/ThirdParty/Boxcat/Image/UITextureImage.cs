@@ -1,5 +1,4 @@
 #nullable enable
-using UnityEngine;
 
 namespace UnityEngine.UI
 {
