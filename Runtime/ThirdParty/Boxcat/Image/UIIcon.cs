@@ -86,6 +86,12 @@ namespace UnityEngine.UI
                 return;
             }
 
+            if (sprite.RefNq(Sprite))
+            {
+                _log.w("Previewing sprite, ignore.");
+                return;
+            }
+
             // ignore if the sprite bounds size is NaN
             if (float.IsNaN(sprite.bounds.size.x))
             {

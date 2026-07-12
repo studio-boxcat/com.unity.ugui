@@ -19,11 +19,16 @@ namespace UnityEngine.UI
 
         public static GraphicMaterialKey ResolveKey(Graphic graphic)
         {
-            return new GraphicMaterialKey(graphic.material, IsPremult(graphic.mainTexture));
+            var material = graphic.material;
+            // without this, the material-kind preview never shows on IMaterialModifier graphics
+            // (masked/soft-masked) — ResolveRender's modifier path bypasses ResolveBase.
+            graphic.OverlayMaterialToRender(ref material);
+            return new GraphicMaterialKey(material, IsPremult(graphic.mainTexture));
         }
 
         public static Material ResolveBase(GraphicMaterialKind material, Graphic graphic)
         {
+            graphic.OverlayMaterialToRender(ref material);
             if (material == GraphicMaterialKind.Custom)
                 return ResolveCustom(graphic);
             // mainTexture accessed lazily — avoids recursion for components whose mainTexture depends on material.
