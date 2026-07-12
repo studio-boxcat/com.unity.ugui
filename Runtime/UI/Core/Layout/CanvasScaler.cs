@@ -114,7 +114,10 @@ namespace UnityEngine.UI
         {
             // to prevent prefab stage flickering on domain reload
             if (Editing.Yes(this) && enabled)
+            {
+                m_Canvas ??= GetComponent<Canvas>();
                 Handle();
+            }
         }
 
         private bool Editor_IsWorldCanvas() => (m_Canvas ??= GetComponent<Canvas>()).renderMode == RenderMode.WorldSpace;
