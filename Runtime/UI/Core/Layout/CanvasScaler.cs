@@ -11,16 +11,7 @@ namespace UnityEngine.UI
     [DisallowMultipleComponent]
     public class CanvasScaler : UIBehaviour
     {
-        [SerializeField]
-        [OnValueChanged(nameof(Handle))]
-        protected float m_ReferencePixelsPerUnit = 100;
-
-        [SerializeField]
-        [HideIf("Editor_IsWorldCanvas"), OnValueChanged(nameof(Handle))]
-        protected Vector2 m_ReferenceResolution = new(1080, 1920); // = RefRes.SizeF
-        public Vector2 referenceResolution => m_ReferenceResolution;
-
-        public enum ScreenMatchMode
+        public enum ScreenMatchMode : byte
         {
             Expand = 1,
             Shrink = 2
@@ -35,7 +26,6 @@ namespace UnityEngine.UI
         // General variables
         [NonSerialized] private Canvas? m_Canvas;
         [NonSerialized] private float m_PrevScaleFactor = 1;
-        [NonSerialized] private float m_PrevReferencePixelsPerUnit = 100;
 
 
         private void OnEnable()
@@ -60,25 +50,23 @@ namespace UnityEngine.UI
             if (!m_Canvas.isRootCanvas)
                 return;
 
-            var isWorldCanvas = m_Canvas.renderMode == RenderMode.WorldSpace;
-            var scaleFactor = isWorldCanvas ? 1 : CalcUIScaleFactor();
+            m_Canvas.referencePixelsPerUnit = RefRes.PPU;
+
+            var scaleFactor = CalcScaleFactor();
             if (scaleFactor.ENq(m_PrevScaleFactor))
             {
                 m_Canvas!.scaleFactor = scaleFactor;
                 m_PrevScaleFactor = scaleFactor;
             }
-
-            if (m_ReferencePixelsPerUnit.ENq(m_PrevReferencePixelsPerUnit))
-            {
-                m_Canvas.referencePixelsPerUnit = m_ReferencePixelsPerUnit;
-                m_PrevReferencePixelsPerUnit = m_ReferencePixelsPerUnit;
-            }
         }
 
-        private float CalcUIScaleFactor()
+        private float CalcScaleFactor()
         {
+            var isWorldCanvas = m_Canvas!.renderMode == RenderMode.WorldSpace;
+            if (isWorldCanvas) return 1;
+
             var screenSize = m_Canvas.renderingDisplaySize;
-            var scale = screenSize / m_ReferenceResolution;
+            var scale = screenSize / RefRes.SizeF;
             return m_ScreenMatchMode switch
             {
                 ScreenMatchMode.Expand => Mathf.Min(scale.x, scale.y),
@@ -118,11 +106,17 @@ namespace UnityEngine.UI
         private static void RemoveInstance(CanvasScaler instance)
         {
             Assert.IsNotNull(_instances, "RemoveInstance called but _instances is null.");
-
             _instances!.RemoveLastRef(instance);
         }
 
 #if UNITY_EDITOR
+        private void OnValidate()
+        {
+            // to prevent prefab stage flickering on domain reload
+            if (Editing.Yes(this) && enabled)
+                Handle();
+        }
+
         private bool Editor_IsWorldCanvas() => (m_Canvas ??= GetComponent<Canvas>()).renderMode == RenderMode.WorldSpace;
 #endif
     }
