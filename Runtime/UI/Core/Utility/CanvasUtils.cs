@@ -70,7 +70,7 @@ namespace UnityEngine.UI
         // many renderers against one clipper should compute it once and hoist it out of the per-renderer
         // loop. Bounds are returned in that (root) canvas space. See Clipper.PerformClipping.
         public static Rect BoundingRect(RectTransform rectTransform, Matrix4x4 wtc)
-            => Matrix2x3.Multiply(wtc, rectTransform.localToWorldMatrix).MultiplyRectBounds(rectTransform.rect);
+            => Matrix2x3.Multiply(wtc, rectTransform.localToWorldMatrix).MultiplyAABB(rectTransform.rect);
 
         public static Rect BoundingRect(RectTransform rectTransform, Matrix4x4 wtc, Vector4 padding, out bool validRect)
         {
@@ -81,7 +81,7 @@ namespace UnityEngine.UI
             if (padding.Equals(default(Vector4)))
             {
                 validRect = true;
-                return ltc.MultiplyRectBounds(r);
+                return ltc.MultiplyAABB(r);
             }
 
             var ax = r.xMin + padding.x;
@@ -93,7 +93,7 @@ namespace UnityEngine.UI
             validRect = ax < bx && ay < by;
 
             return validRect
-                ? ltc.MultiplyRectBounds(Rect.MinMaxRect(ax, ay, bx, by))
+                ? ltc.MultiplyAABB(Rect.MinMaxRect(ax, ay, bx, by))
                 : default;
         }
 

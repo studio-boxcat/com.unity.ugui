@@ -29,14 +29,20 @@ namespace UnityEngine.UI
 
         [ShowIf("@CanShow(GraphicPropertyFlag.Material)"), PropertyOrder(GraphicPropOrder.Material), OnValueChanged("OnInspectorMaterialChanged")]
         [SerializeField] private GraphicMaterialKind m_Material;
+        public GraphicMaterialKind material
+        {
+            get => m_Material;
+            set
+            {
+                if (m_Material == value) return;
+                m_Material = value;
+                SetMaterialDirty();
+            }
+        }
 
         [ShowIf("@CanShow(GraphicPropertyFlag.Color)"), PropertyOrder(GraphicPropOrder.Color), OnValueChanged("SetVerticesDirty"), DontValidate]
         [SerializeField]
         private Color m_Color = Color.white;
-
-        [NonSerialized] private bool m_SkipLayoutUpdate;
-        [NonSerialized] private bool m_SkipMaterialUpdate;
-
         public virtual Color color
         {
             get => m_Color;
@@ -50,12 +56,7 @@ namespace UnityEngine.UI
         [SerializeField, ShowIf("@CanShow(GraphicPropertyFlag.Raycast)"), OnValueChanged("SetRaycastDirty")]
         [FoldoutGroup(GraphicEditorConst.Advanced, order: GraphicPropOrder.Advanced), PropertyOrder(GraphicPropOrder.Advanced_RaycastTarget)]
         private bool m_RaycastTarget;
-
         protected RaycastRegisterLink m_RaycastRegisterLink;
-
-        /// <summary>
-        /// Should this graphic be considered a target for raycasting?
-        /// </summary>
         public bool raycastTarget
         {
             get => m_RaycastTarget;
@@ -82,16 +83,29 @@ namespace UnityEngine.UI
         }
 
         [NonSerialized] private RectTransform? m_RectTransform;
+        // The RectTransform is a required component that must not be destroyed. Based on this assumption, a
+        // null-reference check is sufficient.
+        public RectTransform rectTransform => m_RectTransform ??= (RectTransform)transform;
+
         [NonSerialized] private CanvasRenderer? m_CanvasRenderer;
+        // The CanvasRenderer is a required component that must not be destroyed. Based on this assumption, a null-reference check is sufficient.
+        public CanvasRenderer canvasRenderer => m_CanvasRenderer ??= GetComponent<CanvasRenderer>();
+
         [NonSerialized] private Canvas? m_Canvas;
+        public Canvas canvas
+        {
+            get
+            {
+                if (!m_Canvas) CacheCanvas();
+                return m_Canvas!; // must be exists
+            }
+        }
 
         [NonSerialized] private bool m_VertsDirty;
         [NonSerialized] private bool m_MaterialDirty;
+        [NonSerialized] private bool m_SkipLayoutUpdate;
+        [NonSerialized] private bool m_SkipMaterialUpdate;
 
-        /// <summary>
-        /// Set all properties of the Graphic dirty and needing rebuilt.
-        /// Dirties Layout, Vertices, and Materials.
-        /// </summary>
         public virtual void SetAllDirty()
         {
             // Optimization: Graphic layout doesn't need recalculation if
@@ -123,9 +137,6 @@ namespace UnityEngine.UI
         /// <summary>
         /// Mark the layout as dirty and needing rebuilt.
         /// </summary>
-        /// <remarks>
-        /// Send a OnDirtyLayoutCallback notification if any elements are registered. See RegisterDirtyLayoutCallback
-        /// </remarks>
         public virtual void SetLayoutDirty()
         {
             if (!IsActive())
@@ -134,12 +145,6 @@ namespace UnityEngine.UI
             LayoutRebuilder.SetDirty(rectTransform);
         }
 
-        /// <summary>
-        /// Mark the vertices as dirty and needing rebuilt.
-        /// </summary>
-        /// <remarks>
-        /// Send a OnDirtyVertsCallback notification if any elements are registered. See RegisterDirtyVerticesCallback
-        /// </remarks>
         public virtual void SetVerticesDirty()
         {
             m_VertsDirty = true;
@@ -147,12 +152,6 @@ namespace UnityEngine.UI
                 CanvasUpdateRegistry.QueueGraphic(this);
         }
 
-        /// <summary>
-        /// Mark the material as dirty and needing rebuilt.
-        /// </summary>
-        /// <remarks>
-        /// Send a OnDirtyMaterialCallback notification if any elements are registered. See RegisterDirtyMaterialCallback
-        /// </remarks>
         public virtual void SetMaterialDirty()
         {
             m_MaterialDirty = true;
@@ -204,34 +203,6 @@ namespace UnityEngine.UI
             SetAllDirty();
         }
 
-        /// <summary>
-        /// The RectTransform component used by the Graphic. Cached for speed.
-        /// </summary>
-        public RectTransform rectTransform
-        {
-            get
-            {
-                // The RectTransform is a required component that must not be destroyed. Based on this assumption, a
-                // null-reference check is sufficient.
-                return m_RectTransform ??= (RectTransform)transform;
-            }
-        }
-
-        /// <summary>
-        /// A reference to the Canvas this Graphic is rendering to.
-        /// </summary>
-        /// <remarks>
-        /// In the situation where the Graphic is used in a hierarchy with multiple Canvases, the Canvas closest to the root will be used.
-        /// </remarks>
-        public Canvas canvas
-        {
-            get
-            {
-                if (!m_Canvas) CacheCanvas();
-                return m_Canvas!; // must be exists
-            }
-        }
-
         private void CacheCanvas()
         {
             m_Canvas = ComponentSearch.NearestUpwards_GOAnyAndCompEnabled<Canvas>(this);
@@ -241,39 +212,8 @@ namespace UnityEngine.UI
 #endif
         }
 
-        /// <summary>
-        /// A reference to the CanvasRenderer populated by this Graphic.
-        /// </summary>
-        // The CanvasRenderer is a required component that must not be destroyed. Based on this assumption, a null-reference check is sufficient.
-        public CanvasRenderer canvasRenderer => m_CanvasRenderer ??= GetComponent<CanvasRenderer>();
-
-        public GraphicMaterialKind material
-        {
-            get => m_Material;
-            set
-            {
-                if (m_Material == value) return;
-                m_Material = value;
-                SetMaterialDirty();
-            }
-        }
-
-
-        /// <summary>
-        /// The graphic's texture. (Read Only).
-        /// </summary>
-        /// <remarks>
-        /// This is the Texture that gets passed to the CanvasRenderer, Material and then Shader _MainTex.
-        ///
-        /// When implementing your own Graphic you can override this to control which texture goes through the UI Rendering pipeline.
-        ///
-        /// Bear in mind that Unity tries to batch UI elements together to improve performance, so its ideal to work with atlas to reduce the number of draw calls.
-        /// </remarks>
         public virtual Texture mainTexture => s_WhiteTexture!;
 
-        /// <summary>
-        /// Mark the Graphic and the canvas as having been changed.
-        /// </summary>
         protected virtual void OnEnable()
         {
 #if UNITY_EDITOR
