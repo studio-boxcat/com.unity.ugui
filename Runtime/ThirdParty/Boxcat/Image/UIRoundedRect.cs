@@ -1,6 +1,5 @@
 #nullable enable
 using Sirenix.OdinInspector;
-using UnityEngine;
 
 namespace UnityEngine.UI
 {
@@ -72,6 +71,55 @@ namespace UnityEngine.UI
         {
             base.Reset();
             Sprite = CommonAssets.QuarterSprite;
+        }
+
+        // Converts a slice authored as a fully-rounded rect from a CM corner sprite: every family
+        // maps to Corner.All, only the parsed radius differs (radius = sprite radius × border
+        // multiplier). Other sprites/methods need manual conversion.
+        [UnityEditor.MenuItem("CONTEXT/UISlice/Convert to Rounded Rect")]
+        private static void ConvertFromSlice(UnityEditor.MenuCommand cmd)
+        {
+            var slice = (UISlice)cmd.context;
+            var sprite = slice.Sprite;
+            if (!sprite || !TryParseCornerSprite(sprite!.name, out var spriteRadius))
+            {
+                L.E($"ConvertFromSlice: sprite must be CM_Quarter_* / CM_Semicircle_R* / CM_Circle_* - sprite={sprite.SafeName()}");
+                return;
+            }
+
+            var mat = slice.material;
+            var color = slice.color;
+            var raycastTarget = slice.raycastTarget;
+            var raycastInset = slice.raycastInset;
+            var radius = Mathf.Round(spriteRadius * slice.BorderMultiplier);
+
+            var comp = EditorUtils.ReplaceComponentInSlot<UIRoundedRect>(slice);
+            comp.Sprite = CommonAssets.QuarterSprite;
+            comp.material = mat;
+            comp.color = color;
+            comp.raycastTarget = raycastTarget;
+            comp.raycastInset = raycastInset;
+            comp._radius = radius;
+            return;
+
+            static bool TryParseCornerSprite(string name, out float radius)
+            {
+                radius = 0;
+                var m = System.Text.RegularExpressions.Regex.Match(name, @"^CM_(Quarter_|Semicircle_R|Circle_)(\d+)$");
+                if (!m.Success) return false;
+
+                var n = int.Parse(m.Groups[2].Value);
+                switch (m.Groups[1].Value)
+                {
+                    case "Quarter_":
+                    case "Semicircle_R":
+                        radius = n; // n is the arc radius
+                        return true;
+                    default: // Circle_: n is the diameter
+                        radius = n / 2f;
+                        return true;
+                }
+            }
         }
 #endif
     }

@@ -214,11 +214,7 @@ namespace UnityEngine.UI
             var raycastTarget = icon.raycastTarget;
             var raycastInset = icon.raycastInset;
 
-            var go = icon.gameObject;
-            UnityEditor.Undo.DestroyObjectImmediate(icon);
-
-            var comp = UnityEditor.Undo.AddComponent<UISlice>(go);
-            UnityEditor.Undo.RecordObject(comp, ""); // keep the copied values across undo→redo
+            var comp = EditorUtils.ReplaceComponentInSlot<UISlice>(icon);
             comp.Sprite = sprite;
             comp.material = mat;
             comp.color = color;
