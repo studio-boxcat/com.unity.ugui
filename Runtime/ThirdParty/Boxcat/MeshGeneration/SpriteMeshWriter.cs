@@ -1,5 +1,6 @@
 #nullable enable
-using UnityEngine;
+using Unity.Collections;
+using UnityEngine.U2D; // SpriteDataAccessExtensions: GetIndices
 
 namespace UnityEngine.UI
 {
@@ -7,18 +8,21 @@ namespace UnityEngine.UI
     // repeated), each copy written in a single fused pass — every float computed and stored exactly
     // once. Flips/mirrors are negated scale literals, so loops carry no zero terms. Writes skip z:
     // no pos writer ever stores a non-zero z, so the pooled slots stay 0 from allocation.
+    // Sources are native views into the sprite's own mesh data (SpriteUtils.GetPositions/GetUVs) —
+    // no managed copies, no cache.
     internal readonly unsafe ref struct SpriteMeshWriter
     {
-        private readonly Vector2[] _srcPoses;
+        private readonly NativeSlice<Vector3> _srcPoses;
         private readonly float* _pf;
         private readonly int _vertCount;
 
         private SpriteMeshWriter(Sprite sprite, int copies, MeshBuilder mb)
         {
-            var (srcPoses, srcUVs, srcIndices, vertCount, _) = SpriteMeshCache.Get(sprite);
-            _srcPoses = srcPoses;
-            _vertCount = vertCount;
+            _srcPoses = sprite.GetPositions();
+            _vertCount = _srcPoses.Length;
 
+            var srcUVs = sprite.GetUVs();
+            var srcIndices = sprite.GetIndices();
             if (copies == 1)
             {
                 mb.UVs.SetUp(srcUVs);
@@ -27,12 +31,12 @@ namespace UnityEngine.UI
             else
             {
                 mb.UVs.SetUp_Repeat(srcUVs, copies);
-                mb.Indices.SetUp_Incremental(srcIndices, vertCount, copies);
+                mb.Indices.SetUp_Incremental(srcIndices, _vertCount, copies);
             }
 
             // Poses pointer taken last: the UV/index SetUps above may allocate on growth, and a raw
             // channel pointer must not be held across allocations (MeshChannel.SetUpUnsafe contract).
-            _pf = mb.Poses.SetUpUnsafe(vertCount * copies).Ptr;
+            _pf = mb.Poses.SetUpUnsafe(_vertCount * copies).Ptr;
         }
 
         // Single-copy shortcuts.
@@ -99,8 +103,10 @@ namespace UnityEngine.UI
                 var v = src[i];
                 var vx = v.x * sx;
                 var vy = v.y * sy;
-                q[0] = vx; q[1] = vy;
-                q[b] = -vx; q[b + 1] = vy;
+                q[0] = vx;
+                q[1] = vy;
+                q[b] = -vx;
+                q[b + 1] = vy;
             }
         }
 
@@ -114,8 +120,10 @@ namespace UnityEngine.UI
                 var v = src[i];
                 var vx = v.x * sx;
                 var vy = v.y * sy;
-                q[0] = vx; q[1] = vy;
-                q[b] = vx; q[b + 1] = -vy;
+                q[0] = vx;
+                q[1] = vy;
+                q[b] = vx;
+                q[b + 1] = -vy;
             }
         }
 
@@ -133,10 +141,14 @@ namespace UnityEngine.UI
                 var vy = v.y * sy;
                 var nx = -vx;
                 var ny = -vy;
-                q[0] = vx; q[1] = vy;
-                q[b1] = nx; q[b1 + 1] = vy;
-                q[b2] = nx; q[b2 + 1] = ny;
-                q[b3] = vx; q[b3 + 1] = ny;
+                q[0] = vx;
+                q[1] = vy;
+                q[b1] = nx;
+                q[b1 + 1] = vy;
+                q[b2] = nx;
+                q[b2 + 1] = ny;
+                q[b3] = vx;
+                q[b3 + 1] = ny;
             }
         }
 
@@ -150,8 +162,10 @@ namespace UnityEngine.UI
                 var v = src[i];
                 var vx = v.x * sx;
                 var vy = v.y * sy + ay;
-                q[0] = vx + ax; q[1] = vy;
-                q[b] = nx - vx; q[b + 1] = vy;
+                q[0] = vx + ax;
+                q[1] = vy;
+                q[b] = nx - vx;
+                q[b + 1] = vy;
             }
         }
 
@@ -165,8 +179,10 @@ namespace UnityEngine.UI
                 var v = src[i];
                 var vx = v.x * sx + ax;
                 var vy = v.y * sy;
-                q[0] = vx; q[1] = vy + ay;
-                q[b] = vx; q[b + 1] = ny - vy;
+                q[0] = vx;
+                q[1] = vy + ay;
+                q[b] = vx;
+                q[b + 1] = ny - vy;
             }
         }
 
@@ -184,10 +200,14 @@ namespace UnityEngine.UI
                 var vy = v.y * sy;
                 float px = vx + ax, mx = nx - vx;
                 float py = vy + ay, my = ny - vy;
-                q[0] = px; q[1] = py;
-                q[b1] = mx; q[b1 + 1] = py;
-                q[b2] = mx; q[b2 + 1] = my;
-                q[b3] = px; q[b3 + 1] = my;
+                q[0] = px;
+                q[1] = py;
+                q[b1] = mx;
+                q[b1 + 1] = py;
+                q[b2] = mx;
+                q[b2 + 1] = my;
+                q[b3] = px;
+                q[b3 + 1] = my;
             }
         }
     }

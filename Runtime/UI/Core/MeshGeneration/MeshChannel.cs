@@ -9,7 +9,7 @@ using UnityEngine.Rendering;
 
 namespace UnityEngine.UI
 {
-    public abstract class MeshChannel<T> where T : struct
+    public abstract class MeshChannel<T> where T : unmanaged
     {
         protected T[]? Data { get; private set; }
         public int Count { get; private set; }
@@ -64,6 +64,21 @@ namespace UnityEngine.UI
 
             Data = data;
             Count = count;
+        }
+
+        // Copy-in from a native view (e.g. SpriteUtils.GetPositions/GetUVs) — no managed alloc,
+        // stride-aware single native copy (ArrayUtils.CopyTo) into the pooled buffer.
+        public void SetUp(NativeSlice<T> src)
+        {
+            var data = SetUp(src.Length);
+            src.CopyTo(data, 0);
+        }
+
+        public void SetUp(NativeArray<T> src)
+        {
+            var count = src.Length;
+            var data = SetUp(count);
+            NativeArray<T>.Copy(src, 0, data, 0, count);
         }
 
         [MustUseReturnValue]
@@ -263,13 +278,13 @@ namespace UnityEngine.UI
         [MustUseReturnValue]
         public unsafe UnsafeVecArray EditUnsafe() => new((float*)EditUnsafeCore(), 2, Count);
 
-        public void SetUp_Repeat(Vector2[] src, int repeat)
+        public void SetUp_Repeat(NativeSlice<Vector2> src, int repeat)
         {
             var count = src.Length;
             var data = SetUp(count * repeat);
-            var offset = 0;
-            for (var i = 0; i < repeat; i++, offset += count)
-                Array.Copy(src, 0, data, offset, count);
+            src.CopyTo(data, 0);
+            for (var b = 1; b < repeat; b++)
+                Array.Copy(data, 0, data, count * b, count);
         }
 
         protected override void Internal_FillMesh(Mesh mesh)
@@ -305,11 +320,6 @@ namespace UnityEngine.UI
                 data = SetUp(count);
                 Array.Fill(data, color, 0, count);
             }
-        }
-
-        public void SetUp_White(int count)
-        {
-            SetUp(WhiteColorCache.Opaque(count), count);
         }
 
         protected override void Internal_FillMesh(Mesh mesh)
@@ -351,7 +361,7 @@ namespace UnityEngine.UI
                 data[k] = (ushort) (data[k] + vertStride);
         }
 
-        public void SetUp_Incremental(ushort[] src, int increment, int repeat)
+        public void SetUp_Incremental(NativeArray<ushort> src, int increment, int repeat)
         {
             Assert.IsTrue(repeat > 0);
 
@@ -359,14 +369,14 @@ namespace UnityEngine.UI
             var data = SetUp(count * repeat);
 
             // Copy initial indices.
-            Array.Copy(src, 0, data, 0, count);
+            NativeArray<ushort>.Copy(src, 0, data, 0, count);
 
-            // Copy indices for each repeat.
+            // Copy indices for each repeat, reading the already-copied managed block.
             var indexPtr = count;
             var toAdd = increment;
             for (var j = 0; j < repeat - 1; j++, toAdd += increment)
             for (var i = 0; i < count; i++)
-                data[indexPtr++] = (ushort)(src[i] + toAdd);
+                data[indexPtr++] = (ushort)(data[i] + toAdd);
         }
 
         private static readonly List<ushort> _meshIndexBuf = new();
