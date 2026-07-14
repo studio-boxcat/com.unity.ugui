@@ -1,6 +1,5 @@
-﻿#nullable enable
-#if UNITY_EDITOR
-using UnityEngine;
+﻿#if UNITY_EDITOR
+#nullable enable
 using System.Collections.Generic;
 
 /**
@@ -30,7 +29,7 @@ namespace UnityEngine.UI
         {
             var indices = new List<ushort>();
 
-            var n = (ushort) m_points.Count;
+            var n = (ushort)m_points.Count;
             if (n < 3)
                 return indices.ToArray();
 
@@ -43,7 +42,7 @@ namespace UnityEngine.UI
             else
             {
                 for (ushort v = 0; v < n; v++)
-                    V[v] = (ushort) (n - 1 - v);
+                    V[v] = (ushort)(n - 1 - v);
             }
 
             int nv = n;

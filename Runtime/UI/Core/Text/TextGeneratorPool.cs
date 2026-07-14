@@ -13,7 +13,7 @@ namespace UnityEngine.UI
 
 #if DEBUG
             _debugCreationCount++;
-            L.I("[TextGeneratorPool] Created a new instance: " + _debugCreationCount);
+            // L.I("[TextGeneratorPool] Created a new instance: " + _debugCreationCount);
 #endif
             return new TextGenerator();
         }
