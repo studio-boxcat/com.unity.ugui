@@ -63,7 +63,7 @@ namespace UnityEngine.UI
                 Assert.IsTrue(_layoutRebuildQueue.IsEmpty());
                 if (_tempBuf.NotEmpty())
                 {
-                    L.I($"[CanvasUpdateRegistry] Rebuilding Layout Roots: {_tempBuf.Count.Strm()}");
+                    // L.I($"[CanvasUpdateRegistry] Rebuilding Layout Roots: {_tempBuf.Count.Strm()}");
 
                     foreach (Transform layoutRoot in _tempBuf) // element is guaranteed to be non-destroyed here.
                     {
