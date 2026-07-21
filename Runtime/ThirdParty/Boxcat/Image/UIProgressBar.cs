@@ -17,16 +17,17 @@ namespace UnityEngine.UI
             _bar.alpha = GetProgressAlpha(ratio);
         }
 
-        public void To(float to)
+        public Tweener To(float to)
         {
             var x = _bar.GetRectTransform().anchorMax.x;
-            DOTween.To(() => x, v =>
+            return DOTween.To(() => x, v =>
                 {
                     x = v;
                     _bar.GetRectTransform().SetAnchorMaxX1(v);
                     _bar.alpha = GetProgressAlpha(v);
                 }, to, 0.9f)
-                .SetEase(Ease.OutQuint);
+                .SetEase(Ease.OutQuint)
+                .SetTarget(_bar); // self-cleaning on bar destruction — the update lambda touches its rect
         }
 
         private static float GetProgressAlpha(float value)
