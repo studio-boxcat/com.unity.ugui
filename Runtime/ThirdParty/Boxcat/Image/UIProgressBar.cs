@@ -17,7 +17,7 @@ namespace UnityEngine.UI
             _bar.alpha = GetProgressAlpha(ratio);
         }
 
-        public Tweener To(float to)
+        public Tween To(float to)
         {
             var x = _bar.GetRectTransform().anchorMax.x;
             return DOTween.To(() => x, v =>
