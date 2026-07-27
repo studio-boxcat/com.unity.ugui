@@ -19,15 +19,14 @@ namespace UnityEngine.UI
 
         public Tween To(float to)
         {
-            var x = _bar.GetRectTransform().anchorMax.x;
-            return DOTween.To(() => x, v =>
+            return DOTween.FromTo(_bar,
+                static (bar, v) =>
                 {
-                    x = v;
-                    _bar.GetRectTransform().SetAnchorMaxX1(v);
-                    _bar.alpha = GetProgressAlpha(v);
-                }, to, 0.9f)
-                .SetEase(Ease.OutQuint)
-                .SetTarget(_bar); // self-cleaning on bar destruction — the update lambda touches its rect
+                    var b = (CanvasGroup) bar;
+                    b.GetRectTransform().SetAnchorMaxX1(v);
+                    b.alpha = GetProgressAlpha(v);
+                }, _bar.GetRectTransform().anchorMax.x, to, 0.9f)
+                .SetEase(Ease.OutQuint);
         }
 
         private static float GetProgressAlpha(float value)
