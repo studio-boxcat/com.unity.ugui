@@ -18,8 +18,7 @@ namespace UnityEngine.UI
 
         private SpriteMeshWriter(Sprite sprite, int copies, MeshBuilder mb)
         {
-            _srcPoses = sprite.GetPositions();
-            _vertCount = _srcPoses.Length;
+            _vertCount = sprite.GetVertexCount();
 
             var srcUVs = sprite.GetUVs();
             var srcIndices = sprite.GetIndices();
@@ -37,6 +36,13 @@ namespace UnityEngine.UI
             // Poses pointer taken last: the UV/index SetUps above may allocate on growth, and a raw
             // channel pointer must not be held across allocations (MeshChannel.SetUpUnsafe contract).
             _pf = mb.Poses.SetUpUnsafe(_vertCount * copies).Ptr;
+
+            // Source slice taken last for the same reason, and read immediately by the Scale* methods
+            // below. Measured: the handle is live when captured before the SetUps and released by the
+            // time they finish (their managed allocations can let a GC run the asset-unload bookkeeping
+            // that releases it), so a slice held across them throws on the checked indexer. The UV and
+            // index reads above are safe precisely because they are consumed the instant they are taken.
+            _srcPoses = sprite.GetPositions();
         }
 
         // Single-copy shortcuts.
