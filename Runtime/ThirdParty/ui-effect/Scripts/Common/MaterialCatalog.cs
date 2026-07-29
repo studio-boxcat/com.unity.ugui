@@ -5,16 +5,16 @@ namespace Coffee.UIEffects
 {
     static class MaterialCatalog
     {
-        static Material _effect_Add;
-        static Material _effect_Fill;
-        static Material _effect_Fill_Premult;
-        static Material _shiny;
-        static Material _shiny_Premult;
+        static Material? _effect_Add;
+        static Material? _effect_Fill;
+        static Material? _effect_Fill_Premult;
+        static Material? _shiny;
+        static Material? _shiny_Premult;
 
 
-        static ParameterTexture _paramEffect;
+        static ParameterTexture? _paramEffect;
         public static ParameterTexture ParamEffect => _paramEffect ??= CreateParamTexture(4, 32);
-        static ParameterTexture _paramShiny;
+        static ParameterTexture? _paramShiny;
         public static ParameterTexture ParamShiny => _paramShiny ??= CreateParamTexture(8, 32);
 
         static int _propertyIdCache;

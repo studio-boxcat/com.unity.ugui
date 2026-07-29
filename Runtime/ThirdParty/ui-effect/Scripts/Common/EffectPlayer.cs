@@ -1,154 +1,82 @@
 ﻿using UnityEngine;
 using System;
-using System.Collections.Generic;
+using Sirenix.OdinInspector;
+using UnityEngine.Serialization;
 
 namespace Coffee.UIEffects
 {
-    /// <summary>
-    /// Effect player.
-    /// </summary>
-    [Serializable]
+    [Serializable, BoxGroup]
     public class EffectPlayer
     {
-        //################################
-        // Public Members.
-        //################################
-        /// <summary>
-        /// Gets or sets a value indicating whether is playing.
-        /// </summary>
-        [Header("Effect Player")] [Tooltip("Playing.")]
-        public bool play = false;
-
-        /// <summary>
-        /// Gets or sets the delay before looping.
-        /// </summary>
-        [Tooltip("Initial play delay.")] [Range(0f, 10f)]
-        public float initialPlayDelay = 0;
-
-        /// <summary>
-        /// Gets or sets the duration.
-        /// </summary>
-        [Tooltip("Duration.")] [Range(0.01f, 10f)]
+        [FormerlySerializedAs("play")]
+        public bool playOnEnable = false;
+        [HorizontalGroup("Time")]
+        [FormerlySerializedAs("initialPlayDelay")]
+        public float initialDelay = 0;
+        [HorizontalGroup("Time")] [MinValue(0.01f)]
         public float duration = 1;
-
-        /// <summary>
-        /// Gets or sets a value indicating whether can loop.
-        /// </summary>
-        [Tooltip("Loop.")] public bool loop = false;
-
-        /// <summary>
-        /// Gets or sets the delay before looping.
-        /// </summary>
-        [Tooltip("Delay before looping.")] [Range(0f, 10f)]
+        [HorizontalGroup("Loop")]
+        public bool loop = false;
+        [HorizontalGroup("Loop")]
         public float loopDelay = 0;
 
-        /// <summary>
-        /// Gets or sets the update mode.
-        /// </summary>
-        [Tooltip("Update mode")] public AnimatorUpdateMode updateMode = AnimatorUpdateMode.Normal;
+        public bool playing { get; private set; }
+        private float _time = float.NaN;
 
-        static List<Action> s_UpdateActions;
-
-        /// <summary>
-        /// Register player.
-        /// </summary>
-        public void OnEnable(Action<float> callback = null)
+        public void OnEnable()
         {
-            if (s_UpdateActions == null)
-            {
-                s_UpdateActions = new List<Action>();
-                Canvas.willRenderCanvases += () =>
-                {
-                    var count = s_UpdateActions.Count;
-                    for (int i = 0; i < count; i++)
-                    {
-                        s_UpdateActions[i].Invoke();
-                    }
-                };
-            }
-
-            s_UpdateActions.Add(OnWillRenderCanvases);
-
-            if (play)
-            {
-                _time = -initialPlayDelay;
-            }
-            else
-            {
-                _time = 0;
-            }
-
-            _callback = callback;
+            if (playOnEnable)
+                Play();
         }
 
-        /// <summary>
-        /// Unregister player.
-        /// </summary>
-        public void OnDisable()
+        public void Play()
         {
-            _callback = null;
-            s_UpdateActions.Remove(OnWillRenderCanvases);
+            _time = -initialDelay;
+            playing = true;
         }
 
-        /// <summary>
-        /// Start playing.
-        /// </summary>
-        public void Play(bool reset, Action<float> callback = null)
+        public void Pause()
         {
-            if (reset)
-            {
-                _time = 0;
-            }
-
-            play = true;
-            if (callback != null)
-            {
-                _callback = callback;
-            }
+            playing = false;
         }
 
-        /// <summary>
-        /// Stop playing.
-        /// </summary>
-        public void Stop(bool reset)
+        public bool Update()
         {
-            if (reset)
+            if (!playing)
+                return false;
+
+            var old = Mathf.Clamp01(_time);
+            _time += Time.deltaTime;
+
+            if (_time > duration)
             {
-                _time = 0;
-                if (_callback != null)
-                {
-                    _callback(_time);
-                }
+                playing = loop;
+                _time = loop ? -loopDelay : duration;
             }
 
-            play = false;
+            var cur = Mathf.Clamp01(_time);
+            return cur.ENq(old);
         }
 
-        //################################
-        // Private Members.
-        //################################
-        float _time = 0;
-        Action<float> _callback;
+        public float? current => _time.IsNan() ? null : Mathf.Clamp01(_time / duration);
 
-        void OnWillRenderCanvases()
+#if UNITY_EDITOR
+        private bool _preview;
+
+        [Button(DirtyOnClick = false)]
+        private void TogglePlay()
         {
-            if (!play || !Application.isPlaying || _callback == null)
+            if (_preview.GetAndFlip())
             {
-                return;
+                Pause();
+                AnimationModeManager.Stop();
             }
-
-            _time += updateMode == AnimatorUpdateMode.UnscaledTime
-                ? Time.unscaledDeltaTime
-                : Time.deltaTime;
-            var current = _time / duration;
-
-            if (duration <= _time)
+            else // was false
             {
-                play = loop;
-                _time = loop ? -loopDelay : 0;
+                Play();
+                AnimationModeManager.Start();
             }
-
-            _callback(current);
         }
+#endif
     }
 }

@@ -5,80 +5,44 @@ using UnityEngine.UI;
 
 namespace Coffee.UIEffects
 {
-    /// <summary>
-    /// UIEffect.
-    /// </summary>
-    [AddComponentMenu("UI/UIEffects/UIShiny", 2)]
     public class UIShiny : BaseMaterialEffect
 #if UNITY_EDITOR
         , ISelfValidator
 #endif
     {
-        float _lastRotation;
-        EffectArea _lastEffectArea;
-
-        [Tooltip("Location for shiny effect.")] [FormerlySerializedAs("m_Location")] [SerializeField] [Range(0, 1)]
+        [SerializeField]
         float m_EffectFactor = 0.5f;
-
-        [Tooltip("Width for shiny effect.")] [SerializeField] [Range(0, 1)]
+        [SerializeField, HorizontalGroup("Geometry")]
         float m_Width = 0.25f;
-
-        [Tooltip("Rotation for shiny effect.")] [SerializeField] [Range(-180, 180)]
+        [SerializeField, HorizontalGroup("Geometry")]
         float m_Rotation = 135;
-
-        [Tooltip("Softness for shiny effect.")] [SerializeField] [Range(0.01f, 1)]
+        [SerializeField, HorizontalGroup("Visual")]
         float m_Softness = 1f;
-
-        [Tooltip("Brightness for shiny effect.")] [FormerlySerializedAs("m_Alpha")] [SerializeField] [Range(0, 1)]
+        [SerializeField, HorizontalGroup("Visual")]
         float m_Brightness = 1f;
-
-        [Tooltip("Gloss factor for shiny effect.")] [FormerlySerializedAs("m_Highlight")] [SerializeField] [Range(0, 1)]
+        [SerializeField, HorizontalGroup("Visual")]
         float m_Gloss = 1;
+        [FormerlySerializedAs("m_EffectArea")]
+        [SerializeField] bool m_FitAABB;
+        [SerializeField] EffectPlayer m_Player = null!;
 
-        [Header("Advanced Option")] [Tooltip("The area for effect.")] [SerializeField]
-        protected EffectArea m_EffectArea;
-
-        [SerializeField] EffectPlayer m_Player;
-
-        /// <summary>
-        /// Effect factor between 0(start) and 1(end).
-        /// </summary>
-        public float effectFactor
-        {
-            get { return m_EffectFactor; }
-            set
-            {
-                value = Mathf.Clamp(value, 0, 1);
-                if (Mathf.Approximately(m_EffectFactor, value)) return;
-                m_EffectFactor = value;
-                SetEffectParamsDirty();
-            }
-        }
-
-        /// <summary>
-        /// Gets the parameter texture.
-        /// </summary>
         public override ParameterTexture paramTex => MaterialCatalog.ParamShiny;
 
-        public EffectPlayer effectPlayer => m_Player ??= new EffectPlayer();
-
-        /// <summary>
-        /// This function is called when the object becomes enabled and active.
-        /// </summary>
         protected override void OnEnable()
         {
+            // Before base: its SetEffectParamsDirty pass has to see a player that already started,
+            // or the first frames render the authored location instead of the sweep's start.
+            m_Player.OnEnable();
             base.OnEnable();
-            effectPlayer.OnEnable(f => effectFactor = f);
         }
 
-        /// <summary>
-        /// This function is called when the behaviour becomes disabled () or inactive.
-        /// </summary>
-        protected override void OnDisable()
+        private void Update()
         {
-            base.OnDisable();
-            effectPlayer.OnDisable();
+            if (m_Player.Update())
+                SetEffectParamsDirty();
         }
+
+        public void Play() => m_Player.Play();
 
         protected override Material GetEffectMaterial(bool isPremult)
         {
@@ -91,7 +55,9 @@ namespace Coffee.UIEffects
         public override void ModifyMesh(MeshBuilder mb)
         {
             var normalizedIndex = paramTex.GetNormalizedIndex(this);
-            var rect = m_EffectArea.GetEffectArea(mb, rectTransform.rect);
+            var rect = m_FitAABB
+                ? mb.Poses.CalculateBoundingRect()
+                : rectTransform.rect;
 
             // Calculate vertex position.
             var poses = mb.Poses;
@@ -109,58 +75,21 @@ namespace Coffee.UIEffects
             }
         }
 
-        /// <summary>
-        /// Play effect.
-        /// </summary>
-        public void Play(bool reset = true)
-        {
-            effectPlayer.Play(reset);
-        }
-
-        /// <summary>
-        /// Stop effect.
-        /// </summary>
-        public void Stop(bool reset = true)
-        {
-            effectPlayer.Stop(reset);
-        }
-
         protected override void SetEffectParamsDirty()
         {
-            paramTex.SetData(this, 0, m_EffectFactor); // param1.x : location
+            var location = m_Player.current ?? m_EffectFactor;
+            paramTex.SetData(this, 0, location); // param1.x : location
             paramTex.SetData(this, 1, m_Width); // param1.y : width
             paramTex.SetData(this, 2, m_Softness); // param1.z : softness
             paramTex.SetData(this, 3, m_Brightness); // param1.w : blightness
             paramTex.SetData(this, 4, m_Gloss); // param2.x : gloss
         }
 
-        protected override void SetVerticesDirty()
-        {
-            base.SetVerticesDirty();
-
-            _lastRotation = m_Rotation;
-            _lastEffectArea = m_EffectArea;
-        }
-
-        protected override void OnDidApplyAnimationProperties()
-        {
-            base.OnDidApplyAnimationProperties();
-
-            if (!Mathf.Approximately(_lastRotation, m_Rotation)
-                || _lastEffectArea != m_EffectArea)
-                SetVerticesDirty();
-        }
-
 #if UNITY_EDITOR
         void ISelfValidator.Validate(SelfValidationResult result)
         {
             var g = GetComponent<Graphic>();
-            if (!g)
-            {
-                result.AddError("Graphic component is missing.");
-                return;
-            }
-
+            if (!g) return; // [RequireComponent] from BaseMeshEffect
             if (g.material is not GraphicMaterialKind.Normal)
                 result.AddError($"UIShiny only supports Normal material (got {g.material}).");
         }
