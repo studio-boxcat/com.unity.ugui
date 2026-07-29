@@ -25,7 +25,6 @@ namespace UnityEngine.UI
 
         // General variables
         [NonSerialized] private Canvas? m_Canvas;
-        [NonSerialized] private float m_PrevScaleFactor = 1;
 
 
         private void OnEnable()
@@ -50,14 +49,14 @@ namespace UnityEngine.UI
             if (!m_Canvas.isRootCanvas)
                 return;
 
-            m_Canvas.referencePixelsPerUnit = RefRes.PPU;
+            if (m_Canvas.referencePixelsPerUnit.ENq(RefRes.PPU))
+                m_Canvas.referencePixelsPerUnit = RefRes.PPU;
 
+            // Compare against the live Canvas: a [NonSerialized] cache resets on domain reload while
+            // the native Canvas keeps its scaleFactor, and set_scaleFactor doesn't early-out.
             var scaleFactor = CalcScaleFactor();
-            if (scaleFactor.ENq(m_PrevScaleFactor))
-            {
-                m_Canvas!.scaleFactor = scaleFactor;
-                m_PrevScaleFactor = scaleFactor;
-            }
+            if (scaleFactor.ENq(m_Canvas.scaleFactor))
+                m_Canvas.scaleFactor = scaleFactor;
         }
 
         private float CalcScaleFactor()
@@ -112,12 +111,18 @@ namespace UnityEngine.UI
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            // to prevent prefab stage flickering on domain reload
-            if (Editing.Yes(this) && enabled)
+            // re-handle to prevent prefab stage flickering on domain reload.
+            if (Editing.No(this) || !enabled)
+                return;
+
+            m_Canvas ??= GetComponent<Canvas>();
+
+            // Deferred: OnValidate runs inside Unity's SendMessage-forbidden window (scene restore on
+            // play-mode exit), where a scaleFactor write drops the dimensions-change cascade.
+            UnityEditor.EditorApplication.delayCall += () =>
             {
-                m_Canvas ??= GetComponent<Canvas>();
-                Handle();
-            }
+                if (this && enabled) Handle();
+            };
         }
 
         private bool Editor_IsWorldCanvas() => (m_Canvas ??= GetComponent<Canvas>()).renderMode == RenderMode.WorldSpace;
