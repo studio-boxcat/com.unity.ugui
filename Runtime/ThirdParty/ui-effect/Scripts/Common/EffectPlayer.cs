@@ -77,6 +77,12 @@ namespace Coffee.UIEffects
                 AnimationModeManager.Start();
             }
         }
+
+        public void OnDisable()
+        {
+            if (_preview)
+                TogglePlay();
+        }
 #endif
     }
 }
