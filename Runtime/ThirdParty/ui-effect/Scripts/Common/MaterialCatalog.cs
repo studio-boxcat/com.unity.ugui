@@ -12,30 +12,14 @@ namespace Coffee.UIEffects
         static Material? _shiny_Premult;
 
 
-        static ParameterTexture? _paramEffect;
-        public static ParameterTexture ParamEffect => _paramEffect ??= CreateParamTexture(4, 32);
-        static ParameterTexture? _paramShiny;
-        public static ParameterTexture ParamShiny => _paramShiny ??= CreateParamTexture(8, 32);
-
-        static int _propertyIdCache;
-        static int _propertyId
-        {
-            get
-            {
-                if (_propertyIdCache == 0)
-                    _propertyIdCache = Shader.PropertyToID("_ParamTex");
-                return _propertyIdCache;
-            }
-        }
-
         public static Material GetEffect(ColorMode colorMode, bool isPremult)
         {
             return colorMode switch
             {
-                ColorMode.Add => _effect_Add ??= LoadMaterial(MaterialNames.UIEffectAdd, ParamEffect),
+                ColorMode.Add => _effect_Add ??= LoadMaterial(MaterialNames.UIEffectAdd),
                 ColorMode.Fill when isPremult
-                    => _effect_Fill_Premult ??= LoadMaterial(MaterialNames.UIEffectFillPremult, ParamEffect),
-                ColorMode.Fill => _effect_Fill ??= LoadMaterial(MaterialNames.UIEffectFill, ParamEffect),
+                    => _effect_Fill_Premult ??= LoadMaterial(MaterialNames.UIEffectFillPremult),
+                ColorMode.Fill => _effect_Fill ??= LoadMaterial(MaterialNames.UIEffectFill),
                 _ => throw new System.NotSupportedException("Only ColorMode.Add and ColorMode.Fill are supported.")
             };
         }
@@ -54,27 +38,20 @@ namespace Coffee.UIEffects
         public static Material GetShiny(bool isPremult)
         {
             return isPremult
-                ? _shiny_Premult ??= LoadMaterial(MaterialNames.UIShinyPremult, ParamShiny)
-                : _shiny ??= LoadMaterial(MaterialNames.UIShiny, ParamShiny);
+                ? _shiny_Premult ??= LoadMaterial(MaterialNames.UIShinyPremult)
+                : _shiny ??= LoadMaterial(MaterialNames.UIShiny);
         }
 
-        static Material LoadMaterial(string path, ParameterTexture paramTex)
+        static Material LoadMaterial(string path)
         {
-            L.I($"LoadMaterial: {path}");
+            L.TI(path);
             var mat = Resources.Load<Material>(path);
+            Assert.IsNotNull(mat, $"Material not found: {path}"); // before the copy, which would NRE first
 #if UNITY_EDITOR
             mat = new Material(mat) { hideFlags = HideFlags.HideAndDontSave };
 #endif
-            Assert.IsNotNull(mat, $"Material not found: {path}");
-            paramTex.SetTextureForMaterial(mat, _propertyId);
+            mat.SetParamTex(ParamTex.Texture);
             return mat;
-        }
-
-        static ParameterTexture CreateParamTexture(int channels, int instanceLimit)
-        {
-            var paramTex = new ParameterTexture(channels, instanceLimit);
-            paramTex.Initialize();
-            return paramTex;
         }
     }
 }

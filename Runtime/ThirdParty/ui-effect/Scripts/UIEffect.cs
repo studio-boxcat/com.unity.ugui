@@ -54,11 +54,6 @@ namespace Coffee.UIEffects
             }
         }
 
-        /// <summary>
-        /// Gets the parameter texture.
-        /// </summary>
-        public override ParameterTexture paramTex => MaterialCatalog.ParamEffect;
-
         protected override Material GetEffectMaterial(bool isPremult)
         {
             return MaterialCatalog.GetEffect(colorMode, isPremult);
@@ -71,7 +66,7 @@ namespace Coffee.UIEffects
         {
             var uvs = mb.UVs.Edit();
             var count = uvs.Length;
-            var normalizedIndex = paramTex.GetNormalizedIndex(this);
+            var normalizedIndex = ParamTex.GetNormalizedIndex(ParamSlot);
 
             for (var i = 0; i < count; i++)
             {
@@ -84,7 +79,8 @@ namespace Coffee.UIEffects
 
         protected override void SetEffectParamsDirty()
         {
-            paramTex.SetData(this, 1, m_ColorFactor); // param.y : color factor
+            if (ParamTex.Edit(ParamSlot, out var w))
+                w.Set(1, m_ColorFactor); // param.y : color factor
         }
 
 #if UNITY_EDITOR

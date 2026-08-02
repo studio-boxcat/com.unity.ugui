@@ -5,11 +5,9 @@ using UnityEngine.UI;
 namespace Coffee.UIEffects
 {
     [DisallowMultipleComponent]
-    public abstract class BaseMaterialEffect : BaseMeshEffect, IParameterInstance, IMaterialModifier
+    public abstract class BaseMaterialEffect : BaseMeshEffect, IMaterialModifier
     {
-        int IParameterInstance.index { get; set; }
-
-        public abstract ParameterTexture paramTex { get; }
+        protected int ParamSlot { get; private set; } = ParamTex.NoSlot;
 
         public void SetMaterialDirty() => graphic.SetMaterialDirty();
 
@@ -17,7 +15,7 @@ namespace Coffee.UIEffects
         {
             if (enabled is false) return null;
             var effectMat = GetEffectMaterial(key.IsPremult);
-            Assert.IsNotNull(effectMat.GetTexture("_ParamTex"), "Material must have a texture property '_ParamTex'.");
+            Assert.IsNotNull(effectMat.GetParamTex(), "Material must have a texture property '_ParamTex'.");
             return effectMat;
         }
 
@@ -44,7 +42,8 @@ namespace Coffee.UIEffects
         {
             base.OnEnable();
 
-            paramTex?.Register(this);
+            Assert.AreEqual(ParamTex.NoSlot, ParamSlot, "slot is already acquired.");
+            ParamSlot = ParamTex.Acquire();
 
             SetMaterialDirty();
             SetEffectParamsDirty();
@@ -56,7 +55,8 @@ namespace Coffee.UIEffects
 
             SetMaterialDirty();
 
-            paramTex?.Unregister(this);
+            ParamTex.Release(ParamSlot);
+            ParamSlot = ParamTex.NoSlot;
         }
     }
 }

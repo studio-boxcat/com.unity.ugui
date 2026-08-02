@@ -26,8 +26,6 @@ namespace Coffee.UIEffects
         [SerializeField] bool m_FitAABB;
         [SerializeField] EffectPlayer m_Player = null!;
 
-        public override ParameterTexture paramTex => MaterialCatalog.ParamShiny;
-
         protected override void OnEnable()
         {
             // Before base: its SetEffectParamsDirty pass has to see a player that already started,
@@ -54,7 +52,7 @@ namespace Coffee.UIEffects
         /// </summary>
         public override void ModifyMesh(MeshBuilder mb)
         {
-            var normalizedIndex = paramTex.GetNormalizedIndex(this);
+            var normalizedIndex = ParamTex.GetNormalizedIndex(ParamSlot);
             var rect = m_FitAABB
                 ? mb.Poses.CalculateBoundingRect()
                 : rectTransform.rect;
@@ -77,12 +75,14 @@ namespace Coffee.UIEffects
 
         protected override void SetEffectParamsDirty()
         {
+            if (!ParamTex.Edit(ParamSlot, out var w)) return;
+
             var location = m_Player.current ?? m_EffectFactor;
-            paramTex.SetData(this, 0, location); // param1.x : location
-            paramTex.SetData(this, 1, m_Width); // param1.y : width
-            paramTex.SetData(this, 2, m_Softness); // param1.z : softness
-            paramTex.SetData(this, 3, m_Brightness); // param1.w : blightness
-            paramTex.SetData(this, 4, m_Gloss); // param2.x : gloss
+            w.Set(0, location); // param1.x : location
+            w.Set(1, m_Width); // param1.y : width
+            w.Set(2, m_Softness); // param1.z : softness
+            w.Set(3, m_Brightness); // param1.w : blightness
+            w.Set(4, m_Gloss); // param2.x : gloss
         }
 
 #if UNITY_EDITOR
