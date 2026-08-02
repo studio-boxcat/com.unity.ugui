@@ -185,9 +185,11 @@ namespace Coffee.UISoftMask
             _graphicMesh.CombineMeshes(cr.GetMesh());
 
             // set material property
-            _mpb!.SetTexture(s_MainTexId, g.mainTexture);
-            _mpb.SetFloat(s_SoftnessId, m_Softness);
-            _mpb.SetFloat(s_Alpha, m_Alpha);
+            // Not SetMainTex: Graphic.mainTexture is legitimately null (NonDrawingGraphic), and
+            // clearing the property is the wanted behaviour there.
+            _mpb!.SetTexture(GraphicsUtils.MainTexID, g.mainTexture);
+            _mpb.SetFloat(s_SoftnessId.Val, m_Softness);
+            _mpb.SetFloat(s_Alpha.Val, m_Alpha);
 
             // draw mesh & execute command buffer
             _cb.DrawMesh(_graphicMesh, transform.localToWorldMatrix, GetSharedMaskMaterial(), 0, 0, _mpb);
@@ -196,16 +198,8 @@ namespace Coffee.UISoftMask
             Profiler.EndSample(); // UpdateMaskRt
         }
 
-        private static readonly int s_MainTexId;
-        private static readonly int s_SoftnessId;
-        private static readonly int s_Alpha;
-
-        static SoftMask()
-        {
-            s_MainTexId = Shader.PropertyToID("_MainTex");
-            s_SoftnessId = Shader.PropertyToID("_Softness");
-            s_Alpha = Shader.PropertyToID("_Alpha");
-        }
+        private static ShaderID s_SoftnessId = new("_Softness");
+        private static ShaderID s_Alpha = new("_Alpha");
 
         private static Material? _sharedMaskMat;
         private static Material GetSharedMaskMaterial() => _sharedMaskMat ??= Resources.Load<Material>(MaterialNames.SoftMask);
