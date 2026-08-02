@@ -52,13 +52,20 @@ namespace Coffee.UIExtensions
 #endif
 
             var ps = Source;
+            var pr = SourceRenderer;
             var cr = canvasRenderer;
             if ((!ps.IsAlive() && !ps.isPlaying) // not playing. for timeline, isPlaying is always false but IsAlive() returns true only when the ParticleSystem needs to be updated.
                 || ps.particleCount == 0 // no particles to render.
+#if UNITY_EDITOR
+                // particleCount is simulation-side; BakeMesh reads the renderer-side snapshot, which edit mode never fills
+                // (Graphic is [ExecuteAlways]). Baking without it asserts on 'ps->array_size()' and returns NaN bounds.
+                || pr.bounds.size == Vector3.zero
+#endif
                 || Mathf.Approximately(cr.GetInheritedAlpha(), 0)) // #102: Do not bake particle system to mesh when the alpha is zero.
             {
                 V($"[UIParticle] ParticleSystem is not alive or not playing or no particles: " +
-                  $"isAlive={ps.IsAlive()}, isPlaying={ps.isPlaying}, particleCount={ps.particleCount}, inheritedAlpha={cr.GetInheritedAlpha()}");
+                  $"isAlive={ps.IsAlive()}, isPlaying={ps.isPlaying}, particleCount={ps.particleCount}, " +
+                  $"rendererBounds={pr.bounds.size}, inheritedAlpha={cr.GetInheritedAlpha()}");
                 cr.SetMesh(MeshPool.Empty);
                 return;
             }
@@ -77,7 +84,7 @@ namespace Coffee.UIExtensions
 
             // For particle, we don't need layout, mesh modification or so.
             var m = MeshPool.Rent();
-            UIParticleBaker.BakeMesh(ps, SourceRenderer, m, cam, out var subMeshCount);
+            UIParticleBaker.BakeMesh(ps, pr, m, cam, out var subMeshCount);
             cr.SetMesh(m);
             MeshPool.Return(m);
 
