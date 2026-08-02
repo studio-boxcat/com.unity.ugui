@@ -17,7 +17,7 @@ namespace UnityEngine.UI
             _bar.alpha = GetProgressAlpha(ratio);
         }
 
-        public Tween To(float to, float duration)
+        public Tween To(float to, float duration, Ease ease = Ease.OutCubic)
         {
             return DOTween.FromTo(_bar,
                 static (bar, v) =>
@@ -26,7 +26,7 @@ namespace UnityEngine.UI
                     b.GetRectTransform().SetAnchorMaxX1(v);
                     b.alpha = GetProgressAlpha(v);
                 }, _bar.GetRectTransform().anchorMax.x, to, duration)
-                .SetEase(Ease.OutQuint);
+                .SetEase(ease);
         }
 
         private static float GetProgressAlpha(float value)
