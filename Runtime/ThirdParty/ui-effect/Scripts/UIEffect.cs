@@ -4,30 +4,21 @@ using UnityEngine.UI;
 
 namespace Coffee.UIEffects
 {
-    /// <summary>
-    /// UIEffect.
-    /// </summary>
     [RequireComponent(typeof(Graphic))]
     [DisallowMultipleComponent]
-    [AddComponentMenu("UI/UIEffects/UIEffect", 1)]
     public class UIEffect : BaseMaterialEffect
 #if UNITY_EDITOR
         , ISelfValidator
 #endif
     {
-        [Tooltip("Color effect factor between 0(no effect) and 1(complete effect).")]
         [SerializeField] [Range(0, 1)]
         [OnValueChanged(nameof(SetEffectParamsDirty))]
         float m_ColorFactor = 1;
 
-        [Tooltip("Color effect mode")]
         [SerializeField]
         [OnValueChanged(nameof(SetMaterialDirty))]
         ColorMode m_ColorMode = ColorMode.Fill;
 
-        /// <summary>
-        /// Color effect factor between 0(no effect) and 1(complete effect).
-        /// </summary>
         public float colorFactor
         {
             get => m_ColorFactor;
@@ -40,28 +31,11 @@ namespace Coffee.UIEffects
             }
         }
 
-        /// <summary>
-        /// Color effect mode.
-        /// </summary>
-        public ColorMode colorMode
-        {
-            get => m_ColorMode;
-            set
-            {
-                if (m_ColorMode == value) return;
-                m_ColorMode = value;
-                SetMaterialDirty();
-            }
-        }
-
         protected override Material GetEffectMaterial(bool isPremult)
         {
-            return MaterialCatalog.GetEffect(colorMode, isPremult);
+            return MaterialCatalog.GetEffect(m_ColorMode, isPremult);
         }
 
-        /// <summary>
-        /// Modifies the mesh.
-        /// </summary>
         public override void ModifyMesh(MeshBuilder mb)
         {
             var uvs = mb.UVs.Edit();
@@ -88,8 +62,8 @@ namespace Coffee.UIEffects
         {
             var g = GetComponent<Graphic>();
             var isPremult = GraphicMaterialResolver.IsPremult(g.mainTexture);
-            if (!MaterialCatalog.IsValidForEffect(colorMode, isPremult))
-                result.AddError($"UIEffect with colorMode={colorMode} does not support premult={isPremult}.");
+            if (!MaterialCatalog.IsValidForEffect(m_ColorMode, isPremult))
+                result.AddError($"UIEffect with colorMode={m_ColorMode} does not support premult={isPremult}.");
         }
 #endif
     }

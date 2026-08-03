@@ -1,17 +1,49 @@
+using System;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.UI;
 
 namespace Coffee.UIEffects
 {
+    [ExecuteAlways]
+    [RequireComponent(typeof(Graphic))]
+    [RequireComponent(typeof(RectTransform))]
     [DisallowMultipleComponent]
-    public abstract class BaseMaterialEffect : BaseMeshEffect, IMaterialModifier
+    public abstract class BaseMaterialEffect : UIBehaviour, IMeshModifier, IMaterialModifier
     {
+        [NonSerialized] Graphic? _graphic;
+        public Graphic graphic => _graphic ??= GetComponent<Graphic>();
+
         protected int ParamSlot { get; private set; } = ParamTex.NoSlot;
 
-        public void SetMaterialDirty() => graphic.SetMaterialDirty();
+        protected virtual void OnEnable()
+        {
+            Assert.AreEqual(ParamTex.NoSlot, ParamSlot, "slot is already acquired.");
+            ParamSlot = ParamTex.Acquire();
 
-        public Material? GetModifiedMaterial(GraphicMaterialKey key)
+            SetVerticesDirty();
+            SetMaterialDirty();
+            SetEffectParamsDirty();
+        }
+
+        protected virtual void OnDisable()
+        {
+            SetVerticesDirty();
+            SetMaterialDirty();
+
+            ParamTex.Release(ParamSlot);
+            ParamSlot = ParamTex.NoSlot;
+        }
+
+        protected void SetVerticesDirty() => graphic.SetVerticesDirty();
+        public void SetMaterialDirty() => graphic.SetMaterialDirty();
+        protected abstract void SetEffectParamsDirty();
+
+        public abstract void ModifyMesh(MeshBuilder mb);
+
+        protected abstract Material GetEffectMaterial(bool isPremult);
+
+        Material? IMaterialModifier.GetModifiedMaterial(GraphicMaterialKey key)
         {
             if (enabled is false) return null;
             var effectMat = GetEffectMaterial(key.IsPremult);
@@ -19,44 +51,20 @@ namespace Coffee.UIEffects
             return effectMat;
         }
 
-        protected abstract Material GetEffectMaterial(bool isPremult);
-
-#if UNITY_EDITOR
-        protected override void Reset()
+        protected void OnDidApplyAnimationProperties()
         {
             if (!isActiveAndEnabled) return;
-            SetMaterialDirty();
-            SetVerticesDirty();
             SetEffectParamsDirty();
         }
 
-        protected override void OnValidate()
+#if UNITY_EDITOR
+        protected void Reset()
         {
             if (!isActiveAndEnabled) return;
             SetVerticesDirty();
+            SetMaterialDirty();
             SetEffectParamsDirty();
         }
 #endif
-
-        protected override void OnEnable()
-        {
-            base.OnEnable();
-
-            Assert.AreEqual(ParamTex.NoSlot, ParamSlot, "slot is already acquired.");
-            ParamSlot = ParamTex.Acquire();
-
-            SetMaterialDirty();
-            SetEffectParamsDirty();
-        }
-
-        protected override void OnDisable()
-        {
-            base.OnDisable();
-
-            SetMaterialDirty();
-
-            ParamTex.Release(ParamSlot);
-            ParamSlot = ParamTex.NoSlot;
-        }
     }
 }

@@ -4,32 +4,21 @@ using UnityEngine.UI;
 
 namespace Coffee.UIEffects
 {
-    /// <summary>
-    /// UIGradient.
-    /// </summary>
+    // The ugui-core base, unlike the Coffee one this replaced, requires neither a Graphic nor
+    // an OnValidate — so both are declared here.
+    [RequireComponent(typeof(Graphic))]
     [DisallowMultipleComponent]
     [AddComponentMenu("UI/UIEffects/UIGradient", 101)]
     public class UIGradient : BaseMeshEffect
     {
-        [Tooltip("Gradient Direction.")] [SerializeField]
-        Axis m_Direction;
-
-        [Tooltip("Color1: Top or Left.")] [SerializeField]
-        Color m_Color1 = Color.white;
-
-        [Tooltip("Color2: Bottom or Right.")] [SerializeField]
-        Color m_Color2 = Color.white;
-
-        [Tooltip("Gradient offset for Horizontal, Vertical or Angle.")] [SerializeField] [Range(-1, 1)]
-        float m_Offset1;
-
-        [Tooltip("Color space to correct color.")] [SerializeField]
-        [HideIf("@m_ColorSpace == ColorSpace.Gamma")] // Will be removed.
+        [SerializeField, OnValueChanged("Editor_SetVerticesDirty")] Axis m_Direction;
+        [SerializeField, OnValueChanged("Editor_SetVerticesDirty")] Color m_Color1 = Color.white;
+        [SerializeField, OnValueChanged("Editor_SetVerticesDirty")] Color m_Color2 = Color.white;
+        [SerializeField, OnValueChanged("Editor_SetVerticesDirty")] [Range(-1, 1)] float m_Offset1;
+        [SerializeField, OnValueChanged("Editor_SetVerticesDirty")]
+        [HideIf("m_ColorSpace", ColorSpace.Gamma)] // Will be removed.
         ColorSpace m_ColorSpace = ColorSpace.Gamma;
 
-        /// <summary>
-        /// Call used to modify mesh.
-        /// </summary>
         public override void ModifyMesh(MeshBuilder mb)
         {
             // Gradient space.
@@ -62,5 +51,9 @@ namespace Coffee.UIEffects
                 };
             }
         }
+
+#if UNITY_EDITOR
+        private void Editor_SetVerticesDirty() => graphic.SetVerticesDirty();
+#endif
     }
 }

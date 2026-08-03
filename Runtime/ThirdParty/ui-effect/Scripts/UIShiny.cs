@@ -10,20 +10,20 @@ namespace Coffee.UIEffects
         , ISelfValidator
 #endif
     {
-        [SerializeField]
+        [SerializeField, OnValueChanged("Editor_Refresh")]
         float m_EffectFactor = 0.5f;
-        [SerializeField, HorizontalGroup("Geometry")]
+        [SerializeField, HorizontalGroup("Geometry"), OnValueChanged("Editor_Refresh")]
         float m_Width = 0.25f;
-        [SerializeField, HorizontalGroup("Geometry")]
+        [SerializeField, HorizontalGroup("Geometry"), OnValueChanged("Editor_Refresh")]
         float m_Rotation = 135;
-        [SerializeField, HorizontalGroup("Visual")]
+        [SerializeField, HorizontalGroup("Visual"), OnValueChanged("Editor_Refresh")]
         float m_Softness = 1f;
-        [SerializeField, HorizontalGroup("Visual")]
+        [SerializeField, HorizontalGroup("Visual"), OnValueChanged("Editor_Refresh")]
         float m_Brightness = 1f;
-        [SerializeField, HorizontalGroup("Visual")]
+        [SerializeField, HorizontalGroup("Visual"), OnValueChanged("Editor_Refresh")]
         float m_Gloss = 1;
         [FormerlySerializedAs("m_EffectArea")]
-        [SerializeField] bool m_FitAABB;
+        [SerializeField, OnValueChanged("Editor_Refresh")] bool m_FitAABB;
         [SerializeField] EffectPlayer m_Player = null!;
 
         protected override void OnEnable()
@@ -55,7 +55,7 @@ namespace Coffee.UIEffects
             var normalizedIndex = ParamTex.GetNormalizedIndex(ParamSlot);
             var rect = m_FitAABB
                 ? mb.Poses.CalculateBoundingRect()
-                : rectTransform.rect;
+                : graphic.rectTransform.rect;
 
             // Calculate vertex position.
             var poses = mb.Poses;
@@ -86,6 +86,15 @@ namespace Coffee.UIEffects
         }
 
 #if UNITY_EDITOR
+        // The base has no OnValidate, so Odin drives the refresh. Rotation and FitAABB reach
+        // ModifyMesh, the rest only the shader params — one helper covers both.
+        private void Editor_Refresh()
+        {
+            if (!isActiveAndEnabled) return;
+            SetVerticesDirty();
+            SetEffectParamsDirty();
+        }
+
         void ISelfValidator.Validate(SelfValidationResult result)
         {
             var g = GetComponent<Graphic>();
