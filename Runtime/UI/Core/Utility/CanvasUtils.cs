@@ -9,7 +9,6 @@ namespace UnityEngine.UI
     /// </summary>
     public static class CanvasUtils
     {
-        private static readonly DLog _log = new(nameof(CanvasUtils));
 
         public static bool IsRenderRoot(Canvas c) =>
             c is { enabled: true, overrideSorting: true } || c.isRootCanvas;
@@ -26,7 +25,7 @@ namespace UnityEngine.UI
             }
             else
             {
-                _log.e($"No root canvas found for the transform: {t}");
+                L.E($"No root canvas found for the transform: {t}");
                 return null;
             }
         }
@@ -42,7 +41,7 @@ namespace UnityEngine.UI
             }
 
             if (canvas is null)
-                _log.e($"No render root canvas found for the graphic: {g}");
+                L.E($"No render root canvas found for the graphic: {g}");
 
             return canvas;
         }
@@ -53,7 +52,7 @@ namespace UnityEngine.UI
 
             if (!g.canvas)
             {
-                _log.e("No canvas found for the graphic: " + g);
+                L.E("No canvas found for the graphic: " + g);
                 return null;
             }
 
@@ -62,7 +61,7 @@ namespace UnityEngine.UI
             if (!cam && g.canvas.rootCanvas.name == "Prefab Mode in Context")
                 cam = Camera.current; // camera is not exists for prefab stage.
 #endif
-            if (!cam) _log.e("No camera found for the graphic: " + g);
+            if (!cam) L.E("No camera found for the graphic: " + g);
             return cam;
         }
 

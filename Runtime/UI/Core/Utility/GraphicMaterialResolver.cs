@@ -67,7 +67,7 @@ namespace UnityEngine.UI
                 if (mat) return mat;
             }
 #if DEBUG
-            L.W($"[GraphicMaterialResolver] Custom material on \"{graphic.name}\" but no ICustomMaterialProvider found. Falling back to Normal.", graphic);
+            L.W($"Custom material on \"{graphic.name}\" but no ICustomMaterialProvider found. Falling back to Normal.", graphic);
 #endif
             return ResolveBase(GraphicMaterialKind.Normal, graphic);
         }

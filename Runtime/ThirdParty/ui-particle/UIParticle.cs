@@ -39,14 +39,14 @@ namespace Coffee.UIExtensions
 #if UNITY_EDITOR
             if (_skipUpdatePlayModeChanged)
             {
-                L.I("[UIParticle] Update() is skipped to prevent Unity crash on exiting play mode.");
+                L.I("Update() is skipped to prevent Unity crash on exiting play mode.");
                 return;
             }
 
             if (_skipUpdateFocusChanged)
             {
                 _skipUpdateFocusChanged = false; // reset the flag.
-                L.I("[UIParticle] Update() is skipped once to prevent Unity crash on editor focus.");
+                L.I("Update() is skipped once to prevent Unity crash on editor focus.");
                 return;
             }
 #endif
@@ -77,7 +77,7 @@ namespace Coffee.UIExtensions
             var cam = CanvasUtils.ResolveWorldCamera(this)!;
             if (!cam) // is this necessary?
             {
-                L.W($"[UIParticle] No camera found: {name}");
+                L.W($"No camera found: {name}");
                 return; // should I keep the previous mesh?
             }
 

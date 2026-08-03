@@ -52,7 +52,6 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
-        private static readonly DLog _log = new(nameof(UIIcon));
 
         public void SetSpriteAndMatchDimension(Sprite sprite)
         {
@@ -71,7 +70,7 @@ namespace UnityEngine.UI
             }
             else
             {
-                _log.i("Cannot match size and anchor with sprite in prefab instance.");
+                L.I("Cannot match size and anchor with sprite in prefab instance.");
             }
         }
 
@@ -82,27 +81,27 @@ namespace UnityEngine.UI
             var sprite = ResolveSpriteToRender();
             if (!sprite)
             {
-                _log.e("Sprite is not set, cannot match size and anchor.");
+                L.E("Sprite is not set, cannot match size and anchor.");
                 return;
             }
 
             if (sprite.RefNq(Sprite))
             {
-                _log.w("Previewing sprite, ignore.");
+                L.W("Previewing sprite, ignore.");
                 return;
             }
 
             // ignore if the sprite bounds size is NaN
             if (float.IsNaN(sprite.bounds.size.x))
             {
-                _log.e("Sprite bounds size is NaN, cannot match size and anchor.");
+                L.E("Sprite bounds size is NaN, cannot match size and anchor.");
                 return;
             }
 
             var trans = rectTransform;
             if (trans.anchorMax.Equals(trans.anchorMin) is false)
             {
-                _log.w("Anchor is not equal, cannot match size and anchor.");
+                L.W("Anchor is not equal, cannot match size and anchor.");
                 return;
             }
 

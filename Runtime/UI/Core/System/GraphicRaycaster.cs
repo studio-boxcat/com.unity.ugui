@@ -72,7 +72,7 @@ namespace UnityEngine.UI
                 // https://console.firebase.google.com/project/nyan-tower-306804/crashlytics/app/android:com.grapetree.meowtower/issues/3ad89d02972c2c5e2ac0a43fbd494aca?time=last-seven-days&versions=2.3.0%20(265);2.3.0%20(264)&sessionEventKey=648893B4006900014ABB0CF4090C225C_1822653280777558743
                 if (graphic == null)
                 {
-                    L.E("[GraphicRaycaster] Found a null Graphic in its list during a raycast.");
+                    L.E("Found a null Graphic in its list during a raycast.");
                     continue;
                 }
 
@@ -87,10 +87,10 @@ namespace UnityEngine.UI
                 // we should abort the raycast since it could be block the raycast if it's initialized later.
                 if (depth is -1)
                 {
-                    L.I("[GraphicRaycaster] Uninitialized Graphic found: " + graphic.name, graphic);
+                    L.I("Uninitialized Graphic found: " + graphic.name, graphic);
                     if (Hit(t, graphic, eventCamera, pointerPosition))
                     {
-                        L.W("[GraphicRaycaster] Aborting raycast since the blocking Graphic is not initialized yet: " + graphic.name, graphic);
+                        L.W("Aborting raycast since the blocking Graphic is not initialized yet: " + graphic.name, graphic);
                         result = null;
                         return RaycastResultType.Abort;
                     }

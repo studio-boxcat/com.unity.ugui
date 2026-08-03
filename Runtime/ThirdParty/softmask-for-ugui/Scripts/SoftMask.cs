@@ -70,7 +70,7 @@ namespace Coffee.UISoftMask
             foreach (var m in _maskables)
             {
                 if (m) m.Graphic.SetMaterialDirty();
-                else L.W($"[SoftMask] Maskable is destroyed: {m.SafeName()}");
+                else L.W($"Maskable is destroyed: {m.SafeName()}");
             }
         }
 
@@ -102,7 +102,7 @@ namespace Coffee.UISoftMask
             foreach (var m in _maskables)
             {
                 if (m) m.SetMaterialDirty();
-                else L.W($"[SoftMask] Maskable is destroyed: {m.SafeName()}");
+                else L.W($"Maskable is destroyed: {m.SafeName()}");
             }
         }
 
@@ -124,14 +124,14 @@ namespace Coffee.UISoftMask
 
             if (_maskRt)
             {
-                L.I($"[SoftMask] Resizing soft mask buffer: {w}x{h}, down sampling rate: {m_DownSamplingRate}.");
+                L.I($"Resizing soft mask buffer: {w}x{h}, down sampling rate: {m_DownSamplingRate}.");
                 _maskRt!.Release(); // release the buffer to change the size.
                 _maskRt.width = w;
                 _maskRt.height = h;
             }
             else
             {
-                L.I($"[SoftMask] Creating soft mask buffer: {w}x{h}, down sampling rate: {m_DownSamplingRate}.");
+                L.I($"Creating soft mask buffer: {w}x{h}, down sampling rate: {m_DownSamplingRate}.");
                 _maskRt = RenderTexture.GetTemporary(w, h, depthBuffer: 0, RenderTextureFormat.R8);
             }
 
@@ -151,7 +151,7 @@ namespace Coffee.UISoftMask
 
         void IPostGraphicRebuildCallback.PostGraphicRebuild()
         {
-            // L.I("[SoftMask] Updating mask buffer: " + this, this);
+            // L.I("Updating mask buffer: " + this, this);
 
             var g = Graphic;
             var cr = g.canvasRenderer;
@@ -160,7 +160,7 @@ namespace Coffee.UISoftMask
             var cam = CanvasUtils.ResolveWorldCamera(g);
             if (!cam)
             {
-                L.W("[SoftMask] No camera found: " + name);
+                L.W("No camera found: " + name);
                 return;
             }
 

@@ -19,7 +19,7 @@ namespace UnityEngine.UI
                 return result;
             }
 
-            L.I("[UGUI] Creating new MeshBuilder.");
+            L.I("Creating new MeshBuilder.");
             return new MeshBuilder();
         }
 

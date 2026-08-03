@@ -44,7 +44,7 @@ namespace Coffee.UIEffects
 
         static Material LoadMaterial(string path)
         {
-            L.TI(path);
+            L.I(path);
             var mat = Resources.Load<Material>(path);
             Assert.IsNotNull(mat, $"Material not found: {path}"); // before the copy, which would NRE first
 #if UNITY_EDITOR

@@ -31,7 +31,7 @@ namespace UnityEngine.UI
             // when it doesn't have ILayoutGroup, it could skip visiting the parent in the first place,
             // and this will make skipping the grandparent in the future visits.
 
-            // L.I("[LayoutRebuilder] ResolveUnvisitedLayoutRoot: " + t.name, t);
+            // L.I(t.name, t);
 
             // skip if it's already visited ILayoutController.
             if (visitedLayout?.Contains(t) is true)
@@ -98,13 +98,13 @@ namespace UnityEngine.UI
         /// </remarks>
         internal static void RebuildRootImmediate(Transform layoutRoot)
         {
-            // L.I("[LayoutRebuilder] RebuildRootImmediate: " + layoutRoot.BuildPath(), layoutRoot);
+            // L.I($"{layoutRoot.BuildPath()}", layoutRoot);
 
 #if DEBUG
             if (!layoutRoot.gameObject.activeInHierarchy)
-                L.E("[LayoutRebuilder] Attempting calculate layout for inactive object: " + layoutRoot.name, layoutRoot);
+                L.E("Attempting calculate layout for inactive object: " + layoutRoot.name, layoutRoot);
             if (layoutRoot.NoComponent<ILayoutController>())
-                L.E("[LayoutRebuilder] No ILayoutController on target: " + layoutRoot.name, layoutRoot);
+                L.E("No ILayoutController on target: " + layoutRoot.name, layoutRoot);
 #endif
 
             using var d0 = _elemPool.Rent(out var elems); // layout elements (child to parent order)

@@ -11,11 +11,11 @@ namespace UnityEngine.EventSystems
 
         public static RaycastResultType Raycast(Vector2 screenPosition, Camera targetCamera, out RaycastResult raycastResult)
         {
-            // L.I($"Raycast: {screenPosition}, {targetCamera.name}");
+            // L.I($"{screenPosition}, {targetCamera.name}");
 
             if (_raycasterBuffer.Count is not 0)
             {
-                L.E("[QuickRaycast] _raycasterBuffer is not empty.");
+                L.E("_raycasterBuffer is not empty.");
                 ClearBuffer();
             }
 
@@ -52,7 +52,7 @@ namespace UnityEngine.EventSystems
 
             if (_raycasterBuffer[^1].RendererDepth is -1)
             {
-                L.I("[QuickRaycast] Aborting raycast because there's a CanvasRenderer that is not initialized.");
+                L.I("Aborting raycast because there's a CanvasRenderer that is not initialized.");
                 raycastResult = default;
                 ClearBuffer();
                 return RaycastResultType.Abort;

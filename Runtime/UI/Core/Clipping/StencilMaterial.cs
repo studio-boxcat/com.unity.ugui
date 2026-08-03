@@ -45,7 +45,7 @@ namespace UnityEngine.UI
             renderMat.SetFloat(_stencil, _stencilValue);
             renderMat.SetFloat(_stencilComp, (float) CompareFunction.Equal);
 
-            L.I($"[UGUI] Stencil material created: {renderMat.name}", baseMat);
+            L.I($"Stencil material created: {renderMat.name}", baseMat);
 
             var entry = new MatEntry(baseMat, renderMat) { RefCount = 1 };
             _baseToEntry.Add(baseID, entry);
@@ -53,7 +53,7 @@ namespace UnityEngine.UI
 
 #if DEBUG
             if (_baseToEntry.Count > 8)
-                L.E($"[UGUI] Too many stencil materials created: {_baseToEntry.Count}, " +
+                L.E($"Too many stencil materials created: {_baseToEntry.Count}, " +
                     $"list=[{string.Join(", ", _baseToEntry.Values)}]");
 #endif
             return renderMat;
@@ -63,7 +63,7 @@ namespace UnityEngine.UI
         public static void ConfigureRenderMaterialForDebug(Material renderMat)
         {
             if (Application.isPlaying && renderMat.HasProperty(_stencil) is false)
-                L.E($"[UGUI] Material property missing: {renderMat.SafeName()}", renderMat);
+                L.E($"Material property missing: {renderMat.SafeName()}", renderMat);
             renderMat.SetFloat(_stencil, _stencilValue);
             renderMat.SetFloat(_stencilComp, (float) CompareFunction.Equal);
         }
@@ -77,7 +77,7 @@ namespace UnityEngine.UI
             var renderID = renderMat.GetInstanceID();
             if (_renderToEntry.TryGetValue(renderID, out var e) is false)
             {
-                L.E($"[UGUI] Trying to remove a stencil material that doesn't exist: {renderMat.SafeName()}", renderMat);
+                L.E($"Trying to remove a stencil material that doesn't exist: {renderMat.SafeName()}", renderMat);
                 return;
             }
 
@@ -88,7 +88,7 @@ namespace UnityEngine.UI
             }
 
             // Destroy material if no longer in use.
-            L.I($"[UGUI] Stencil material destroyed: {e.Render.SafeName()}", e.Render);
+            L.I($"Stencil material destroyed: {e.Render.SafeName()}", e.Render);
             Object.DestroyImmediate(e.Render);
             _baseToEntry.Remove(e.Base.GetInstanceID());
             _renderToEntry.Remove(renderID);
@@ -129,7 +129,7 @@ namespace UnityEngine.UI
 
         private static Material CreateMaskMaterial(StencilOp op, bool showMaskGraphic)
         {
-            L.I("[UGUI] Creating stencil mask/unmask materials");
+            L.I("Creating stencil mask/unmask materials");
             var mat = new Material(Graphic.defaultGraphicMaterial);
             mat.SetNameDebug($"Mask (Op={op}, ShowGraphic={showMaskGraphic})");
             mat.SetDontSave();

@@ -21,7 +21,7 @@ namespace Coffee.UISoftMask
             get
             {
 #if DEBUG
-                if (!_material) L.E($"[SoftMask.MaterialLink] Material is destroyed or not initialized. Hash: {_hash}");
+                if (!_material) L.E($"Material is destroyed or not initialized. Hash: {_hash}");
 #endif
                 return _material;
             }
@@ -110,7 +110,7 @@ namespace Coffee.UISoftMask
         {
             if (TryResolveShaderIndex(material, out var shaderIndex))
                 return shaderIndex;
-            L.E($"[SoftMask.MaterialCache] Material '{material}' is not supported. Using default shader index 0.");
+            L.E($"Material '{material}' is not supported. Using default shader index 0.");
             return 0; // Fallback to default shader index.
         }
 
@@ -134,7 +134,7 @@ namespace Coffee.UISoftMask
                 return;
             }
 
-            L.I($"[SoftMask.MaterialCache] Creating material: material={material}, hash={hash}");
+            L.I($"Creating material: material={material}, hash={hash}");
 
             link = new MaterialLink(hash, shaderIndex, maskInteraction, maskRt);
             Assert.IsTrue(link.ReferenceCount is 1, "Reference count should be 1 after creation.");
@@ -143,7 +143,7 @@ namespace Coffee.UISoftMask
             _cache.Add(hash, link);
 #if DEBUG
             if (_cache.Count > 32)
-                L.E("[SoftMask.MaterialCache] Material cache size exceeded 32. Consider optimizing material usage.");
+                L.E("Material cache size exceeded 32. Consider optimizing material usage.");
 #endif
         }
 

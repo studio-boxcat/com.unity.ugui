@@ -59,8 +59,6 @@ namespace UnityEngine.UI
         [HideIf("_borderMultiplier_HideIf")]
         private float _borderMultiplier = 1f;
 
-        private static readonly DLog _log = new(nameof(UISlice));
-
         public UISliceMethod Method
         {
             get => _method;
@@ -89,7 +87,7 @@ namespace UnityEngine.UI
             // Padding is not supported other than R3C3.
             if (!SupportsPadding(_method) && !UnityEngine.Sprites.DataUtility.GetPadding(sprite).EE0())
             {
-                _log.e($"Padding is not supported: method={_method}, sprite={sprite.SafeName()}, padding={UnityEngine.Sprites.DataUtility.GetPadding(sprite)}");
+                L.E($"Padding is not supported: method={_method}, sprite={sprite.SafeName()}, padding={UnityEngine.Sprites.DataUtility.GetPadding(sprite)}");
             }
 #endif
 

@@ -208,7 +208,7 @@ namespace UnityEngine.UI
             m_Canvas = ComponentSearch.NearestUpwards_GOAnyAndCompEnabled<Canvas>(this);
 #if DEBUG
             if (!m_Canvas && Editing.No(this))
-                L.E("[Graphic] No canvas found for the graphic: " + this);
+                L.E("No canvas found for the graphic: " + this);
 #endif
         }
 
@@ -339,7 +339,7 @@ namespace UnityEngine.UI
 #if UNITY_EDITOR
             catch (Exception e)
             {
-                L.E($"UpdateGeometry failed for {name}", this);
+                L.E($"failed for {name}", this);
                 L.E(e);
                 mb.Invalidate(); // keep the pool consistent so Return() doesn't mask this exception
                 throw;
@@ -356,7 +356,7 @@ namespace UnityEngine.UI
         protected virtual void OnPopulateMesh(Color color, MeshBuilder mb)
         {
 #if UNITY_EDITOR
-            L.E("[Graphic] OnPopulateMesh not implemented: " + GetType().Name);
+            L.E("not implemented: " + GetType().Name);
 #endif
         }
 

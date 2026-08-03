@@ -13,7 +13,7 @@ namespace UnityEngine.UI
 
 #if DEBUG
             _debugCreationCount++;
-            // L.I("[TextGeneratorPool] Created a new instance: " + _debugCreationCount);
+            // L.I("Created a new instance: " + _debugCreationCount);
 #endif
             return new TextGenerator();
         }
@@ -22,7 +22,7 @@ namespace UnityEngine.UI
         {
             if (_pool.Count > 100)
             {
-                L.W("[TextGeneratorPool] Pool is too large. There might be a leak.");
+                L.W("Pool is too large. There might be a leak.");
                 return;
             }
 

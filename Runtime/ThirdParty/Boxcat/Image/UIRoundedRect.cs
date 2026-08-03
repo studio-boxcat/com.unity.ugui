@@ -83,7 +83,7 @@ namespace UnityEngine.UI
             var sprite = slice.Sprite;
             if (!sprite || !TryParseCornerSprite(sprite!.name, out var spriteRadius))
             {
-                L.E($"ConvertFromSlice: sprite must be CM_Quarter_* / CM_Semicircle_R* / CM_Circle_* - sprite={sprite.SafeName()}");
+                L.E($"sprite must be CM_Quarter_* / CM_Semicircle_R* / CM_Circle_* - sprite={sprite.SafeName()}");
                 return;
             }
 

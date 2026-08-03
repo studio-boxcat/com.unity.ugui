@@ -122,7 +122,7 @@ namespace UnityEngine.UI
                 var localCanvas = canvas;
                 if (!localCanvas)
                 {
-                    L.W("[UITextBase] Canvas is null, returning default scale factor of 1.", this);
+                    L.W("Canvas is null, returning default scale factor of 1.", this);
                     return 1;
                 }
 

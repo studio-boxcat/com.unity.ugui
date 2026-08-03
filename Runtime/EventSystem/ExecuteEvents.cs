@@ -42,7 +42,7 @@ namespace UnityEngine.EventSystems
 #if DEBUG
                 var actionName = GetActionName(functor);
                 if (actionName != null)
-                    L.I($"[UGUI] Pointer {actionName}: {target.name}, type={arg.GetType().Name}, frame={Time.frameCount}", target);
+                    L.I($"Pointer {actionName}: {target.name}, type={arg.GetType().Name}, frame={Time.frameCount}", target);
 #endif
 
                 try

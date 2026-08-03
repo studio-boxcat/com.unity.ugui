@@ -28,7 +28,6 @@ namespace UnityEngine.UI
         }
 
 #if UNITY_EDITOR
-        private static readonly DLog _log = new(nameof(UIPolygon));
 
         protected override void Reset()
         {
@@ -43,7 +42,7 @@ namespace UnityEngine.UI
             var t = rectTransform;
             if (t.HasChild())
             {
-                _log.e("Cannot rebase polygon with children.");
+                L.E("Cannot rebase polygon with children.");
                 return;
             }
 

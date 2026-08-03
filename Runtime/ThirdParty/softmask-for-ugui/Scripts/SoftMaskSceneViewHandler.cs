@@ -39,7 +39,7 @@ namespace Coffee.UISoftMask
             var cam = CanvasUtils.ResolveWorldCamera(graphic);
             if (!cam)
             {
-                L.E("[SoftMaskable] No camera found for Graphic: " + graphic, graphic);
+                L.E("No camera found for Graphic: " + graphic, graphic);
                 return;
             }
 

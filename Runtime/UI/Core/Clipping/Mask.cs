@@ -28,7 +28,7 @@ namespace UnityEngine.UI
             foreach (var m in _maskables)
             {
                 if (m) m.Graphic.SetMaterialDirty();
-                else L.W($"[Mask] Maskable is destroyed: {m.SafeName()}");
+                else L.W($"Maskable is destroyed: {m.SafeName()}");
             }
         }
 
@@ -42,7 +42,7 @@ namespace UnityEngine.UI
             foreach (var m in _maskables)
             {
                 if (m) m.Graphic.SetMaterialDirty();
-                else L.W($"[Mask] Maskable is destroyed: {m.SafeName()}");
+                else L.W($"Maskable is destroyed: {m.SafeName()}");
             }
         }
 

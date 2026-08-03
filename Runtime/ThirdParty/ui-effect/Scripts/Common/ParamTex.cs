@@ -34,7 +34,7 @@ namespace Coffee.UIEffects
             var slot = _usedSlots.LowestZeroIndex;
             if (slot is NoSlot)
             {
-                L.TE("Slots exhausted.");
+                L.E("Slots exhausted.");
                 return NoSlot;
             }
 

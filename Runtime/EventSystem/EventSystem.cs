@@ -90,7 +90,7 @@ namespace UnityEngine.EventSystems
             }
             else
             {
-                L.E("[EventSystem] EventSystem.current must be set to this");
+                L.E("EventSystem.current must be set to this");
             }
         }
 

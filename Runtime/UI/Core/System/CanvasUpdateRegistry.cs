@@ -63,7 +63,7 @@ namespace UnityEngine.UI
                 Assert.IsTrue(_layoutRebuildQueue.IsEmpty());
                 if (_tempBuf.NotEmpty())
                 {
-                    // L.I($"[CanvasUpdateRegistry] Rebuilding Layout Roots: {_tempBuf.Count.Strm()}");
+                    // L.I($"Rebuilding Layout Roots: {_tempBuf.Count.Strm()}");
 
                     foreach (Transform layoutRoot in _tempBuf) // element is guaranteed to be non-destroyed here.
                     {
@@ -86,7 +86,7 @@ namespace UnityEngine.UI
                 Assert.IsTrue(_layoutRebuildCallbacks.IsEmpty());
                 if (_tempBuf.NotEmpty())
                 {
-                    L.I($"[CanvasUpdateRegistry] Executing PostLayoutRebuildCallbacks: {_tempBuf.Count.Strm()}");
+                    L.I($"Executing PostLayoutRebuildCallbacks: {_tempBuf.Count.Strm()}");
 
                     foreach (IPostLayoutRebuildCallback callback in _tempBuf)
                     {
@@ -227,7 +227,7 @@ namespace UnityEngine.UI
         internal static void QueueLayoutNode(Transform target)
         {
             if (_phase is Phase.LayoutUpdate)
-                L.W($"[CanvasUpdateRegistry] Trying to add {target} for layout rebuild while we are already inside a rebuild loop.");
+                L.W($"Trying to add {target} for layout rebuild while we are already inside a rebuild loop.");
 
             // root will be resolved by LayoutRebuilder.
             _layoutRebuildQueue.Add((target, target.GetInstanceID()));
@@ -236,7 +236,7 @@ namespace UnityEngine.UI
         public static void QueueGraphic(Graphic target)
         {
             if (_phase is Phase.GraphicUpdate)
-                L.W($"[CanvasUpdateRegistry] Trying to add {target} for graphic rebuild while we are already inside a rebuild loop.");
+                L.W($"Trying to add {target} for graphic rebuild while we are already inside a rebuild loop.");
 
             _graphicRebuildQueue.Add((target, target.GetInstanceID()));
         }
@@ -245,7 +245,7 @@ namespace UnityEngine.UI
             where TLayoutRebuildTarget : MonoBehaviour, IPostLayoutRebuildCallback
         {
             if (_phase is Phase.LayoutCallback)
-                L.W($"[CanvasUpdateRegistry] Trying to add {target} for layout rebuild while we are already inside a rebuild loop.");
+                L.W($"Trying to add {target} for layout rebuild while we are already inside a rebuild loop.");
 
             _layoutRebuildCallbacks.Add((target, target.GetInstanceID()));
         }
@@ -254,7 +254,7 @@ namespace UnityEngine.UI
             where TGraphicRebuildTarget : MonoBehaviour, IPostGraphicRebuildCallback
         {
             if (_phase is Phase.GraphicCallback)
-                L.W($"[CanvasUpdateRegistry] Trying to add {target} for graphic rebuild while we are already inside a rebuild loop.");
+                L.W($"Trying to add {target} for graphic rebuild while we are already inside a rebuild loop.");
 
             _graphicRebuildCallbacks.Add((target, target.GetInstanceID()));
         }

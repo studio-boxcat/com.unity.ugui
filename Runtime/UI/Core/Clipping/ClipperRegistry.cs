@@ -59,7 +59,7 @@ namespace UnityEngine.UI
 #if DEBUG
             if (result is false)
             {
-                L.E("[ClipperRegistry] Clippable was not registered in ClipperRegistry: " + c);
+                L.E("Clippable was not registered in ClipperRegistry: " + c);
                 return;
             }
 #endif
@@ -143,7 +143,7 @@ namespace UnityEngine.UI
                         V($"Clippable {cr} already has the same clipper {orgClipper}, no need to update.");
 #if DEBUG
                         if (orgClipper is not null && (_clippers.TryGetValue(orgClipper, out var l) is false || l is null || l.ContainsRef(c) is false))
-                            L.E($"[ClipperRegistry] Clippable {cr} is already registered in ClipperRegistry, but not found in the clipper {orgClipper}. This is a bug.");
+                            L.E($"Clippable {cr} is already registered in ClipperRegistry, but not found in the clipper {orgClipper}. This is a bug.");
 #endif
                         continue;
                     }
@@ -228,7 +228,7 @@ namespace UnityEngine.UI
         }
 
         [Conditional("VERBOSE")]
-        private static void V(string message) => L.I($"[ClipperRegistry] {message}");
+        private static void V(string message) => L.I($"{message}");
 
 #if UNITY_EDITOR
         public static Clipper? GetCachedClipper(Clippable c) => _clippables.GetValueOrDefault(c);

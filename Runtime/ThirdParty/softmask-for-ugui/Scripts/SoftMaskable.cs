@@ -32,14 +32,14 @@ namespace Coffee.UISoftMask
         {
             if (!isActiveAndEnabled)
             {
-                L.W("[SoftMaskable] is not active. Falling back to base: " + this, this);
+                L.W("is not active. Falling back to base: " + this, this);
                 return null;
             }
 
             var softMask = transform.NearestUpwards_GOActiveAndCompEnabled<SoftMask>();
             if (!softMask)
             {
-                L.I("[SoftMaskable] No SoftMask in parent hierarchy. Falling back to base: " + this, this);
+                L.I("No SoftMask in parent hierarchy. Falling back to base: " + this, this);
                 return null;
             }
 
@@ -52,7 +52,7 @@ namespace Coffee.UISoftMask
             // XXX: material properties will be cleared after the scene or prefab is saved.
             if (_materialLink.IsMaterialConfigured() is false)
             {
-                if (Editing.No(this)) L.E("[SoftMaskable] Material properties were cleared. Reconfiguring material: " + this, this);
+                if (Editing.No(this)) L.E("Material properties were cleared. Reconfiguring material: " + this, this);
                 _materialLink.ConfigureMaterial();
                 SoftMaskSceneViewHandler.SetUpGameVP(mat, Graphic);
             }
