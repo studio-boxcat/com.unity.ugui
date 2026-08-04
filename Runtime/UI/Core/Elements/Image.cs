@@ -34,8 +34,6 @@ namespace UnityEngine.UI
 
         [SerializeField] private bool m_PreserveAspect = false;
 
-        [SerializeField] private bool m_FillCenter = true;
-
         /// Filling method for filled sprites.
         [SerializeField] private FillMethod m_FillMethod = FillMethod.Radial360;
         public FillMethod fillMethod { set { if (SetPropertyUtility.SetEnum(ref m_FillMethod, value)) { SetVerticesDirty(); m_FillOrigin = 0; } } }
