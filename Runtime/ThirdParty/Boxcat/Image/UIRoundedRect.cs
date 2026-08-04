@@ -83,7 +83,7 @@ namespace UnityEngine.UI
             var sprite = slice.Sprite;
             if (!sprite || !TryParseCornerSprite(sprite!.name, out var spriteRadius))
             {
-                L.E($"sprite must be CM_Quarter_* / CM_Semicircle_R* / CM_Circle_* - sprite={sprite.SafeName()}");
+                L.E($"sprite must end in _Quarter_N / _Semicircle_RN / _Circle_N - sprite={sprite.SafeName()}");
                 return;
             }
 
@@ -105,7 +105,7 @@ namespace UnityEngine.UI
             static bool TryParseCornerSprite(string name, out float radius)
             {
                 radius = 0;
-                var m = System.Text.RegularExpressions.Regex.Match(name, @"^CM_(Quarter_|Semicircle_R|Circle_)(\d+)$");
+                var m = System.Text.RegularExpressions.Regex.Match(name, @"^.*_(Quarter_|Semicircle_R|Circle_)(\d+)$");
                 if (!m.Success) return false;
 
                 var n = int.Parse(m.Groups[2].Value);

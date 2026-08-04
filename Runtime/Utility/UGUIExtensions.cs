@@ -82,6 +82,16 @@ namespace UnityEngine.UI
                 g.color = color;
         }
 
+        // Tint and material move together on state swaps (lit vs. spent, covered vs. revealed).
+        public static void SetMaterialNormal(this Graphic g, Color color) => g.SetMaterial(GraphicMaterialKind.Normal, color);
+        public static void SetMaterialSolid(this Graphic g, Color color) => g.SetMaterial(GraphicMaterialKind.Solid, color);
+
+        private static void SetMaterial(this Graphic g, GraphicMaterialKind kind, Color color)
+        {
+            g.material = kind;
+            g.color = color;
+        }
+
         private static readonly Type[] _graphicTypes = { typeof(RectTransform), typeof(CanvasRenderer) };
 
         public static GameObject NewGraphicChildBase(this Transform t, string name = "")
