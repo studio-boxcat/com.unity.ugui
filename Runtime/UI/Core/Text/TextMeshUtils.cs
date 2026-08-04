@@ -27,8 +27,8 @@ namespace UnityEngine.UI
             var uf = toFill.UVs.SetUpUnsafe(vertCount).Ptr;
             var cp = toFill.Colors.SetUpUnsafe(vertCount);
 
-            // The generator emits quads in perimeter order (0=TL 1=TR 2=BR 3=BL); write them in the
-            // channel convention (0=BL 1=BR 2=TL 3=TR) so the shared QuadIndexCache applies.
+            // The generator emits quads in perimeter order (0=TL 1=TR 2=BR 3=BL); append them in
+            // QuadMesh corner order so the shared QuadIndexCache applies.
             var unitsPerPixel = 1 / pixelsPerUnit;
             for (var q = 0; q < quadCount; ++q)
             {

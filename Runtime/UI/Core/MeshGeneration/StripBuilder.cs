@@ -36,13 +36,13 @@ namespace UnityEngine.UI
         }
 
         // Axis-aligned quad: x in [xL,xR], y in [yB,yT], U = uL/uR, V = vB/vT (flip to mirror or collapse
-        // to a solid fill). Vert layout 0=BL,1=BR,2=TL,3=TR — matches Indices.SetUp_Quad.
+        // to a solid fill). Appends in QuadMesh corner order, so Indices.SetUp_Quad applies.
         public void Quad(float xL, float xR, float yB, float yT, float uL, float uR, float vB, float vT)
         {
-            Vert(xL, yB, uL, vB);
-            Vert(xR, yB, uR, vB);
-            Vert(xL, yT, uL, vT);
-            Vert(xR, yT, uR, vT);
+            Vert(xL, yB, uL, vB); // BL
+            Vert(xR, yB, uR, vB); // BR
+            Vert(xL, yT, uL, vT); // TL
+            Vert(xR, yT, uR, vT); // TR
         }
     }
 }

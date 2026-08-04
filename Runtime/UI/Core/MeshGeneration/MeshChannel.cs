@@ -338,7 +338,16 @@ namespace UnityEngine.UI
 
         public void SetUp_Quad(int quadCount)
         {
-            SetUp(QuadIndexCache.Get(quadCount), quadCount * 6);
+            var indices = QuadIndexCache.Get(quadCount, out var indexCount);
+            if (indices is not null)
+            {
+                SetUp(indices, indexCount);
+                return;
+            }
+
+            // Past the shared cache (very long texts), generate into our own pooled buffer instead —
+            // SetUp sizes it, so the oversized path allocates only when it has to grow.
+            QuadIndexCache.Fill(SetUp(indexCount), quadCount);
         }
 
         // Grow by `copies` index blocks for effect copies drawn behind the original: draw block

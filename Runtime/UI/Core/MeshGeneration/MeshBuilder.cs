@@ -30,37 +30,9 @@ namespace UnityEngine.UI
         {
             Assert.IsTrue(_count < _capacity);
 
-            var i = _count++ * 4;
-
-            _poses[i] = p1;
-            _poses[i + 1] = new Vector3(p2.x, p1.y);
-            _poses[i + 2] = new Vector3(p1.x, p2.y);
-            _poses[i + 3] = p2;
-
-            _uvs[i] = uv1;
-            _uvs[i + 1] = new Vector2(uv2.x, uv1.y);
-            _uvs[i + 2] = new Vector2(uv1.x, uv2.y);
-            _uvs[i + 3] = uv2;
-        }
-
-        public void Add_0312(Vector2[] poses, Vector2[] uvs)
-        {
-            // Visual representation:
-            // 1 2
-            // 0 3
-
-            Assert.AreEqual(4, poses.Length);
-            Assert.AreEqual(4, uvs.Length);
-
-            var s = _count++ * 4; // start index
-            _poses[s + 0] = poses[0];
-            _poses[s + 1] = poses[3];
-            _poses[s + 2] = poses[1];
-            _poses[s + 3] = poses[2];
-            _uvs[s + 0] = uvs[0];
-            _uvs[s + 1] = uvs[3];
-            _uvs[s + 2] = uvs[1];
-            _uvs[s + 3] = uvs[2];
+            var q = _count++;
+            QuadMesh.SetPos(_poses, q, p1, p2);
+            QuadMesh.SetUV(_uvs, q, uv1, uv2);
         }
 
         public void Commit(Color32 color)
@@ -136,33 +108,22 @@ namespace UnityEngine.UI
 
         public void SetUp_Quad(Vector2 pos1, Vector2 pos2, Vector2 uv1, Vector2 uv2, Color32 color)
         {
-            // Pos
-            var poses = Poses.SetUp(4);
-            poses[0] = pos1;
-            poses[1] = new Vector3(pos2.x, pos1.y);
-            poses[2] = new Vector3(pos1.x, pos2.y);
-            poses[3] = pos2;
-
-            // UV
-            var uvs = UVs.SetUp(4);
-            uvs[0] = uv1;
-            uvs[1] = new Vector2(uv2.x, uv1.y);
-            uvs[2] = new Vector2(uv1.x, uv2.y);
-            uvs[3] = uv2;
+            QuadMesh.SetPos(Poses.SetUp(4), 0, pos1, pos2);
+            QuadMesh.SetUV(UVs.SetUp(4), 0, uv1, uv2);
 
             // Color & Index
             Colors.SetUp(color, 4);
             Indices.SetUp(QuadIndexCache.Single);
         }
 
-        // Arbitrary quad (e.g. a sheared parallelogram) with a single shared UV. Corners: 0=bl, 1=br, 2=tl, 3=tr.
+        // Arbitrary quad (e.g. a sheared parallelogram) with a single shared UV.
         public void SetUp_Quad(Vector2 bl, Vector2 br, Vector2 tl, Vector2 tr, Vector2 uv, Color32 color)
         {
             var poses = Poses.SetUp(4);
-            poses[0] = bl;
-            poses[1] = br;
-            poses[2] = tl;
-            poses[3] = tr;
+            poses[QuadMesh.BL] = bl;
+            poses[QuadMesh.BR] = br;
+            poses[QuadMesh.TL] = tl;
+            poses[QuadMesh.TR] = tr;
 
             UVs.SetUp(uv, 4);
             Colors.SetUp(color, 4);

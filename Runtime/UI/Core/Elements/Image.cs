@@ -1,4 +1,5 @@
 using System;
+using UnityEngine.Assertions;
 
 namespace UnityEngine.UI
 {
@@ -16,11 +17,9 @@ namespace UnityEngine.UI
 
         public enum FillMethod
         {
-            Horizontal,
-            Vertical,
-            Radial90,
-            Radial180,
-            Radial360,
+            Horizontal = 0,
+            Vertical = 1,
+            Radial360 = 4,
         }
 
         public enum OriginHorizontal
@@ -31,7 +30,7 @@ namespace UnityEngine.UI
 
 
         [SerializeField] private Type m_Type = Type.Simple;
-        public Type type { get { return m_Type; } set { if (SetPropertyUtility.SetEnum(ref m_Type, value)) SetVerticesDirty(); } }
+        public Type type { set { if (SetPropertyUtility.SetEnum(ref m_Type, value)) SetVerticesDirty(); } }
 
         [SerializeField] private bool m_PreserveAspect = false;
 
@@ -39,7 +38,7 @@ namespace UnityEngine.UI
 
         /// Filling method for filled sprites.
         [SerializeField] private FillMethod m_FillMethod = FillMethod.Radial360;
-        public FillMethod fillMethod { get { return m_FillMethod; } set { if (SetPropertyUtility.SetEnum(ref m_FillMethod, value)) { SetVerticesDirty(); m_FillOrigin = 0; } } }
+        public FillMethod fillMethod { set { if (SetPropertyUtility.SetEnum(ref m_FillMethod, value)) { SetVerticesDirty(); m_FillOrigin = 0; } } }
 
         /// Amount of the Image shown. 0-1 range with 0 being nothing shown, and 1 being the full Image.
         [Range(0, 1)]
@@ -50,7 +49,7 @@ namespace UnityEngine.UI
         [SerializeField] private bool m_FillClockwise = true;
 
         [SerializeField] private int m_FillOrigin;
-        public int fillOrigin { get { return m_FillOrigin; } set { if (SetPropertyUtility.SetValue(ref m_FillOrigin, value)) SetVerticesDirty(); } }
+        public int fillOrigin { set { if (SetPropertyUtility.SetValue(ref m_FillOrigin, value)) SetVerticesDirty(); } }
 
         private static void PreserveSpriteAspectRatio(ref Rect rect, Vector2 pivot, Vector2 spriteSize)
         {
@@ -110,7 +109,7 @@ namespace UnityEngine.UI
         {
             var rect = rectTransform.rect;
             var pivot = rectTransform.pivot;
-            switch (type)
+            switch (m_Type)
             {
                 case Type.Simple:
                 {
@@ -156,8 +155,47 @@ namespace UnityEngine.UI
             toFill.Indices.SetUp(sprite.triangles);
         }
 
+        // Scratch quads, in QuadMesh corner order.
         static readonly Vector2[] s_Xy = new Vector2[4];
         static readonly Vector2[] s_Uv = new Vector2[4];
+
+        // The sweep order. Each step fills the quadrant anchored at that corner, and the anchor's bits
+        // give both the quadrant's extent and the pivot to cut about.
+        static readonly int[] s_SweepAnchors = { QuadMesh.BL, QuadMesh.TL, QuadMesh.TR, QuadMesh.BR };
+
+        // Sub-rect [fMin,fMax] of the drawing rect `v` and UV rect `outer` (both x=left y=bottom z=right w=top).
+        private static void SetScratchQuad(Vector4 v, Vector4 outer, Vector2 fMin, Vector2 fMax)
+        {
+            SetCorners(s_Xy, Mathf.Lerp(v.x, v.z, fMin.x), Mathf.Lerp(v.x, v.z, fMax.x),
+                Mathf.Lerp(v.y, v.w, fMin.y), Mathf.Lerp(v.y, v.w, fMax.y));
+            SetCorners(s_Uv, Mathf.Lerp(outer.x, outer.z, fMin.x), Mathf.Lerp(outer.x, outer.z, fMax.x),
+                Mathf.Lerp(outer.y, outer.w, fMin.y), Mathf.Lerp(outer.y, outer.w, fMax.y));
+            return;
+
+            static void SetCorners(Vector2[] quad, float x0, float x1, float y0, float y1)
+            {
+                quad[QuadMesh.BL] = new Vector2(x0, y0);
+                quad[QuadMesh.BR] = new Vector2(x1, y0);
+                quad[QuadMesh.TL] = new Vector2(x0, y1);
+                quad[QuadMesh.TR] = new Vector2(x1, y1);
+            }
+        }
+
+        // Shrinks one axis to `fill` of its length, growing from the near edge or, with `fromHi`, the far
+        // one. UVs track the rect so the sprite clips rather than squashes.
+        private static void CollapseAxis(ref float lo, ref float hi, ref float uLo, ref float uHi, float fill, bool fromHi)
+        {
+            if (fromHi)
+            {
+                lo = Mathf.Lerp(hi, lo, fill);
+                uLo = Mathf.Lerp(uHi, uLo, fill);
+            }
+            else
+            {
+                hi = Mathf.Lerp(lo, hi, fill);
+                uHi = Mathf.Lerp(uLo, uHi, fill);
+            }
+        }
 
         /// <summary>
         /// Generate vertices for a filled Image.
@@ -171,187 +209,68 @@ namespace UnityEngine.UI
             var v = GetDrawingDimensions(sprite, rect, pivot, preserveAspect);
             var outer = Sprites.DataUtility.GetOuterUV(sprite);
 
-            var tx0 = outer.x;
-            var ty0 = outer.y;
-            var tx1 = outer.z;
-            var ty1 = outer.w;
-
-            // Horizontal and vertical filled sprites are simple -- just end the Image prematurely
-            if (fillMethod == FillMethod.Horizontal)
+            // A single quad covers everything but a partial radial fill. Horizontal and vertical just end
+            // the Image prematurely; a full fill needs no cut at all.
+            if (fillMethod is FillMethod.Horizontal or FillMethod.Vertical || fillAmount >= 1f)
             {
-                var fill = (tx1 - tx0) * fillAmount;
+                if (fillMethod == FillMethod.Horizontal)
+                    CollapseAxis(ref v.x, ref v.z, ref outer.x, ref outer.z, fillAmount, fillOrigin == 1);
+                else if (fillMethod == FillMethod.Vertical)
+                    CollapseAxis(ref v.y, ref v.w, ref outer.y, ref outer.w, fillAmount, fillOrigin == 1);
 
-                if (fillOrigin == 1)
-                {
-                    v.x = v.z - (v.z - v.x) * fillAmount;
-                    tx0 = tx1 - fill;
-                }
-                else
-                {
-                    v.z = v.x + (v.z - v.x) * fillAmount;
-                    tx1 = tx0 + fill;
-                }
-            }
-            else if (fillMethod == FillMethod.Vertical)
-            {
-                var fill = (ty1 - ty0) * fillAmount;
-
-                if (fillOrigin == 1)
-                {
-                    v.y = v.w - (v.w - v.y) * fillAmount;
-                    ty0 = ty1 - fill;
-                }
-                else
-                {
-                    v.w = v.y + (v.w - v.y) * fillAmount;
-                    ty1 = ty0 + fill;
-                }
-            }
-
-            if (fillAmount >= 1f || (fillMethod is FillMethod.Horizontal or FillMethod.Vertical))
-            {
-                toFill.SetUp_Quad(
-                    new Vector2(v.x, v.y), new Vector2(v.z, v.w),
-                    new Vector2(tx0, ty0), new Vector2(tx1, ty1),
-                    color);
+                var (pos1, pos2) = v.Split_XY_ZW();
+                var (uv1, uv2) = outer.Split_XY_ZW();
+                toFill.SetUp_Quad(pos1, pos2, uv1, uv2, color);
                 return;
             }
 
-            var qb = toFill.SetUp_Quad(4);
+            Assert.IsTrue(fillMethod == FillMethod.Radial360, "Only Radial360 fill method is supported for partial fill");
 
-            if (fillMethod == FillMethod.Radial90)
+            // RadialCut drops the quadrants the sweep hasn't reached, so pack as we go.
+            const int maxQuads = 4;
+            var poses = toFill.Poses.SetUp(maxQuads * 4);
+            var uvs = toFill.UVs.SetUp(maxQuads * 4);
+            var quadCount = 0;
+
+            for (var cycle = 0; cycle < maxQuads; ++cycle)
             {
-                s_Xy[0] = new Vector2(v.x, v.y);
-                s_Xy[1] = new Vector2(v.x, v.w);
-                s_Xy[2] = new Vector2(v.z, v.w);
-                s_Xy[3] = new Vector2(v.z, v.y);
+                var anchor = s_SweepAnchors[cycle];
+                var fMin = new Vector2(
+                    (anchor & QuadMesh.FlipX) != 0 ? 0.5f : 0f,
+                    (anchor & QuadMesh.FlipY) != 0 ? 0.5f : 0f);
+                SetScratchQuad(v, outer, fMin, fMin + new Vector2(0.5f, 0.5f));
 
-                s_Uv[0] = new Vector2(tx0, ty0);
-                s_Uv[1] = new Vector2(tx0, ty1);
-                s_Uv[2] = new Vector2(tx1, ty1);
-                s_Uv[3] = new Vector2(tx1, ty0);
+                // fillOrigin rotates which quadrant fills first.
+                var step = (cycle + fillOrigin) % 4;
+                if (!fillClockwise) step = 3 - step;
 
-                if (RadialCut(s_Xy, s_Uv, fillAmount, fillClockwise, fillOrigin))
-                    qb.Add_0312(s_Xy, s_Uv);
-            }
-            else if (fillMethod == FillMethod.Radial180)
-            {
-                for (var side = 0; side < 2; ++side)
+                // Alternating quadrants sweep the opposite way; the cut pivots on the rect centre.
+                var invert = fillClockwise ^ ((cycle & 1) == 1);
+                if (!RadialCut(s_Xy, s_Uv, Mathf.Clamp01(fillAmount * 4f - step), invert, anchor ^ QuadMesh.Opposite))
+                    continue;
+
+                var b = quadCount++ * 4;
+                for (var i = 0; i < 4; i++)
                 {
-                    float fx0, fx1, fy0, fy1;
-                    var even = fillOrigin > 1 ? 1 : 0;
-
-                    if (fillOrigin is 0 or 2)
-                    {
-                        fy0 = 0f;
-                        fy1 = 1f;
-                        if (side == even)
-                        {
-                            fx0 = 0f;
-                            fx1 = 0.5f;
-                        }
-                        else
-                        {
-                            fx0 = 0.5f;
-                            fx1 = 1f;
-                        }
-                    }
-                    else
-                    {
-                        fx0 = 0f;
-                        fx1 = 1f;
-                        if (side == even)
-                        {
-                            fy0 = 0.5f;
-                            fy1 = 1f;
-                        }
-                        else
-                        {
-                            fy0 = 0f;
-                            fy1 = 0.5f;
-                        }
-                    }
-
-                    s_Xy[0].x = s_Xy[1].x = Mathf.Lerp(v.x, v.z, fx0);
-                    s_Xy[2].x = s_Xy[3].x = Mathf.Lerp(v.x, v.z, fx1);
-
-                    s_Xy[0].y = s_Xy[3].y = Mathf.Lerp(v.y, v.w, fy0);
-                    s_Xy[1].y = s_Xy[2].y = Mathf.Lerp(v.y, v.w, fy1);
-
-                    s_Uv[0].x = s_Uv[1].x = Mathf.Lerp(tx0, tx1, fx0);
-                    s_Uv[2].x = s_Uv[3].x = Mathf.Lerp(tx0, tx1, fx1);
-
-                    s_Uv[0].y = s_Uv[3].y = Mathf.Lerp(ty0, ty1, fy0);
-                    s_Uv[1].y = s_Uv[2].y = Mathf.Lerp(ty0, ty1, fy1);
-
-                    float val = fillClockwise ? fillAmount * 2f - side : fillAmount * 2f - (1 - side);
-
-                    if (RadialCut(s_Xy, s_Uv, Mathf.Clamp01(val), fillClockwise, ((side + fillOrigin + 3) % 4)))
-                        qb.Add_0312(s_Xy, s_Uv);
-                }
-            }
-            else if (fillMethod == FillMethod.Radial360)
-            {
-                for (var corner = 0; corner < 4; ++corner)
-                {
-                    float fx0, fx1, fy0, fy1;
-
-                    if (corner < 2)
-                    {
-                        fx0 = 0f;
-                        fx1 = 0.5f;
-                    }
-                    else
-                    {
-                        fx0 = 0.5f;
-                        fx1 = 1f;
-                    }
-
-                    if (corner is 0 or 3)
-                    {
-                        fy0 = 0f;
-                        fy1 = 0.5f;
-                    }
-                    else
-                    {
-                        fy0 = 0.5f;
-                        fy1 = 1f;
-                    }
-
-                    s_Xy[0].x = s_Xy[1].x = Mathf.Lerp(v.x, v.z, fx0);
-                    s_Xy[2].x = s_Xy[3].x = Mathf.Lerp(v.x, v.z, fx1);
-
-                    s_Xy[0].y = s_Xy[3].y = Mathf.Lerp(v.y, v.w, fy0);
-                    s_Xy[1].y = s_Xy[2].y = Mathf.Lerp(v.y, v.w, fy1);
-
-                    s_Uv[0].x = s_Uv[1].x = Mathf.Lerp(tx0, tx1, fx0);
-                    s_Uv[2].x = s_Uv[3].x = Mathf.Lerp(tx0, tx1, fx1);
-
-                    s_Uv[0].y = s_Uv[3].y = Mathf.Lerp(ty0, ty1, fy0);
-                    s_Uv[1].y = s_Uv[2].y = Mathf.Lerp(ty0, ty1, fy1);
-
-                    var val = fillClockwise ?
-                        fillAmount * 4f - ((corner + fillOrigin) % 4) :
-                        fillAmount * 4f - (3 - ((corner + fillOrigin) % 4));
-
-                    if (RadialCut(s_Xy, s_Uv, Mathf.Clamp01(val), fillClockwise, ((corner + 2) % 4)))
-                        qb.Add_0312(s_Xy, s_Uv);
+                    poses[b + i] = s_Xy[i];
+                    uvs[b + i] = s_Uv[i];
                 }
             }
 
-            qb.Commit(color);
+            var vertCount = quadCount * 4;
+            toFill.Poses.TrimAfter(vertCount);
+            toFill.UVs.TrimAfter(vertCount);
+            toFill.Colors.SetUp(color, vertCount);
+            toFill.Indices.SetUp_Quad(quadCount);
         }
 
         /// <summary>
         /// Adjust the specified quad, making it be radially filled instead.
         /// </summary>
-        private static bool RadialCut(Vector2[] xy, Vector2[] uv, float fill, bool invert, int corner)
+        private static bool RadialCut(Vector2[] xy, Vector2[] uv, float fill, bool invert, int pivot)
         {
             // Nothing to fill
             if (fill < 0.001f) return false;
-
-            // Even corners invert the fill direction
-            if ((corner & 1) == 1) invert = !invert;
 
             // Nothing to adjust
             if (!invert && fill > 0.999f) return true;
@@ -365,87 +284,52 @@ namespace UnityEngine.UI
             float cos = Mathf.Cos(angle);
             float sin = Mathf.Sin(angle);
 
-            RadialCut(xy, cos, sin, invert, corner);
-            RadialCut(uv, cos, sin, invert, corner);
+            RadialCut(xy, cos, sin, invert, pivot);
+            RadialCut(uv, cos, sin, invert, pivot);
             return true;
         }
 
         /// <summary>
         /// Adjust the specified quad, making it be radially filled instead.
         /// </summary>
-        private static void RadialCut(Vector2[] xy, float cos, float sin, bool invert, int corner)
+        private static void RadialCut(Vector2[] xy, float cos, float sin, bool invert, int pivot)
         {
-            int i0 = corner;
-            int i1 = ((corner + 1) % 4);
-            int i2 = ((corner + 2) % 4);
-            int i3 = ((corner + 3) % 4);
+            // The cut spans the pivot to its diagonal, moving the two neighbours in between.
+            var i0 = pivot;
+            var i1 = pivot ^ QuadMesh.FlipX;
+            var i2 = pivot ^ QuadMesh.Opposite;
+            var i3 = pivot ^ QuadMesh.FlipY;
 
-            if ((corner & 1) == 1)
+            if (sin > cos)
             {
-                if (sin > cos)
-                {
-                    cos /= sin;
-                    sin = 1f;
+                cos /= sin;
+                sin = 1f;
 
-                    if (invert)
-                    {
-                        xy[i1].x = Mathf.Lerp(xy[i0].x, xy[i2].x, cos);
-                        xy[i2].x = xy[i1].x;
-                    }
-                }
-                else if (cos > sin)
+                if (invert)
                 {
-                    sin /= cos;
-                    cos = 1f;
-
-                    if (!invert)
-                    {
-                        xy[i2].y = Mathf.Lerp(xy[i0].y, xy[i2].y, sin);
-                        xy[i3].y = xy[i2].y;
-                    }
+                    xy[i1].x = Mathf.Lerp(xy[i0].x, xy[i2].x, cos);
+                    xy[i2].x = xy[i1].x;
                 }
-                else
+            }
+            else if (cos > sin)
+            {
+                sin /= cos;
+                cos = 1f;
+
+                if (!invert)
                 {
-                    cos = 1f;
-                    sin = 1f;
+                    xy[i2].y = Mathf.Lerp(xy[i0].y, xy[i2].y, sin);
+                    xy[i3].y = xy[i2].y;
                 }
-
-                if (!invert) xy[i3].x = Mathf.Lerp(xy[i0].x, xy[i2].x, cos);
-                else xy[i1].y = Mathf.Lerp(xy[i0].y, xy[i2].y, sin);
             }
             else
             {
-                if (cos > sin)
-                {
-                    sin /= cos;
-                    cos = 1f;
-
-                    if (!invert)
-                    {
-                        xy[i1].y = Mathf.Lerp(xy[i0].y, xy[i2].y, sin);
-                        xy[i2].y = xy[i1].y;
-                    }
-                }
-                else if (sin > cos)
-                {
-                    cos /= sin;
-                    sin = 1f;
-
-                    if (invert)
-                    {
-                        xy[i2].x = Mathf.Lerp(xy[i0].x, xy[i2].x, cos);
-                        xy[i3].x = xy[i2].x;
-                    }
-                }
-                else
-                {
-                    cos = 1f;
-                    sin = 1f;
-                }
-
-                if (invert) xy[i3].y = Mathf.Lerp(xy[i0].y, xy[i2].y, sin);
-                else xy[i1].x = Mathf.Lerp(xy[i0].x, xy[i2].x, cos);
+                cos = 1f;
+                sin = 1f;
             }
+
+            if (!invert) xy[i3].x = Mathf.Lerp(xy[i0].x, xy[i2].x, cos);
+            else xy[i1].y = Mathf.Lerp(xy[i0].y, xy[i2].y, sin);
         }
 
         protected override void OnDidApplyAnimationProperties()
