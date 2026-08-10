@@ -198,6 +198,22 @@ namespace UnityEngine.UI
             Invalidate();
         }
 
+        // FillAndInvalidate(Sprite) plus the color stream. Separate rather than folded in: a sprite
+        // without one renders white, and only a generator that varies color per vertex
+        // (UIGradationMeshGen) sets the channel up at all.
+        public void FillColoredAndInvalidate(Sprite sprite)
+        {
+            AssertPrepared();
+
+            using var ps = Poses.AllocateNativeArray(Allocator.Temp);
+            using var uvs = UVs.AllocateNativeArray(Allocator.Temp);
+            using var colors = Colors.AllocateNativeArray(Allocator.Temp);
+            using var tris = Indices.AllocateNativeArray(Allocator.Temp);
+            sprite.SetMesh(ps, uvs, colors, tris);
+
+            Invalidate();
+        }
+
         public void SetMeshAndInvalidate(CanvasRenderer canvasRenderer)
         {
             Assert.IsTrue(Poses.Count is not Invalid, "Poses is not prepared.");
