@@ -85,7 +85,7 @@ namespace UnityEngine.UI
         {
 #if UNITY_EDITOR
             // Padding is not supported other than R3C3.
-            if (!SupportsPadding(_method) && !UnityEngine.Sprites.DataUtility.GetPadding(sprite).EE0())
+            if (!SupportsPadding(_method) && sprite.HasAuthoredPadding())
             {
                 L.E($"Padding is not supported: method={_method}, sprite={sprite.SafeName()}, padding={UnityEngine.Sprites.DataUtility.GetPadding(sprite)}");
             }
