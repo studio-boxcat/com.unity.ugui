@@ -132,6 +132,13 @@ namespace UnityEngine.UI
             }
         }
 
+        /// <summary>
+        /// Generator-space (pixel) to local-space conversion factor — the inverse of <see cref="pixelsPerUnit"/>.
+        /// Anything positioned from TextGen output must scale by this rather than by the canvas scale factor:
+        /// the two diverge whenever the 1:1 clamp above engages.
+        /// </summary>
+        public float unitsPerPixel => 1f / pixelsPerUnit;
+
         public float preferredWidth
         {
             get
