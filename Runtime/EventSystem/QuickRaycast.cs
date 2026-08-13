@@ -7,9 +7,9 @@ namespace UnityEngine.EventSystems
 {
     public static class QuickRaycast
     {
-        static readonly List<RaycasterComparisonData> _raycasterBuffer = new();
+        private static readonly List<RaycasterComparisonData> _raycasterBuffer = new();
 
-        public static RaycastResultType Raycast(Vector2 screenPosition, Camera targetCamera, out RaycastResult raycastResult)
+        public static RaycastResultType Raycast(Vector2 screenPosition, Camera? targetCamera, out RaycastResult raycastResult)
         {
             // L.I($"{screenPosition}, {targetCamera.name}");
 
@@ -45,7 +45,7 @@ namespace UnityEngine.EventSystems
             catch (Exception e)
             {
                 _raycasterBuffer.Clear(); // XXX: _raycasterBuffer 가 오염되었기 때문에 _pool 로 반환하지 않음.
-                L.W(e.InnerException?.Message);
+                L.W(e.InnerException?.Message ?? e.Message);
                 raycastResult = default;
                 return RaycastResultType.Abort;
             }
@@ -91,9 +91,12 @@ namespace UnityEngine.EventSystems
             return Raycast(screenPosition, null, out raycastResult) is RaycastResultType.Hit;
         }
 
-        class RaycasterComparisonData
+        private class RaycasterComparisonData
         {
-            static readonly Stack<RaycasterComparisonData> _pool = new();
+            private static readonly Stack<RaycasterComparisonData> _pool = new();
+
+            // One-shot latch for the same-camera-depth report in CompareCameraDepth.
+            private static bool _sameDepthReported;
 
             public static RaycasterComparisonData Rent(BaseRaycaster raycaster, Camera eventCamera)
             {
@@ -117,16 +120,20 @@ namespace UnityEngine.EventSystems
             public BaseRaycaster Raycaster;
             public Camera Camera;
 
-            Canvas _canvas;
-            public Canvas Canvas => _canvas ??= ((GraphicRaycaster) Raycaster).canvas;
+            private Canvas? _canvas;
+            public Canvas Canvas => _canvas ??= ((GraphicRaycaster)Raycaster).canvas;
 
-            float _cameraDepth = float.NaN;
-            int _sortingLayerID = int.MaxValue;
-            int _sortingLayerValue = int.MaxValue;
-            int _sortingOrder = int.MaxValue;
-            Canvas _rootCanvas;
-            int _rendererDepth = int.MaxValue;
-            public int RendererDepth => _rendererDepth != int.MaxValue ? _rendererDepth : Raycaster.GetComponent<CanvasRenderer>().absoluteDepth;
+            private float _cameraDepth = float.NaN;
+            private int _sortingLayerID = int.MaxValue;
+            private int _sortingLayerValue = int.MaxValue;
+            private int _sortingOrder = int.MaxValue;
+            private Canvas? _rootCanvas;
+            private int _rendererDepth = int.MaxValue;
+            // Read inside the sort comparer, so it must land in the cache — otherwise every
+            // comparison pays a GetComponent. Reset per rent by Init().
+            public int RendererDepth => _rendererDepth != int.MaxValue
+                ? _rendererDepth
+                : _rendererDepth = Raycaster.GetComponent<CanvasRenderer>().absoluteDepth;
 
 
             public RaycasterComparisonData(BaseRaycaster raycaster, Camera eventCamera)
@@ -161,13 +168,25 @@ namespace UnityEngine.EventSystems
                     return false;
                 }
 
-                if (_cameraDepth == float.NaN)
+                // NaN means unset — test with IsNaN, since `== float.NaN` is always false.
+                if (float.IsNaN(_cameraDepth))
                     _cameraDepth = Camera.depth;
-                if (other._cameraDepth == float.NaN)
+                if (float.IsNaN(other._cameraDepth))
                     other._cameraDepth = other.Camera.depth;
 
-                if (_cameraDepth == other._cameraDepth)
-                    throw new Exception("Given cameras are different but have the same depth.");
+                // Two cameras sharing a depth is a scene-config smell, not a reason to kill input:
+                // a throw escapes into List.Sort, and Raycast turns any Sort failure into
+                // RaycastResultType.Abort — a screen-wide dead touch. Defer to the canvas criteria,
+                // which bottom out in a deterministic InstanceID tiebreak. Latched because the
+                // comparer runs O(n log n) times per touch.
+                if (_cameraDepth.EEq(other._cameraDepth))
+                {
+                    if (_sameDepthReported.ToTrue())
+                        L.E($"cameras share a depth, so their raycast order is arbitrary - depth={_cameraDepth}, a={Camera.name}, b={other.Camera.name}");
+
+                    result = default;
+                    return false;
+                }
 
                 result = _cameraDepth < other._cameraDepth ? 1 : -1;
                 return true;
@@ -206,9 +225,10 @@ namespace UnityEngine.EventSystems
                     return false;
                 }
 
-                if (_sortingLayerValue == float.NaN)
+                // int.MaxValue means unset, as above.
+                if (_sortingLayerValue == int.MaxValue)
                     _sortingLayerValue = SortingLayer.GetLayerValueFromID(_sortingLayerID);
-                if (other._sortingLayerValue == float.NaN)
+                if (other._sortingLayerValue == int.MaxValue)
                     other._sortingLayerValue = SortingLayer.GetLayerValueFromID(other._sortingLayerID);
 
                 if (_sortingLayerValue != other._sortingLayerValue)
@@ -269,7 +289,7 @@ namespace UnityEngine.EventSystems
             }
         }
 
-        class RaycasterComparer : IComparer<RaycasterComparisonData>
+        private class RaycasterComparer : IComparer<RaycasterComparisonData>
         {
             public static readonly RaycasterComparer Instance = new();
 
