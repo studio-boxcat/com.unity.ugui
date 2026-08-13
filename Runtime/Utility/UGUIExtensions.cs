@@ -38,11 +38,9 @@ namespace UnityEngine.UI
         // raycastInset (x,y,z,w = left,bottom,right,top padding; negative grows it), so the bare
         // rect is not the clickable region. Shrink-only — an inset that grows past the rect reaches
         // over neighbours, which callers aiming at THIS graphic don't want.
-        public static Rect CalcHitRect(this RectTransform rectTrans)
+        public static Rect CalcHitRect(this Graphic graphic)
         {
-            var rect = rectTrans.rect;
-            if (!rectTrans.TryGetComponent<Graphic>(out var graphic)) return rect;
-
+            var rect = graphic.rectTransform.rect;
             var inset = graphic.raycastInset;
             return Rect.MinMaxRect(
                 rect.xMin + Mathf.Max(inset.x, 0), rect.yMin + Mathf.Max(inset.y, 0),
