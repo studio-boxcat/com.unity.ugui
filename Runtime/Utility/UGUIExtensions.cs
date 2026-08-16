@@ -4,6 +4,18 @@ namespace UnityEngine.UI
 {
     public static class UGUIExtensions
     {
+        /// Scroll the target to the content's origin — enough to bring it into view. Reads the
+        /// current layout, so rebuild it first if it may be stale.
+        public static void ScrollIntoView(this ScrollRect scroll, RectTransform target)
+        {
+            var content = scroll.content;
+            var center = RectTransformUtility.CalculateRelativeRectTransformBounds(content, target).center;
+            var pos = content.anchoredPosition;
+            content.anchoredPosition = scroll.horizontal
+                ? new Vector2(-center.x, pos.y)
+                : new Vector2(pos.x, -center.y);
+        }
+
         public static void SetMaterialSingle(this CanvasRenderer cr, Material material)
         {
             cr.materialCount = 1;
