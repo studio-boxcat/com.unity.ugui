@@ -9,6 +9,7 @@ namespace UnityEngine.UI
     internal sealed class UIProgressBar : MonoBehaviour
     {
         [SerializeField, Required, ChildGameObjectsOnly]
+        [DrivesTransformProperties(DrivenTransformProperties.AnchorMaxX)]
         private CanvasGroup _bar;
 
         public void Set(float ratio)

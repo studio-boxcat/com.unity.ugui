@@ -11,6 +11,7 @@ namespace UnityEngine.UI
 #endif
     {
         [SerializeField, Required]
+        [DrivesTransformProperties(DrivenTransformProperties.Anchors)]
         private RectTransform m_HandleRect;
         [SerializeField]
         private Axis m_Direction;

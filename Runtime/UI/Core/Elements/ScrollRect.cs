@@ -25,6 +25,7 @@ namespace UnityEngine.UI
         }
 
         [SerializeField, Required, ChildGameObjectsOnly]
+        [DrivesTransformProperties(DrivenTransformProperties.AnchoredPosition)]
         private RectTransform m_Content;
         public RectTransform content => m_Content;
 

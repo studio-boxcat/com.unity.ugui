@@ -7,6 +7,10 @@ namespace UnityEngine.UI
     [DisallowMultipleComponent]
     [ExecuteAlways]
     [RequireComponent(typeof(RectTransform))]
+    [DrivesTransformProperties(DriveTarget.Children,
+        DrivenTransformProperties.Anchors
+        | DrivenTransformProperties.AnchoredPosition
+        | DrivenTransformProperties.Pivot)]
     public class GridLayoutGroup : MonoBehaviour, ILayoutElementV, ILayoutGroup
 #if UNITY_EDITOR
         , ISelfValidator

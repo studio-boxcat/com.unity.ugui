@@ -13,6 +13,10 @@ namespace UnityEngine.UI
     /// </remarks>
     [ExecuteAlways]
     [RequireComponent(typeof(RectTransform))]
+    [DrivesTransformProperties(DriveTarget.Self,
+        DrivenTransformProperties.SizeDeltaX, When = nameof(m_HorizontalFit))]
+    [DrivesTransformProperties(DriveTarget.Self,
+        DrivenTransformProperties.SizeDeltaY, When = nameof(m_VerticalFit))]
     public sealed class ContentSizeFitter : UIBehaviour, ILayoutSelfController
     {
         [SerializeField, OnValueChanged(nameof(SetDirty))]
