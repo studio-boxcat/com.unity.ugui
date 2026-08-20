@@ -47,6 +47,14 @@ namespace UnityEngine.UI
             return _buf;
         }
 
+        // Zero-length set-up. Delegates rather than assigning Data/Count itself so the state transition
+        // and its asserts stay in one place; at zero length the buffer has nothing to fill, so the
+        // caller has no use for it.
+        public void SetUpEmpty()
+        {
+            _ = SetUp(0);
+        }
+
         public void SetUp(T[] data)
         {
             Assert.AreEqual(MeshBuilder.Invalid, Count, "MeshChannel is not properly invalidated.");

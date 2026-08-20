@@ -75,12 +75,10 @@ namespace UnityEngine.UI
 
         public void SetUp_Empty()
         {
-            // ReSharper disable MustUseReturnValue
-            Poses.SetUp(0);
-            UVs.SetUp(0);
-            Colors.SetUp(0);
-            Indices.SetUp(0);
-            // ReSharper restore MustUseReturnValue
+            Poses.SetUpEmpty();
+            UVs.SetUpEmpty();
+            Colors.SetUpEmpty();
+            Indices.SetUpEmpty();
         }
 
         // Fills an empty mesh (colours only) when `isEmpty`; returns true so a caller can bail on a zero-area rect.
@@ -93,11 +91,9 @@ namespace UnityEngine.UI
 
         public void SetUp_EmptyExceptColors()
         {
-            // ReSharper disable MustUseReturnValue
-            Poses.SetUp(0);
-            UVs.SetUp(0);
-            Indices.SetUp(0);
-            // ReSharper restore MustUseReturnValue
+            Poses.SetUpEmpty();
+            UVs.SetUpEmpty();
+            Indices.SetUpEmpty();
         }
 
         [MustUseReturnValue]
